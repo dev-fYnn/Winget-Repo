@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block header %}
+    {% if back != 'False' %}
+        <div>
+            <a href="{{ url_for('user_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+                Zurück
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header text-center">
+                    <h4>Create User</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('user_bp.add_user') }}" onsubmit="validatePasswords();">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" maxlength="25" minlength="1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password <span class="text-secondary">(min. 10)</span></label>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" minlength="10" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirm_password" placeholder="Confirm password" minlength="10" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Create User</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function validatePasswords() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+
+        if (password !== confirmPassword) {
+            alert("Passwords do not match.");
+            event.preventDefault();
+        }
+    }
+</script>
+{% endblock %}

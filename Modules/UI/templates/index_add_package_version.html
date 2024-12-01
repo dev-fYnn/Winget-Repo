@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block header %}
+    <div>
+        <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+            Zurück
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header text-center">
+                        <h4>Add Package Version</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Formular für das obere Formular -->
+                        <form method="POST" action="{{ url_for('ui_bp.add_package_version') }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
+                            <div class="mb-3">
+                                <label for="package_id" class="form-label">Choose a Package</label>
+                                <select name="package_id" id="package_id" class="form-control form-control" required>
+                                    {% for p in packages %}
+                                        <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Paket Version -->
+                            <div class="mb-3">
+                                <label for="package_version" class="form-label">Package Version</label>
+                                <input type="text" class="form-control" id="package_version" name="package_version" placeholder="Package version" maxlength="25" required>
+                            </div>
+
+                            <!-- Paket Locale Auswahl -->
+                            <div class="mb-3">
+                                <label for="package_local" class="form-label">Locale</label>
+                                <select name="package_local" id="package_local" class="form-control" required>
+                                    {% for l in locales %}
+                                        <option value="{{ l['id'] }}">{{ l['name'] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Architektur Auswahl -->
+                            <div class="mb-3">
+                                <label for="file_architect" class="form-label">Architecture</label>
+                                <select name="file_architect" id="file_architect" class="form-control" required>
+                                    <option value="x64">x64</option>
+                                    <option value="x86">x86</option>
+                                </select>
+                            </div>
+
+                            <!-- Datei Upload -->
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Package File</label>
+                                <input type="file" class="form-control" id="file" name="file">
+                            </div>
+
+                            <!-- File Scope Auswahl -->
+                            <div class="mb-3">
+                                <label for="file_scope" class="form-label">Scope</label>
+                                <select name="file_scope" id="file_scope" class="form-control" required>
+                                    <option value="machine">Machine</option>
+                                    <option value="user">User</option>
+                                </select>
+                            </div>
+
+                            <!-- Zusätzliche Switch Optionen -->
+                            <div class="mb-3">
+                                <label class="form-label">Switch Options</label>
+                                <div class="d-flex flex-column">
+                                    <input type="text" class="form-control mb-2" name="switch_Silent" placeholder="Silent">
+                                    <input type="text" class="form-control mb-2" name="switch_SilentWithProgress" placeholder="Silent with progress">
+                                    <input type="text" class="form-control mb-2" name="switch_Interactive" placeholder="Interactive">
+                                    <input type="text" class="form-control mb-2" name="switch_InstallLocation" placeholder="Install Location">
+                                    <input type="text" class="form-control mb-2" name="switch_Log" placeholder="Log">
+                                    <input type="text" class="form-control mb-2" name="switch_Upgrade" placeholder="Upgrade">
+                                    <input type="text" class="form-control mb-2" name="switch_Custom" placeholder="Custom">
+                                    <input type="text" class="form-control mb-2" name="switch_Repair" placeholder="Repair">
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary" id="submit_form">Add Package Version</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
