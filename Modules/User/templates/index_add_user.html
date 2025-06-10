@@ -4,7 +4,7 @@
     {% if back != 'False' %}
         <div>
             <a href="{{ url_for('user_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
-                Zurück
+                Back
             </a>
         </div>
     {% endif %}
@@ -32,6 +32,20 @@
                             <label for="confirm_password" class="form-label">Confirm Password</label>
                             <input type="password" class="form-control" id="confirm_password" placeholder="Confirm password" minlength="10" required>
                         </div>
+                        {% if back != 'False' %}
+                            <div class="mb-3">
+                                <label class="form-label">Groups <span class="text-danger">*</span></label>
+                                <div>
+                                    {% for g in groups %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="group" value="{{ g['ID'] }}" id="{{ g['ID'] }}">
+                                            <label class="form-check-label" for="{{ g['ID'] }}">{{ g['NAME'] }}</label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div id="groupError" class="text-danger" style="display:none;">Select one group!</div>
+                            </div>
+                        {% endif %}
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Create User</button>
                         </div>
@@ -45,11 +59,21 @@
     function validatePasswords() {
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirm_password').value;
+        const checkedBoxes = document.querySelectorAll('input[name="group"]:checked');
 
         if (password !== confirmPassword) {
             alert("Passwords do not match.");
             event.preventDefault();
+            return false;
         }
+
+        {% if back != 'False' %}
+            if (checkedBoxes.length !== 1) {
+                alert("Select only one group at a time!");
+                event.preventDefault();
+                return false;
+            }
+        {% endif %}
     }
 </script>
 {% endblock %}

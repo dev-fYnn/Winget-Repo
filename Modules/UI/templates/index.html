@@ -6,15 +6,24 @@
     <h6 class="text-center text-secondary mb-0 flex-grow-1" style="margin-right: 30px;">{{ username }}</h6>
 
     <!-- Dropdown-Menü für Einstellungen -->
-    <div class="dropdown me-2">
-        <button class="btn btn-light dropdown-toggle" type="button" id="settingsButton" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fas fa-cog"></i>
-        </button>
-        <!-- Dropdown Menü, links ausgerichtet -->
-        <ul class="dropdown-menu dropdown-menu-start" aria-labelledby="settingsButton">
-            <li><a class="dropdown-item" href="{{ url_for('user_bp.index') }}">Manage Users</a></li>
-        </ul>
-    </div>
+    {% if user_mng_btn %}
+        <div class="dropdown me-2">
+            <button class="btn btn-light dropdown-toggle" type="button" id="settingsButton" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-cog"></i>
+            </button>
+
+            <!-- Dropdown Menü, links ausgerichtet -->
+            <ul class="dropdown-menu dropdown-menu-start" aria-labelledby="settingsButton">
+                {% if user_mng_btn %}
+                    <li><a class="dropdown-item" href="{{ url_for('user_bp.index') }}">Manage Users</a></li>
+                {% endif %}
+
+                {% if group_mng_btn %}
+                    <li><a class="dropdown-item" href="{{ url_for('groups_bp.index') }}">Manage Groups</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    {% endif %}
 
     <!-- Logout-Button -->
     <a href="{{ url_for('login_bp.logout') }}" class="btn btn-danger">

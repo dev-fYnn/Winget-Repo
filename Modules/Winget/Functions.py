@@ -13,7 +13,7 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str)
             "PackageIdentifier": p[0],
             "PackageName": p[1],
             "Publisher": p[2],
-            "Versions": [{"PackageVersion": d['Version']} for d in db.get_All_Verions_from_Package(p[0])]
+            "Versions": [{"PackageVersion": d['Version']} for d in db.get_All_Versions_from_Package(p[0])]
         }
         data.append(temp)
 

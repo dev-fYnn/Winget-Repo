@@ -13,8 +13,8 @@ class SQLiteDatabase:
         if self.__conn:
             self.__conn.close()
 
-    def db_commit(self):
-        if self.__conn:
+    def db_commit(self, without: bool = False):
+        if self.__conn and (self.__cursor.rowcount > 0 or without):
             self.__conn.commit()
 
     def get_All_Packages(self) -> list:
@@ -26,6 +26,12 @@ class SQLiteDatabase:
         self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_LOCALE""")
         data = self.__cursor.fetchall()
         return [{"id": d[0], "name": d[1]} for d in data]
+
+    def get_All_Permission_Groups(self) -> list:
+        self.__cursor.execute("SELECT * FROM tbl_USERS_RIGHTS")
+        data = self.__cursor.fetchall()
+        data = select_to_dict(data, self.__cursor.description)
+        return data
 
     def check_Package_exists(self, package_id: str) -> bool:
         self.__cursor.execute("""SELECT PACKAGE_ID FROM tbl_PACKAGES WHERE PACKAGE_ID = ?""", (f"{package_id}",))
@@ -58,14 +64,14 @@ class SQLiteDatabase:
         data = self.__cursor.fetchall()
         return [list(d) for d in data]
 
-    def get_All_Verions_from_Package(self, package_id: str) -> list:
+    def get_All_Versions_from_Package(self, package_id: str) -> list:
         self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID FROM tbl_PACKAGES_VERSIONS AS PV
                                     INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
                                 WHERE PV.PACKAGE_ID = ?""", (f"{package_id}",))
         data = self.__cursor.fetchall()
         return [{"ID": d[0], "Version": d[1], "Locale": d[2], "Architecture": d[3], "Type": d[4], "URL": d[5], "SHA256": d[6], "Scope": d[7], "UID": d[8]} for d in data]
 
-    def get_specfic_Verions_from_Package(self, uid: str) -> dict:
+    def get_specfic_Versions_from_Package(self, uid: str) -> dict:
         self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (f"{uid}",))
         data = self.__cursor.fetchone()
 
@@ -131,6 +137,10 @@ class SQLiteDatabase:
             return True
         return False
 
+    def add_New_Group(self, group_name: str, id: str):
+        self.__cursor.execute("""INSERT INTO tbl_USERS_RIGHTS (ID, NAME) VALUES (?, ?)""", (id, group_name))
+        self.db_commit()
+
     def add_Package(self, package_id: str, package_version: str, package_publisher: str, package_description: str) -> bool:
         self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES (PACKAGE_ID, PACKAGE_NAME, PACKAGE_PUBLISHER, PACKAGE_DESCRIPTION) 
                                     VALUES (?, ?, ?, ?)""",
@@ -158,6 +168,13 @@ class SQLiteDatabase:
             return True
         return False
 
+    def update_Permission(self, group_id: str, permission_name: str, state: int):
+        self.__cursor.execute(f"""UPDATE tbl_USERS_RIGHTS SET "{permission_name}" = ? WHERE ID = ?""", (state, group_id))
+
+    def update_User_Password(self, user_id: str, password: str):
+        self.__cursor.execute(f"""UPDATE tbl_USERS SET PW = ? WHERE ID = ?""", (password, user_id))
+        self.db_commit()
+
     def delete_Package(self, package_id: str):
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES WHERE PACKAGE_ID = ?""", (f"{package_id}",))
 
@@ -173,29 +190,59 @@ class SQLiteDatabase:
             return {"id": data[0], "hash": data[1]}
         return {}
 
-    def check_Username_exists(self, username: str, user_id="") -> tuple[bool, int]:
+    def check_User_Authentication(self, username: str) -> dict:
+        self.__cursor.execute("""SELECT TUR.* FROM tbl_USERS_RIGHTS AS TUR 
+                                            LEFT JOIN tbl_USERS AS TU ON TUR.ID = TU."GROUP"
+                                        WHERE TU.ID = ?""", (f"{username}",))
+        data = self.__cursor.fetchall()
+        data = select_to_dict(data, self.__cursor.description)
+        if len(data) > 0:
+            return data[0]
+        return {}
+
+    def check_Username_exists(self, username: str, user_id="") -> tuple[bool, int, str, str]:
         if len(user_id) > 0:
-            self.__cursor.execute("""SELECT USERNAME, DELETABLE FROM tbl_USERS WHERE ID = ?""", (f"{user_id}",))
+            self.__cursor.execute("""SELECT USERNAME, DELETABLE, "GROUP" FROM tbl_USERS WHERE ID = ?""", (f"{user_id}",))
         else:
-            self.__cursor.execute("""SELECT USERNAME, DELETABLE FROM tbl_USERS WHERE USERNAME = ?""", (f"{username}",))
+            self.__cursor.execute("""SELECT USERNAME, DELETABLE, "GROUP" FROM tbl_USERS WHERE USERNAME = ?""", (f"{username}",))
         data = self.__cursor.fetchone()
 
         if data is not None and len(data) > 0:
-            return True, data[1]
-        return False, 0
+            return True, data[1], data[0], data[2]
+        return False, 0, "", ""
+
+    def check_Group_exists(self, group_id: str) -> bool:
+        self.__cursor.execute("""SELECT * FROM tbl_USERS_RIGHTS WHERE ID = ?""", (group_id,))
+        data = self.__cursor.fetchone()
+
+        if data is not None and len(data) > 0:
+            return True
+        return False
 
     def get_All_Users(self):
-        self.__cursor.execute("""SELECT * FROM tbl_USERS""")
+        self.__cursor.execute("""SELECT TU.*, TUR.NAME FROM tbl_USERS AS TU
+                                    LEFT JOIN tbl_USERS_RIGHTS AS TUR ON TU."GROUP" = TUR.ID""")
         data = self.__cursor.fetchall()
         data = select_to_dict(data, self.__cursor.description)
         return data
 
-    def add_User(self, uid: str, username: str, password: str, deletable: int = 1) -> bool:
-        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_USERS (ID, USERNAME, PW, DELETABLE) VALUES (?, ?, ?, ?)""", (f"{uid}", f"{username}", f"{password}", deletable))
+    def add_User(self, uid: str, username: str, password: str, group: str, deletable: int = 1) -> bool:
+        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_USERS (ID, USERNAME, PW, DELETABLE, "GROUP") VALUES (?, ?, ?, ?, ?)""", (f"{uid}", f"{username}", f"{password}", deletable, group))
 
         if self.__cursor.lastrowid > 0:
             return True
         return False
 
+    def update_User(self, uid: str, username: str = None, group: list = None) -> bool:
+        if username is not None:
+            self.__cursor.execute("""UPDATE tbl_USERS SET USERNAME = ? WHERE ID = ?""", (username, uid))
+        if len(group) == 1:
+            self.__cursor.execute("""UPDATE tbl_USERS SET "GROUP" = ? WHERE ID = ?""", (group[0], uid))
+        return True
+
     def delete_User(self, user_id: str):
         self.__cursor.execute("""DELETE FROM tbl_USERS WHERE ID = ? AND DELETABLE = 1""", (f"{user_id}",))
+
+    def delete_Group(self, group_id: str):
+        self.__cursor.execute("""DELETE FROM tbl_USERS_RIGHTS WHERE ID = ?""", (group_id,))
+        self.db_commit()

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block header %}
+    {% if back != 'False' %}
+        <div>
+            <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+                Back
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="mb-4">Permission management</h2>
+
+        <form action="{{ url_for('groups_bp.add_group') }}" method="POST" class="mb-5">
+            <h5>Add new group</h5>
+            <div class="mb-3">
+                <div class="input-group">
+                    <input type="text" name="group_name" class="form-control" required placeholder="Enter group name">
+                    <button class="btn btn-success" type="submit">Add Group</button>
+                </div>
+            </div>
+        </form>
+
+        <form id="rightsForm" action="{{ url_for('groups_bp.save') }}" method="POST">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Permissions / Groups</th>
+                        {% for group in groups %}
+                            <th>
+                                {{ group.NAME }}
+                                {% if group.ID != 'f4b8b5af-a414-466f-aad9-184e7e386425' %}
+                                    <form action="{{ url_for('groups_bp.delete_group', group_id=group.ID) }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-2" title="Delete Group" onclick="return confirm('Are you sure you want to delete this group?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set rights_set = namespace(items=[]) %}
+                    {% for group in groups %}
+                        {% for key in group.keys() %}
+                            {% if key not in ['ID', 'NAME'] and key not in rights_set.items %}
+                                {% do rights_set.items.append(key) %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                    {% set filtered_rights = rights_set.items | sort %}
+
+                    {% for right in filtered_rights %}
+                        <tr>
+                            <th>{{ right }}</th>
+                            {% for group in groups %}
+                                <td>
+                                    <input type="checkbox"
+                                       name="right={{ group.ID }}§{{ right }}"
+                                       {% if group.get(right) %}checked{% endif %}>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <button type="submit" class="btn btn-primary mt-3">Save</button>
+        </form>
+    </div>
+
+    <style>
+        table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        th, td {
+            text-align: center;
+            vertical-align: middle;
+        }
+    </style>
+{% endblock %}

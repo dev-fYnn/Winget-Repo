@@ -7,7 +7,8 @@ from hashlib import sha256
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Files.Functions import delete_File
-from Modules.Login.Login import logged_in
+from Modules.Login.Functions import check_Rights
+from Modules.Login.Login import logged_in, authenticate
 
 ui_bp = Blueprint('ui_bp', __name__, template_folder='templates', static_folder='static')
 
@@ -24,18 +25,27 @@ def index():
         db = SQLiteDatabase()
         packages = db.get_All_Packages()
         del db
-        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''))
+
+        user_mng_btn = False
+        group_mng_btn = False
+        if check_Rights(session['logged_in'], "USER_BP.INDEX"):
+            user_mng_btn = True
+        if check_Rights(session['logged_in'], "GROUPS_BP.INDEX"):
+            group_mng_btn = True
+
+        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn)
 
 
 @ui_bp.route('/add_package', methods=['GET', 'POST'])
 @logged_in
+@authenticate
 def add_package():
     if request.method == "POST":
         data = request.form.to_dict()
 
         if len(data) > 0:
             db = SQLiteDatabase()
-            status = db.add_Package(str(uuid4()), data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40])
+            status = db.add_Package(data.get("package_id", str(uuid4())), data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40])
             db.db_commit()
             del db
 
@@ -52,6 +62,7 @@ def add_package():
 
 @ui_bp.route('/edit_package/<package_id>', methods=['GET', 'POST'])
 @logged_in
+@authenticate
 def edit_package(package_id):
     db = SQLiteDatabase()
     p_exists = db.check_Package_exists(package_id)
@@ -84,11 +95,12 @@ def edit_package(package_id):
 
 @ui_bp.route('/delete_package/<package_id>', methods=['POST'])
 @logged_in
+@authenticate
 def delete_package(package_id):
     db = SQLiteDatabase()
 
     if db.check_Package_exists(package_id):
-        for f in db.get_All_Verions_from_Package(package_id):
+        for f in db.get_All_Versions_from_Package(package_id):
             delete_File(f['URL'])
             db.delete_Package_Version(f['UID'])
 
@@ -103,6 +115,7 @@ def delete_package(package_id):
 
 @ui_bp.route('/add_package_version', methods=['GET', 'POST'])
 @logged_in
+@authenticate
 def add_package_version():
     if request.method == "POST":
         data = request.form.to_dict()
@@ -158,6 +171,7 @@ def add_package_version():
 
 @ui_bp.route('/delete_package_version/<package_id>', methods=['GET', 'POST'])
 @logged_in
+@authenticate
 def delete_package_version(package_id):
     db = SQLiteDatabase()
 
@@ -166,10 +180,10 @@ def delete_package_version(package_id):
             ids = request.form.getlist("version_select")
             if len(ids) > 0:
                 for i in ids:
-                    url = db.get_specfic_Verions_from_Package(i)
+                    url = db.get_specfic_Versions_from_Package(i)
                     delete_File(url['URL'])
                     db.delete_Package_Version(i)
-                db.db_commit()
+                db.db_commit(True)
                 flash("Packages deleted successfully!", "success")
             else:
                 flash("No versions selected!", "error")
@@ -177,7 +191,7 @@ def delete_package_version(package_id):
             flash("No package found!", "error")
     else:
         if db.check_Package_exists(package_id):
-            versions = db.get_All_Verions_from_Package(package_id)
+            versions = db.get_All_Versions_from_Package(package_id)
             package = db.get_Package_by_ID(package_id)
             del db
             return render_template("index_delete_package_version.html", package_id=package_id, versions=versions, Package_Name=package[1])

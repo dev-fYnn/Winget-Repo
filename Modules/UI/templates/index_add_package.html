@@ -3,7 +3,7 @@
 {% block header %}
     <div>
         <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
-            Zurück
+            Back
         </a>
     </div>
 {% endblock %}
@@ -18,6 +18,10 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('ui_bp.add_package') }}">
+                        <div class="mb-3">
+                            <label for="package_name" class="form-label">Package ID</label>
+                            <input type="text" class="form-control" id="package_id" name="package_id" placeholder="Package id" required>
+                        </div>
                         <div class="mb-3">
                             <label for="package_name" class="form-label">Package Name</label>
                             <input type="text" class="form-control" id="package_name" name="package_name" placeholder="Package name" maxlength="25" required>

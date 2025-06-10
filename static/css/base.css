@@ -1,0 +1,72 @@
+ header {
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    background-color: #f4f7fb;
+    font-family: 'Roboto', sans-serif;
+}
+
+h1 {
+    font-size: 2rem;
+    letter-spacing: 1px;
+}
+
+.btn {
+    border-radius: 50px;
+    transition: all 0.3s ease-in-out;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    border-radius: 16px;
+}
+
+.card-body {
+    padding: 3rem;
+}
+
+.form-control-lg {
+    border-radius: 12px;
+}
+
+.container-fluid {
+    padding: 2rem 1rem;
+}
+
+.text-primary {
+    color: #007bff !important;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.alert-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1050;
+    width: auto;
+    max-width: 100%;
+}
+
+.alert {
+    margin-bottom: 10px;
+}
+
+.success {
+    color: white;
+    background-color: green;
+}
+
+.error {
+    color: white;
+    background-color: tomato;
+}
