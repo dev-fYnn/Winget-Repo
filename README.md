@@ -8,12 +8,12 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 - **Easy-to-use Web Interface** for managing packages and package versions 🌐
 - **Search, List, Show, Install, and Upgrade Packages** via Winget 🔍📦
 - **Cross-platform**: The server runs on all environments that support Python 🖥️💻
+- **Client Overview**: Track which clients are accessing Winget-Repo 🖥️👀 -> early stage
+- **Permission Management**: Control access and user rights 🔐
 
 # 🚀 Upcoming Features
 
 - **Library for Click and Deploy Software**: Simplified deployment of software with just a click 🖱️📲
-- **Client Overview**: Track which clients are accessing Winget-Repo 🖥️👀
-- **Permission Management**: Control access and user rights 🔐
 - **Support for Nested Installers** 🛠️🔄
 - **And much more**: Continuous improvements and new features on the way! 🌱✨
 
@@ -26,11 +26,12 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
    Ensure that Python 3.10 or higher is installed on your machine. You can download it from the [official Python website](https://www.python.org/downloads/).
 
 3. **Install Flask** 🔌  
-   Open a Command Prompt (CMD) and run the following command to install Flask, which is the framework for the server:
+   Open a Command Prompt (CMD) and run the following commands to install Flask and dnspython, which is the framework for the server:
    ```bash
    python -m pip install Flask
+   python -m pip install dnspython
    ```
-   Flask is the only package that needs to be installed.
+   Flask and dnspython are the only packages that needed to be installed.
 
 4. **Set Up Reverse Proxy (Recommended)** 🔒  
    Since the connection between Winget and the repository only works over HTTPS, it is recommended to set up a reverse proxy (e.g., Apache) in front of the repository for secure communication.
@@ -63,8 +64,14 @@ Once the Winget-Repo server is set up and accessible, you can now connect the Wi
    winget source add -n Winget-Repo -t "Microsoft.Rest" -a https://{URL of the server}/api/
    ```
    Replace `{URL of the server}` with the actual URL of your Winget-Repo server.
+   3. **Client authentication** 🔒  
+      If client authentication is enabled on the server, include the following parameter: `--header "{'Token': '{ CLIENT_TOKEN }'}"`
 
-3. **Confirmation** ✅  
+      Replace `{CLIENT_TOKEN}` with the client token obtained from Client Management on the server.
+
+      **Note:** The token must be included in every client request.
+
+4. **Confirmation** ✅  
    If the setup is successful, you should see the following message:
    ```
    Source is being added:

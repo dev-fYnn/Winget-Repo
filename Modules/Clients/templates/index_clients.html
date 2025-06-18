@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block header %}
+    {% if back != 'False' %}
+        <div>
+            <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+                Back
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Client Management</h2>
+
+    <form action="{{ url_for('client_bp.add_client') }}" method="POST" class="mb-4">
+        <label for="clientName" class="form-label">Add New Client</label>
+        <div class="input-group">
+            <input type="text" id="clientName" name="client_name" class="form-control" maxlength="25" required placeholder="Enter client name">
+            <button class="btn btn-success" type="submit">Add Client</button>
+        </div>
+    </form>
+
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Computer Name</th>
+                <th>IP Address</th>
+                <th>Last seen</th>
+                <th>Client</th>
+                <th style="width: 15%;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+                <tr>
+                    <td>{{ client.NAME }}</td>
+                    <td>{{ client.IP }}</td>
+                    <td>{{ client.LASTSEEN }}</td>
+                    <td>{{ client.CLIENT }}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-2 copy-btn"
+                                data-token="{{ client.TOKEN }}"
+                                type="button"
+                                title="Copy Auth-Token">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+
+                        <form action="{{ url_for('client_bp.delete_client', client_id=client.UID) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Client"
+                                    onclick="return confirm('Are you sure you want to delete this client?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">No clients available.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    th, td {
+        vertical-align: middle;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.copy-btn').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const token = this.getAttribute('data-token');
+                navigator.clipboard.writeText(token).then(() => {
+                    this.innerHTML = '<i class="bi bi-check-circle text-success"></i>';
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="bi bi-clipboard"></i>';
+                    }, 1500);
+                }).catch(err => {
+                    alert('Failed to copy token');
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

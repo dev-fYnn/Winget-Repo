@@ -28,12 +28,16 @@ def index():
 
         user_mng_btn = False
         group_mng_btn = False
+        client_mng_btn = False
+
         if check_Rights(session['logged_in'], "USER_BP.INDEX"):
             user_mng_btn = True
         if check_Rights(session['logged_in'], "GROUPS_BP.INDEX"):
             group_mng_btn = True
+        if check_Rights(session['logged_in'], "CLIENT_BP.INDEX"):
+            client_mng_btn = True
 
-        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn)
+        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn)
 
 
 @ui_bp.route('/add_package', methods=['GET', 'POST'])

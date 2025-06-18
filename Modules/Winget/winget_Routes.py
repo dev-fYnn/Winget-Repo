@@ -1,21 +1,48 @@
 import sys
+import json
 
 from flask import Blueprint, jsonify, request, send_file
 
 from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, \
-    filter_entries_by_package_match_field
+    filter_entries_by_package_match_field, authenticate_Client
 
 winget_routes = Blueprint('winget_routes', __name__)
 
 
+@winget_routes.before_request
+def check_authentication():
+    settings = get_winget_Settings()
+    if bool(int(settings.get('CLIENT_AUTHENTICATION', '0'))):
+        header_value = request.headers.get('Windows-Package-Manager')
+        if not header_value:
+            return jsonify({"ErrorCode": 401, "ErrorMessage": "Unauthorized"}), 401
+        try:
+            token_data = json.loads(header_value.replace("'", '"'))
+            if not authenticate_Client(token_data.get("Token"), request.remote_addr, settings):
+                return jsonify({"ErrorCode": 401, "ErrorMessage": "Unauthorized"}), 401
+        except Exception:
+            return jsonify({"ErrorCode": 400, "ErrorMessage": "Invalid token format"}), 400
+    return None
+
+
 @winget_routes.route('/information', methods=["GET"])
 def information():
-    data = get_winget_Settings()
+    settings = get_winget_Settings()
     data = {"Data": {
-                    "SourceIdentifier": data.get('SERVER_NAME', 'Winget-Repo'),
-                    "ServerSupportedVersions": data.get('CLIENT_VERSIONS', '1.9.0').split(","),
-                 }
+            "SourceIdentifier": settings.get('SERVER_NAME', 'Winget-Repo'),
+            "ServerSupportedVersions": settings.get('CLIENT_VERSIONS', '1.9.0').split(","),
+            "SourceAgreements": {
+                "AgreementsIdentifier": "v1",
+                "Agreements": [
+                    {
+                        "AgreementLabel": "Terms of Use",
+                        "Agreement": "Please accept the terms of use.",
+                        "AgreementUrl": f"https://{request.host}"
+                    }
+                ]
             }
+        }
+    }
     return jsonify(data)
 
 

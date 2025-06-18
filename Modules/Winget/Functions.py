@@ -1,6 +1,7 @@
 from flask import request
 
 from Modules.Database.Database import SQLiteDatabase
+from Modules.Functions import get_hostname_from_ip_dns
 
 
 def generate_search_Manifest(search_text: str, match_typ: str, match_field: str) -> list:
@@ -72,3 +73,15 @@ def get_winget_Settings(s: bool = False) -> dict:
     data = db.get_winget_Settings(s)
     del db
     return data
+
+
+def authenticate_Client(token: str, ip: str, settings: dict) -> bool:
+    db = SQLiteDatabase()
+    data = db.authenticate_client(token)
+    del db
+
+    if data:
+        hostname = get_hostname_from_ip_dns(ip, settings.get('DNS_SERVER', '192.168.1.1'))
+        if hostname.upper() == data[1]:
+            return True
+    return False
