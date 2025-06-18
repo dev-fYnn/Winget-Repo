@@ -29,7 +29,7 @@ def add_client():
         settings = get_winget_Settings()
         ip = get_ip_from_hostname(name, settings.get('DNS_SERVER', '192.168.1.1'))
 
-        if ip is not None:
+        if len(ip) > 0:
             db = SQLiteDatabase()
             db.add_New_Client(str(uuid4()), name.upper()[:25], ip, str(uuid4()))
             db.db_commit()

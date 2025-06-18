@@ -15,6 +15,7 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 
 - **Library for Click and Deploy Software**: Simplified deployment of software with just a click 🖱️📲
 - **Support for Nested Installers** 🛠️🔄
+- **Winget-Client**: Use Winget easily on your client 🖥️💿
 - **And much more**: Continuous improvements and new features on the way! 🌱✨
 
 # 🛠️ Setup Guide
@@ -64,12 +65,13 @@ Once the Winget-Repo server is set up and accessible, you can now connect the Wi
    winget source add -n Winget-Repo -t "Microsoft.Rest" -a https://{URL of the server}/api/
    ```
    Replace `{URL of the server}` with the actual URL of your Winget-Repo server.
-   3. **Client authentication** 🔒  
-      If client authentication is enabled on the server, include the following parameter: `--header "{'Token': '{ CLIENT_TOKEN }'}"`
 
-      Replace `{CLIENT_TOKEN}` with the client token obtained from Client Management on the server.
+3. **Client authentication** 🔒  
+   If client authentication is enabled on the server, include the following parameter: `--header "{'Token': '{ CLIENT_TOKEN }'}"`
 
-      **Note:** The token must be included in every client request.
+   Replace `{CLIENT_TOKEN}` with the client token obtained from Client Management on the server.
+
+   **Note:** The token must be included in every client request.
 
 4. **Confirmation** ✅  
    If the setup is successful, you should see the following message:

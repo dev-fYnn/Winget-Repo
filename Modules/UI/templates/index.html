@@ -14,16 +14,16 @@
 
             <!-- Dropdown Menü, links ausgerichtet -->
             <ul class="dropdown-menu dropdown-menu-start" aria-labelledby="settingsButton">
+                {% if client_mng_btn %}
+                    <li><a class="dropdown-item" href="{{ url_for('client_bp.index') }}">Manage Clients</a></li>
+                {% endif %}
+
                 {% if user_mng_btn %}
                     <li><a class="dropdown-item" href="{{ url_for('user_bp.index') }}">Manage Users</a></li>
                 {% endif %}
 
                 {% if group_mng_btn %}
-                    <li><a class="dropdown-item" href="{{ url_for('groups_bp.index') }}">Manage Groups</a></li>
-                {% endif %}
-
-                {% if client_mng_btn %}
-                    <li><a class="dropdown-item" href="{{ url_for('client_bp.index') }}">Manage Clients</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('groups_bp.index') }}">Manage Permissions</a></li>
                 {% endif %}
             </ul>
         </div>
