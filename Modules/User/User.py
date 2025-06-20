@@ -13,9 +13,9 @@ user_bp = Blueprint('user_bp', __name__, template_folder='templates', static_fol
 @authenticate
 def index():
     db = SQLiteDatabase()
-    users = db.get_All_Users()
+    user = db.get_All_User()
     del db
-    return render_template("index_manage_user.html", users=users)
+    return render_template("index_manage_user.html", user=user)
 
 
 @user_bp.route('/add_user', methods=['GET', 'POST'])

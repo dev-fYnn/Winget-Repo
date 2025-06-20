@@ -27,7 +27,7 @@ def add_client():
 
     if len(name) > 0:
         settings = get_winget_Settings()
-        ip = get_ip_from_hostname(name, settings.get('DNS_SERVER', '192.168.1.1'))
+        ip = get_ip_from_hostname(name, settings.get('DNS_SUFFIX', ''), settings.get('DNS_SERVER', '192.168.1.1'))
 
         if len(ip) > 0:
             db = SQLiteDatabase()

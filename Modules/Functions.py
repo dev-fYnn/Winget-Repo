@@ -20,7 +20,7 @@ def select_to_dict(data: list, header_data: tuple) -> list:
     return []
 
 
-def get_ip_from_hostname(hostname: str, dns_server: str) -> str:
+def get_ip_from_hostname(hostname: str, suffix: str, dns_server: str) -> str:
     resolver = dns.resolver.Resolver()
     resolver.nameservers = [dns_server]
 
@@ -28,8 +28,17 @@ def get_ip_from_hostname(hostname: str, dns_server: str) -> str:
         answers = resolver.resolve(hostname, 'A')
         for rdata in answers:
             return rdata.address
-    except Exception as e:
+    except Exception:
         pass
+
+    if suffix and not hostname.endswith(suffix):
+        fqdn = f"{hostname}.{suffix}".rstrip(".")
+        try:
+            answers = resolver.resolve(fqdn, 'A')
+            for rdata in answers:
+                return rdata.address
+        except Exception:
+            pass
     return ""
 
 

@@ -6,7 +6,7 @@ from Modules.Database.Database import SQLiteDatabase
 
 def user_setup_finished() -> bool:
     db = SQLiteDatabase()
-    data = db.get_All_Users()
+    data = db.get_All_User()
     del db
 
     if len(data) > 0:

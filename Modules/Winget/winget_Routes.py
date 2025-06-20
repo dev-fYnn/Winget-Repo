@@ -1,6 +1,7 @@
 import sys
 import json
 
+from functools import wraps
 from flask import Blueprint, jsonify, request, send_file
 
 from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, \
@@ -9,23 +10,26 @@ from Modules.Winget.Functions import generate_search_Manifest, generate_Installe
 winget_routes = Blueprint('winget_routes', __name__)
 
 
-@winget_routes.before_request
-def check_authentication():
-    settings = get_winget_Settings()
-    if bool(int(settings.get('CLIENT_AUTHENTICATION', '0'))):
-        header_value = request.headers.get('Windows-Package-Manager')
-        if not header_value:
-            return jsonify({"ErrorCode": 401, "ErrorMessage": "Unauthorized"}), 401
-        try:
-            token_data = json.loads(header_value.replace("'", '"'))
-            if not authenticate_Client(token_data.get("Token"), request.remote_addr, settings):
+def check_authentication(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        settings = get_winget_Settings()
+        if bool(int(settings.get('CLIENT_AUTHENTICATION', '0'))):
+            header_value = request.headers.get('Windows-Package-Manager')
+            if not header_value:
                 return jsonify({"ErrorCode": 401, "ErrorMessage": "Unauthorized"}), 401
-        except Exception:
-            return jsonify({"ErrorCode": 400, "ErrorMessage": "Invalid token format"}), 400
-    return None
+            try:
+                token_data = json.loads(header_value.replace("'", '"'))
+                if not authenticate_Client(token_data.get("Token"), request.remote_addr, settings):
+                    return jsonify({"ErrorCode": 401, "ErrorMessage": "Unauthorized"}), 401
+            except Exception:
+                return jsonify({"ErrorCode": 400, "ErrorMessage": "Invalid token format"}), 400
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @winget_routes.route('/information', methods=["GET"])
+@check_authentication
 def information():
     settings = get_winget_Settings()
     data = {"Data": {
@@ -47,6 +51,7 @@ def information():
 
 
 @winget_routes.route('/packageManifests/<package_id>', methods=['GET'])
+@check_authentication
 def get_package_manifest(package_id):
     version = request.args.get("Version")
     result = generate_Installer_Manifest(package_id, version)
@@ -54,6 +59,7 @@ def get_package_manifest(package_id):
 
 
 @winget_routes.route('/manifestSearch', methods=['POST'])
+@check_authentication
 def manifestSearch():
     result = {"Data": []}
     if 'Query' in (data := request.json):

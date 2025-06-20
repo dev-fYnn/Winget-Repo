@@ -20,7 +20,7 @@ app.jinja_env.add_extension('jinja2.ext.do')
 
 app.register_blueprint(login_bp, url_prefix='/')
 app.register_blueprint(ui_bp, url_prefix='/ui')
-app.register_blueprint(user_bp, url_prefix='/ui/users')
+app.register_blueprint(user_bp, url_prefix='/ui/user')
 app.register_blueprint(groups_bp, url_prefix='/ui/groups')
 app.register_blueprint(client_bp, url_prefix='/ui/clients')
 app.register_blueprint(winget_routes, url_prefix='/api')

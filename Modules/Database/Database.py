@@ -48,7 +48,7 @@ class SQLiteDatabase:
         return [{"id": d[0], "name": d[1]} for d in data]
 
     def get_All_Permission_Groups(self) -> list:
-        self.__cursor.execute("SELECT * FROM tbl_USERS_RIGHTS")
+        self.__cursor.execute("SELECT * FROM tbl_USER_RIGHTS")
         data = self.__cursor.fetchall()
         data = select_to_dict(data, self.__cursor.description)
         return data
@@ -158,7 +158,7 @@ class SQLiteDatabase:
         return False
 
     def add_New_Group(self, group_name: str, id: str):
-        self.__cursor.execute("""INSERT INTO tbl_USERS_RIGHTS (ID, NAME) VALUES (?, ?)""", (id, group_name))
+        self.__cursor.execute("""INSERT INTO tbl_USER_RIGHTS (ID, NAME) VALUES (?, ?)""", (id, group_name))
         self.db_commit()
 
     def add_Package(self, package_id: str, package_name: str, package_publisher: str, package_description: str) -> bool:
@@ -189,10 +189,10 @@ class SQLiteDatabase:
         return False
 
     def update_Permission(self, group_id: str, permission_name: str, state: int):
-        self.__cursor.execute(f"""UPDATE tbl_USERS_RIGHTS SET "{permission_name}" = ? WHERE ID = ?""", (state, group_id))
+        self.__cursor.execute(f"""UPDATE tbl_USER_RIGHTS SET "{permission_name}" = ? WHERE ID = ?""", (state, group_id))
 
     def update_User_Password(self, user_id: str, password: str):
-        self.__cursor.execute(f"""UPDATE tbl_USERS SET PW = ? WHERE ID = ?""", (password, user_id))
+        self.__cursor.execute(f"""UPDATE tbl_USER SET PW = ? WHERE ID = ?""", (password, user_id))
         self.db_commit()
 
     def delete_Package(self, package_id: str):
@@ -203,7 +203,7 @@ class SQLiteDatabase:
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES_SWITCHES WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
 
     def check_User_Credentials(self, username: str) -> dict:
-        self.__cursor.execute("""SELECT ID, PW FROM tbl_USERS WHERE USERNAME = ?""", (username,))
+        self.__cursor.execute("""SELECT ID, PW FROM tbl_USER WHERE USERNAME = ?""", (username,))
         data = self.__cursor.fetchone()
 
         if data is not None and len(data) > 0:
@@ -211,8 +211,8 @@ class SQLiteDatabase:
         return {}
 
     def check_User_Authentication(self, username: str) -> dict:
-        self.__cursor.execute("""SELECT TUR.* FROM tbl_USERS_RIGHTS AS TUR 
-                                            LEFT JOIN tbl_USERS AS TU ON TUR.ID = TU."GROUP"
+        self.__cursor.execute("""SELECT TUR.* FROM tbl_USER_RIGHTS AS TUR 
+                                            LEFT JOIN tbl_USER AS TU ON TUR.ID = TU."GROUP"
                                         WHERE TU.ID = ?""", (username,))
         data = self.__cursor.fetchall()
         data = select_to_dict(data, self.__cursor.description)
@@ -222,9 +222,9 @@ class SQLiteDatabase:
 
     def check_Username_exists(self, username: str, user_id="") -> tuple[bool, int, str, str]:
         if len(user_id) > 0:
-            self.__cursor.execute("""SELECT USERNAME, DELETABLE, "GROUP" FROM tbl_USERS WHERE ID = ?""", (user_id,))
+            self.__cursor.execute("""SELECT USERNAME, DELETABLE, "GROUP" FROM tbl_USER WHERE ID = ?""", (user_id,))
         else:
-            self.__cursor.execute("""SELECT USERNAME, DELETABLE, "GROUP" FROM tbl_USERS WHERE USERNAME = ?""", (username,))
+            self.__cursor.execute("""SELECT USERNAME, DELETABLE, "GROUP" FROM tbl_USER WHERE USERNAME = ?""", (username,))
         data = self.__cursor.fetchone()
 
         if data is not None and len(data) > 0:
@@ -232,22 +232,22 @@ class SQLiteDatabase:
         return False, 0, "", ""
 
     def check_Group_exists(self, group_id: str) -> bool:
-        self.__cursor.execute("""SELECT * FROM tbl_USERS_RIGHTS WHERE ID = ?""", (group_id,))
+        self.__cursor.execute("""SELECT * FROM tbl_USER_RIGHTS WHERE ID = ?""", (group_id,))
         data = self.__cursor.fetchone()
 
         if data is not None and len(data) > 0:
             return True
         return False
 
-    def get_All_Users(self):
-        self.__cursor.execute("""SELECT TU.*, TUR.NAME FROM tbl_USERS AS TU
-                                    LEFT JOIN tbl_USERS_RIGHTS AS TUR ON TU."GROUP" = TUR.ID""")
+    def get_All_User(self):
+        self.__cursor.execute("""SELECT TU.*, TUR.NAME FROM tbl_USER AS TU
+                                    LEFT JOIN tbl_USER_RIGHTS AS TUR ON TU."GROUP" = TUR.ID""")
         data = self.__cursor.fetchall()
         data = select_to_dict(data, self.__cursor.description)
         return data
 
     def add_User(self, uid: str, username: str, password: str, group: str, deletable: int = 1) -> bool:
-        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_USERS (ID, USERNAME, PW, DELETABLE, "GROUP") VALUES (?, ?, ?, ?, ?)""", (uid, username, password, deletable, group))
+        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_USER (ID, USERNAME, PW, DELETABLE, "GROUP") VALUES (?, ?, ?, ?, ?)""", (uid, username, password, deletable, group))
 
         if self.__cursor.lastrowid > 0:
             return True
@@ -255,14 +255,14 @@ class SQLiteDatabase:
 
     def update_User(self, uid: str, username: str = None, group: list = None) -> bool:
         if username is not None:
-            self.__cursor.execute("""UPDATE tbl_USERS SET USERNAME = ? WHERE ID = ?""", (username, uid))
+            self.__cursor.execute("""UPDATE tbl_USER SET USERNAME = ? WHERE ID = ?""", (username, uid))
         if len(group) == 1:
-            self.__cursor.execute("""UPDATE tbl_USERS SET "GROUP" = ? WHERE ID = ?""", (group[0], uid))
+            self.__cursor.execute("""UPDATE tbl_USER SET "GROUP" = ? WHERE ID = ?""", (group[0], uid))
         return True
 
     def delete_User(self, user_id: str):
-        self.__cursor.execute("""DELETE FROM tbl_USERS WHERE ID = ? AND DELETABLE = 1""", (user_id,))
+        self.__cursor.execute("""DELETE FROM tbl_USER WHERE ID = ? AND DELETABLE = 1""", (user_id,))
 
     def delete_Group(self, group_id: str):
-        self.__cursor.execute("""DELETE FROM tbl_USERS_RIGHTS WHERE ID = ?""", (group_id,))
+        self.__cursor.execute("""DELETE FROM tbl_USER_RIGHTS WHERE ID = ?""", (group_id,))
         self.db_commit()
