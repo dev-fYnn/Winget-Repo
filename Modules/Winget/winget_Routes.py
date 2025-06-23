@@ -4,8 +4,7 @@ import json
 from functools import wraps
 from flask import Blueprint, jsonify, request, send_file
 
-from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, \
-    filter_entries_by_package_match_field, authenticate_Client
+from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client
 
 winget_routes = Blueprint('winget_routes', __name__)
 
@@ -33,7 +32,7 @@ def check_authentication(f):
 def information():
     settings = get_winget_Settings()
     data = {"Data": {
-            "SourceIdentifier": settings.get('SERVER_NAME', 'Winget-Repo'),
+            "SourceIdentifier": settings.get('SERVERNAME', 'Winget-Repo'),
             "ServerSupportedVersions": settings.get('CLIENT_VERSIONS', '1.9.0').split(","),
             "SourceAgreements": {
                 "AgreementsIdentifier": "v1",

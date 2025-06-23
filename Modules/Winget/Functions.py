@@ -1,4 +1,5 @@
 from flask import request
+from datetime import datetime
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import get_hostname_from_ip_dns
@@ -78,10 +79,12 @@ def get_winget_Settings(s: bool = False) -> dict:
 def authenticate_Client(token: str, ip: str, settings: dict) -> bool:
     db = SQLiteDatabase()
     data = db.authenticate_client(token)
-    del db
 
     if data:
         hostname = get_hostname_from_ip_dns(ip, settings.get('DNS_SERVER', '192.168.1.1'))
         if hostname.upper() == data[1]:
+            db.update_Client_Informations(ip, datetime.now().strftime("%d.%m.%Y %H:%M:%S"), data[0])
+            del db
             return True
+    del db
     return False

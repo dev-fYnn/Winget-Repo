@@ -114,7 +114,7 @@ def change_password(user_id):
         if status:
             flash("Password was changed successfully!", "success")
         else:
-            flash("Password cannot be changed!", "error")
+            flash("Password can't be changed!", "error")
 
         if user_id == session['logged_in'] and status:
             return redirect(url_for("login_bp.logout"))
@@ -134,7 +134,7 @@ def delete_user(user_id):
         if status:
             flash("User was deleted successfully!", "success")
         else:
-            flash("User cannot be deleted!", "error")
+            flash("User can't be deleted!", "error")
     else:
-        flash("You cannot delete yourself!", "error")
+        flash("You can't delete yourself!", "error")
     return redirect(url_for("user_bp.index"))

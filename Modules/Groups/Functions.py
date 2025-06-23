@@ -71,5 +71,5 @@ def delete_group(group_id):
         del db
         flash("Successfully deleted!", "success")
     else:
-        flash("Admin group cannot be deleted!", "error")
+        flash("Admin group can't be deleted!", "error")
     return redirect(url_for("groups_bp.index"))

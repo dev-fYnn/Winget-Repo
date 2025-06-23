@@ -36,7 +36,7 @@ def add_client():
             del db
             flash("Client was added successfully!", "success")
         else:
-            flash("Cannot get ip from entered hostname! Check the input or dns config!", "error")
+            flash("Can't get ip from entered hostname! Check the input or dns config!", "error")
     else:
         flash("Error. No Data found!", "error")
     return redirect(url_for('client_bp.index'))

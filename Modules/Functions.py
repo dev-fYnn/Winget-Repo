@@ -1,3 +1,4 @@
+import ipaddress
 import random
 import string
 import dns.resolver
@@ -53,3 +54,11 @@ def get_hostname_from_ip_dns(ip_address: str, dns_server: str) -> str:
         return short_hostname
     except Exception:
         return ""
+
+
+def is_ip_address(text):
+    try:
+        ipaddress.ip_address(text)
+        return True
+    except ValueError:
+        return False

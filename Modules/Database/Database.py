@@ -34,6 +34,10 @@ class SQLiteDatabase:
         self.__cursor.execute("""INSERT INTO tbl_CLIENTS (UID, NAME, IP, TOKEN) VALUES (?, ?, ?, ?)""", (uid, client_name, ip, token))
         self.db_commit()
 
+    def update_Client_Informations(self, ip: str, last_seen: str, uid: str):
+        self.__cursor.execute("""UPDATE tbl_CLIENTS SET IP = ?, LASTSEEN = ? WHERE UID = ?""", (ip, last_seen, uid))
+        self.db_commit()
+
     def delete_Client(self, client_id: str):
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS WHERE UID = ?""", (client_id,))
 
@@ -148,6 +152,14 @@ class SQLiteDatabase:
             return data
         return {}
 
+    def get_Settings_for_View(self) -> dict:
+        self.__cursor.execute("""SELECT SETTING_NAME, VALUE, TYPE FROM tbl_SETTINGS WHERE SHOW = 1""")
+        data = self.__cursor.fetchall()
+
+        if len(data) > 0:
+            return {d[0]: {"VALUE": d[1], "TYPE": d[2]} for d in data}
+        return {}
+
     def add_wingetrepo_Setting(self, name: str, value: str) -> bool:
         self.__cursor.execute("""INSERT OR IGNORE INTO tbl_SETTINGS (SETTING_NAME, VALUE) 
                                     VALUES (?, ?)""",
@@ -156,6 +168,9 @@ class SQLiteDatabase:
         if self.__cursor.lastrowid > 0:
             return True
         return False
+
+    def update_wingetrepo_Setting(self, name: str, value: str):
+        self.__cursor.execute("""UPDATE tbl_SETTINGS SET VALUE = ? WHERE SETTING_NAME = ?""", (value, name))
 
     def add_New_Group(self, group_name: str, id: str):
         self.__cursor.execute("""INSERT INTO tbl_USER_RIGHTS (ID, NAME) VALUES (?, ?)""", (id, group_name))

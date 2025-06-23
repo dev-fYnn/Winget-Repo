@@ -25,6 +25,10 @@
                 {% if group_mng_btn %}
                     <li><a class="dropdown-item" href="{{ url_for('groups_bp.index') }}">Manage Permissions</a></li>
                 {% endif %}
+
+                {% if settings_btn %}
+                    <li><a class="dropdown-item" href="{{ url_for('settings_bp.index') }}">Settings</a></li>
+                {% endif %}
             </ul>
         </div>
     {% endif %}

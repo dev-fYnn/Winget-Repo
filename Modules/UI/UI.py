@@ -29,6 +29,7 @@ def index():
         user_mng_btn = False
         group_mng_btn = False
         client_mng_btn = False
+        settings_btn = False
 
         if check_Rights(session['logged_in'], "USER_BP.INDEX"):
             user_mng_btn = True
@@ -36,8 +37,10 @@ def index():
             group_mng_btn = True
         if check_Rights(session['logged_in'], "CLIENT_BP.INDEX"):
             client_mng_btn = True
+        if check_Rights(session['logged_in'], "SETTINGS_BP.INDEX"):
+            settings_btn = True
 
-        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn)
+        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn)
 
 
 @ui_bp.route('/add_package', methods=['GET', 'POST'])
@@ -56,7 +59,7 @@ def add_package():
             if status:
                 flash("Package was added successfully!", "success")
             else:
-                flash("Package cannot be created. Try again!", "error")
+                flash("Package can't be created. Try again!", "error")
         else:
             flash("Error. No Data found!", "error")
         return redirect(url_for("ui_bp.index"))

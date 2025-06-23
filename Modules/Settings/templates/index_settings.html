@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block header %}
+    <div>
+        <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+            Back
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Server Settings</h2>
+
+    <form action="{{ url_for('settings_bp.index') }}" method="POST">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 30%;">Name</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for setting in settings %}
+                <tr>
+                    <td>{{ setting }}</td>
+                    <td>
+                        {% if settings[setting]['TYPE'] == "CHECKBOX" %}
+                            <div class="form-check text-center">
+                                <input class="form-check-input" type="checkbox" name="setting_{{ setting }}" value="1"
+                                       {% if settings[setting]['VALUE']|int == 1 %}checked{% endif %}>
+                            </div>
+                        {% else %}
+                            <input type="text" name="setting_{{ setting }}"
+                                   value="{{ settings[setting]['VALUE'] }}" class="form-control">
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-primary mt-3">Save</button>
+    </form>
+</div>
+
+<style>
+    th, td {
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}
