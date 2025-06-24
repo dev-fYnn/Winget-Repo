@@ -14,7 +14,7 @@
             <div class="col-md-6">
                 <div class="card shadow-sm">
                     <div class="card-header text-center">
-                        <h4>Delete Package Version</h4>
+                        <h4>Manage Package Versions</h4>
                     </div>
                     <div class="card-body">
                         <h4 class="text-center mb-4">{{ Package_Name }}</h4>
@@ -29,7 +29,9 @@
                                             <th scope="col" class="text-center">Version</th>
                                             <th scope="col" class="text-center">Locale</th>
                                             <th scope="col" class="text-center">Architecture</th>
+                                            <th scope="col" class="text-center">Type</th>
                                             <th scope="col" class="text-center">Scope</th>
+                                            <th scope="col" class="text-center">Switches</th>
                                             <th scope="col" class="text-center">Delete</th>
                                         </tr>
                                     </thead>
@@ -39,14 +41,41 @@
                                                 <td class="text-center">{{ v['Version'] }}</td>
                                                 <td class="text-center">{{ v['Locale'] }}</td>
                                                 <td class="text-center">{{ v['Architecture'] }}</td>
+                                                <td class="text-center">{{ v['Type'] }}</td>
                                                 <td class="text-center">{{ v['Scope'] }}</td>
+                                                {% if v['SWITCHES'] | length > 0 %}
+                                                    <td class="text-center">
+                                                        <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#modal_{{ v['UID'] }}">Show</button>
+                                                    </td>
+                                                {% else %}
+                                                    <td class="text-center">Not found!</td>
+                                                {% endif %}
                                                 <td class="text-center"><input type="checkbox" name="version_select" value="{{ v['UID'] }}"></td>
                                             </tr>
+                                            {% if v['SWITCHES'] | length > 0 %}
+                                                <div class="modal fade" id="modal_{{ v['UID'] }}" tabindex="-1" aria-labelledby="modalLabel_{{ v['UID'] }}" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="modalLabel_{{ v['UID'] }}">Switches for Version: {{ v['Version'] }}</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                {% for name, state in v['SWITCHES'].items() %}
+                                                                    <div class="form-check form-switch">
+                                                                        <label class="form-check-label"><b>{{ name }}:</b> {{ state }}</label>
+                                                                    </div>
+                                                                {% endfor %}
+                                                            </div>
+                                                            <div class="modal-footer"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
                                         {% endfor %}
                                     </tbody>
                                 </table>
 
-                                <!-- Submit Button -->
                                 <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-danger">Delete Versions</button>
                                 </div>

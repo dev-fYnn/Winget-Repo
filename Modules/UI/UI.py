@@ -199,6 +199,8 @@ def delete_package_version(package_id):
     else:
         if db.check_Package_exists(package_id):
             versions = db.get_All_Versions_from_Package(package_id)
+            for v in versions:
+                v['SWITCHES'] = db.get_Package_Switche(v['UID'])
             package = db.get_Package_by_ID(package_id)
             del db
             return render_template("index_delete_package_version.html", package_id=package_id, versions=versions, Package_Name=package[1])

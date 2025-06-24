@@ -42,4 +42,4 @@ def global_settings():
 
 
 if __name__ == '__main__':
-    app.run(ssl_context=('SSL/cert.pem', 'SSL/server.key'))
+    app.run()
