@@ -146,7 +146,7 @@ class SQLiteDatabase:
                 data.pop('SECRET_KEY')
             elif secret is True and 'SECRET_KEY' not in data.keys():
                 data['SECRET_KEY'] = generate_random_string(32)
-                self.add_wingetrepo_Setting("SECRET_KEY", data['SECRET_KEY'])
+                self.add_wingetrepo_Setting("SECRET_KEY", data['SECRET_KEY'], "TEXT", False)
                 self.db_commit()
 
             return data
@@ -160,10 +160,10 @@ class SQLiteDatabase:
             return {d[0]: {"VALUE": d[1], "TYPE": d[2]} for d in data}
         return {}
 
-    def add_wingetrepo_Setting(self, name: str, value: str) -> bool:
-        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_SETTINGS (SETTING_NAME, VALUE) 
-                                    VALUES (?, ?)""",
-                              (name, value))
+    def add_wingetrepo_Setting(self, name: str, value: str, settings_type: str, show: bool) -> bool:
+        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_SETTINGS (SETTING_NAME, VALUE, TYPE, SHOW) 
+                                    VALUES (?, ?, ?, ?)""",
+                              (name, value, settings_type, int(show)))
 
         if self.__cursor.lastrowid > 0:
             return True
