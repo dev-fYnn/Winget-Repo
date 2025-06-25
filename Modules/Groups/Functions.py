@@ -13,8 +13,9 @@ groups_bp = Blueprint('groups_bp', __name__, template_folder='templates', static
 def index():
     db = SQLiteDatabase()
     groups = db.get_All_Permission_Groups()
+    text = db.get_Fields_by_Section("PERMISSIONS", "EN")
     del db
-    return render_template("index_manage_groups.html", groups=groups)
+    return render_template("index_manage_groups.html", groups=groups, texts=text)
 
 
 @groups_bp.route('/add_group', methods=['POST'])

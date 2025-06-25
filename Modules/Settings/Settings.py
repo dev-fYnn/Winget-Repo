@@ -36,5 +36,7 @@ def index():
 
         flash("Saved settings!", "success")
         return redirect(url_for("settings_bp.index"))
+
+    text = db.get_Fields_by_Section("SETTINGS", "EN")
     del db
-    return render_template("index_settings.html", settings=settings)
+    return render_template("index_settings.html", settings=settings, texts=text)

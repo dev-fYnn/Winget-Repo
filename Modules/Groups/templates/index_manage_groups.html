@@ -10,10 +10,14 @@
     {% endif %}
 {% endblock %}
 
+{% block header_title %}
+    <div style="position: absolute; left: 50%; transform: translateX(-50%);">
+        <h1 class="text-secondary font-weight-bold">Permission Management</h1>
+    </div>
+{% endblock %}
+
 {% block content %}
     <div class="container">
-        <h2 class="mb-4">Permission management</h2>
-
         <form action="{{ url_for('groups_bp.add_group') }}" method="POST" class="mb-5">
             <h5>Add new group</h5>
             <div class="mb-3">
@@ -54,17 +58,31 @@
                     {% endfor %}
                     {% set filtered_rights = rights_set.items | sort %}
 
+                    {% set grouped_rights = {} %}
                     {% for right in filtered_rights %}
-                        <tr>
-                            <th>{{ right }}</th>
-                            {% for group in groups %}
-                                <td>
-                                    <input type="checkbox"
-                                       name="right={{ group.ID }}§{{ right }}"
-                                       {% if group.get(right) %}checked{% endif %}>
-                                </td>
-                            {% endfor %}
+                        {% set package = right.split('.')[0] %}
+                        {% if package not in grouped_rights %}
+                            {% set _ = grouped_rights.update({package: []}) %}
+                        {% endif %}
+                        {% set _ = grouped_rights[package].append(right) %}
+                    {% endfor %}
+
+                    {% for package, rights in grouped_rights.items() %}
+                        <tr class="table-secondary">
+                            <td colspan="{{ groups | length + 1 }}"><strong>{% if package in texts %} {{ texts[package] }} {% else %} {{ package }} {% endif %}</strong></td>
                         </tr>
+                        {% for right in rights %}
+                            <tr>
+                                <th>{% if right in texts %} {{ texts[right] }} {% else %} {{ right }} {% endif %}</th>
+                                {% for group in groups %}
+                                    <td>
+                                        <input type="checkbox"
+                                           name="right={{ group.ID }}§{{ right }}"
+                                           {% if group.get(right) %}checked{% endif %}>
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
                     {% endfor %}
                 </tbody>
             </table>

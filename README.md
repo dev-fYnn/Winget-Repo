@@ -26,8 +26,8 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 2. **Install Python 3.10 or Higher** 🐍  
    Ensure that Python 3.10 or higher is installed on your machine. You can download it from the [official Python website](https://www.python.org/downloads/).
 
-3. **Install Flask** 🔌  
-   Open a Command Prompt (CMD) and run the following commands to install Flask and dnspython, which is the framework for the server:
+3. **Install Packages** 🔌  
+   Open a Command Prompt (CMD) and run the following commands to install the following packages:
    ```bash
    python -m pip install Flask
    python -m pip install dnspython

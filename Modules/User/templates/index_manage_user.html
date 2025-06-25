@@ -8,72 +8,71 @@
     </div>
 {% endblock %}
 
-{% block content %}
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card shadow-sm">
-                    <div class="card-header text-center">
-                        <h4>Manage User</h4>
-                    </div>
-                    <div class="card-body">
-                        {% if user %}
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th scope="col"></th>
-                                    <th scope="col">Username</th>
-                                    <th scope="col">Group</th>
-                                    <th scope="col">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user in user %}
-                                    <tr>
-                                        <th scope="row">{{ loop.index }}</th>
-                                        <td>{{ user['USERNAME'] }}</td>
-                                        <td>{{ user['NAME'] }}</td>
-                                        <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <form method="GET" action="{{ url_for('user_bp.change_password', user_id=user['ID']) }}">
-                                                    <button type="submit" class="btn btn-warning">PW</button>
-                                                </form>
-                                                {% if user['DELETABLE'] == 1 %}
-                                                    <form method="GET" action="{{ url_for('user_bp.edit_user', user_id=user['ID']) }}">
-                                                        <button type="submit" class="btn btn-primary">
-                                                            <i class="bi bi-pencil"></i>
-                                                        </button>
-                                                    </form>
-                                                    <form method="POST" action="{{ url_for('user_bp.delete_user', user_id=user['ID']) }}" onsubmit="sure();">
-                                                        <button type="submit" class="btn btn-danger">Delete</button>
-                                                    </form>
-                                                {% else %}
-                                                    <div class="text-secondary small d-flex align-items-center">Can't be deleted!</div>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% else %}
-                            <h5 class="text-center text-secondary mb-4">No user found.</h5>
-                        {% endif %}
-                        <form method="GET" action="{{ url_for('user_bp.add_user') }}" class="d-grid gap-2 mt-3">
-                            <button type="submit" class="btn btn-primary">Create New User</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+{% block header_title %}
+    <div style="position: absolute; left: 50%; transform: translateX(-50%);">
+        <h1 class="text-secondary font-weight-bold">User Management</h1>
     </div>
-    <script>
-        function sure(){
-            const isConfirmed = confirm("Are you sure you want to continue?");
+{% endblock %}
 
-            if (!isConfirmed) {
-                event.preventDefault();
-            }
+{% block content %}
+    <div class="container">
+        <form method="GET" action="{{ url_for('user_bp.add_user') }}" class="mt-3" style="margin-bottom: 15px;">
+            <button type="submit" class="btn btn-success">Create New User</button>
+        </form>
+
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Username</th>
+                    <th>Group</th>
+                    <th style="width: 25%;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in user %}
+                    <tr>
+                        <td>{{ user['USERNAME'] }}</td>
+                        <td>{{ user['NAME'] }}</td>
+                        <td>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <form method="GET" action="{{ url_for('user_bp.change_password', user_id=user['ID']) }}">
+                                    <button type="submit" class="btn btn-sm btn-warning">PW</button>
+                                </form>
+                                {% if user['DELETABLE'] == 1 %}
+                                    <form method="GET" action="{{ url_for('user_bp.edit_user', user_id=user['ID']) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('user_bp.delete_user', user_id=user['ID']) }}" onsubmit="return confirmDelete();">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted small">Can't be deleted</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center">No User available.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <style>
+        th, td {
+            vertical-align: middle;
+        }
+    </style>
+
+    <script>
+        function confirmDelete() {
+            return confirm("Are you sure you want to delete this user?");
         }
     </script>
 {% endblock %}

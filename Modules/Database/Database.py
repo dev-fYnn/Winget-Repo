@@ -17,6 +17,11 @@ class SQLiteDatabase:
         if self.__conn and (self.__cursor.rowcount > 0 or without):
             self.__conn.commit()
 
+    def get_Fields_by_Section(self, section: str, lang: str) -> dict:
+        self.__cursor.execute("SELECT FIELD_ID, TEXT FROM tbl_FIELDS WHERE SECTION = ? AND LANGUAGE = ?", (section, lang))
+        data = self.__cursor.fetchall()
+        return {d[0]: d[1] for d in data}
+
     def authenticate_client(self, token: str) -> list:
         self.__cursor.execute("""SELECT * FROM tbl_CLIENTS WHERE TOKEN = ?""", (token,))
         client = self.__cursor.fetchone()

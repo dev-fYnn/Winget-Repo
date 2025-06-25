@@ -10,10 +10,14 @@
     {% endif %}
 {% endblock %}
 
+{% block header_title %}
+    <div style="position: absolute; left: 50%; transform: translateX(-50%);">
+        <h1 class="text-secondary font-weight-bold">Client Management</h1>
+    </div>
+{% endblock %}
+
 {% block content %}
 <div class="container">
-    <h2 class="mb-4">Client Management</h2>
-
     <form action="{{ url_for('client_bp.add_client') }}" method="POST" class="mb-4">
         <label for="clientName" class="form-label">Add New Client</label>
         <div class="input-group">
@@ -57,7 +61,7 @@
                 </tr>
             {% else %}
                 <tr>
-                    <td colspan="5" class="text-center">No clients available.</td>
+                    <td colspan="5" class="text-center">No Clients available.</td>
                 </tr>
             {% endfor %}
         </tbody>

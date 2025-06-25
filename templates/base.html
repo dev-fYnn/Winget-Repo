@@ -12,8 +12,11 @@
         <div class="container-fluid">
             <header class="d-flex align-items-center justify-content-between py-3 mb-4 border-bottom" style="position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; background-color: white;">
                 <div class="d-flex align-items-center">
-                    <h1 class="text-primary font-weight-bold" style="margin-left: 15px;">📦 {{ app_name }}</h1>
+                    <h1 class="text-primary font-weight-bold" style="margin-left: 15px;">
+                        📦 <span class="d-none d-md-inline">{{ app_name }}</span>
+                    </h1>
                 </div>
+                {% block header_title %}{% endblock %}
                 {% block header %}{% endblock %}
             </header>
             <div style="margin-top: 80px;">
