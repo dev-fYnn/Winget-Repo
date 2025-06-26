@@ -31,21 +31,25 @@ def check_authentication(f):
 @check_authentication
 def information():
     settings = get_winget_Settings()
-    data = {"Data": {
+
+    data = {
+        "Data": {
             "SourceIdentifier": settings.get('SERVERNAME', 'Winget-Repo'),
-            "ServerSupportedVersions": settings.get('CLIENT_VERSIONS', '1.9.0').split(","),
-            "SourceAgreements": {
-                "AgreementsIdentifier": "v1",
-                "Agreements": [
-                    {
-                        "AgreementLabel": "Terms of Use",
-                        "Agreement": "Please accept the terms of use.",
-                        "AgreementUrl": f"https://{request.host}"
-                    }
-                ]
-            }
+            "ServerSupportedVersions": settings.get('CLIENT_VERSIONS', '1.9.0').split(",")
         }
     }
+
+    if settings.get('TOS') == '1':
+        data["Data"]["SourceAgreements"] = {
+            "AgreementsIdentifier": "v1",
+            "Agreements": [
+                {
+                    "AgreementLabel": "Terms of Use",
+                    "Agreement": "Please accept the terms of use.",
+                    "AgreementUrl": f"https://{request.host}/ui/settings/terms"
+                }
+            ]
+        }
     return jsonify(data)
 
 

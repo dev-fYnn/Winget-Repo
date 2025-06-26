@@ -11,7 +11,7 @@
 {% block content %}
     <div class="container mt-5">
         <div class="row justify-content-center">
-            <div class="col-md-6">
+            <div class="col-lg-10">
                 <div class="card shadow-sm">
                     <div class="card-header text-center">
                         <h4>Manage Package Versions</h4>
@@ -20,19 +20,17 @@
                         <h4 class="text-center mb-4">{{ Package_Name }}</h4>
 
                         {% if versions | length > 0 %}
-                            <!-- Formular für das obere Formular -->
                             <form method="POST" action="{{ url_for('ui_bp.delete_package_version', package_id=package_id) }}" onsubmit="sure();">
-                                <!-- Tabelle mit Checkboxen -->
                                 <table class="table table-striped">
                                     <thead>
                                         <tr>
-                                            <th scope="col" class="text-center">Version</th>
-                                            <th scope="col" class="text-center">Locale</th>
-                                            <th scope="col" class="text-center">Architecture</th>
-                                            <th scope="col" class="text-center">Type</th>
-                                            <th scope="col" class="text-center">Scope</th>
-                                            <th scope="col" class="text-center">Switches</th>
-                                            <th scope="col" class="text-center">Delete</th>
+                                            <th class="text-center">Version</th>
+                                            <th class="text-center">Locale</th>
+                                            <th class="text-center d-none d-md-table-cell">Architecture</th>
+                                            <th class="text-center d-none d-lg-table-cell">Scope</th>
+                                            <th class="text-center">Type</th>
+                                            <th class="text-center">Switches</th>
+                                            <th class="text-center">Delete</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -40,16 +38,16 @@
                                             <tr>
                                                 <td class="text-center">{{ v['Version'] }}</td>
                                                 <td class="text-center">{{ v['Locale'] }}</td>
-                                                <td class="text-center">{{ v['Architecture'] }}</td>
+                                                <td class="text-center d-none d-md-table-cell">{{ v['Architecture'] }}</td>
+                                                <td class="text-center d-none d-lg-table-cell">{{ v['Scope'] }}</td>
                                                 <td class="text-center">{{ v['Type'] }}</td>
-                                                <td class="text-center">{{ v['Scope'] }}</td>
-                                                {% if v['SWITCHES'] | length > 0 %}
-                                                    <td class="text-center">
+                                                <td class="text-center">
+                                                    {% if v['SWITCHES'] | length > 0 %}
                                                         <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#modal_{{ v['UID'] }}">Show</button>
-                                                    </td>
-                                                {% else %}
-                                                    <td class="text-center">Not found!</td>
-                                                {% endif %}
+                                                    {% else %}
+                                                        Not found!
+                                                    {% endif %}
+                                                </td>
                                                 <td class="text-center"><input type="checkbox" name="version_select" value="{{ v['UID'] }}"></td>
                                             </tr>
                                             {% if v['SWITCHES'] | length > 0 %}

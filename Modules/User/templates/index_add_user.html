@@ -22,15 +22,15 @@
                     <form method="POST" action="{{ url_for('user_bp.add_user') }}" onsubmit="validatePasswords();">
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" maxlength="25" minlength="1" required>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter Username" maxlength="25" minlength="1" required>
                         </div>
                         <div class="mb-3">
                             <label for="password" class="form-label">Password <span class="text-secondary">(min. 10)</span></label>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" minlength="10" required>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter Password" minlength="10" required>
                         </div>
                         <div class="mb-3">
                             <label for="confirm_password" class="form-label">Confirm Password</label>
-                            <input type="password" class="form-control" id="confirm_password" placeholder="Confirm password" minlength="10" required>
+                            <input type="password" class="form-control" id="confirm_password" placeholder="Confirm Password" minlength="10" required>
                         </div>
                         {% if back != 'False' %}
                             <div class="mb-3">

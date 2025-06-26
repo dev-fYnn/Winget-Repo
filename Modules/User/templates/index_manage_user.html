@@ -9,8 +9,8 @@
 {% endblock %}
 
 {% block header_title %}
-    <div style="position: absolute; left: 50%; transform: translateX(-50%);">
-        <h1 class="text-secondary font-weight-bold">User Management</h1>
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+        <h4 class="text-secondary font-weight-bold">User Management</h4>
     </div>
 {% endblock %}
 
@@ -36,21 +36,23 @@
                         <td>
                             <div class="d-flex gap-2 justify-content-center">
                                 <form method="GET" action="{{ url_for('user_bp.change_password', user_id=user['ID']) }}">
-                                    <button type="submit" class="btn btn-sm btn-warning">PW</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Change Password">
+                                        <i class="bi bi-key"></i>
+                                    </button>
                                 </form>
                                 {% if user['DELETABLE'] == 1 %}
                                     <form method="GET" action="{{ url_for('user_bp.edit_user', user_id=user['ID']) }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary" title="Edit User">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                     </form>
                                     <form method="POST" action="{{ url_for('user_bp.delete_user', user_id=user['ID']) }}" onsubmit="return confirmDelete();">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete User">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
                                 {% else %}
-                                    <span class="text-muted small">Can't be deleted</span>
+                                    <span class="text-muted small" style="margin-top: 4px;">Can't be deleted</span>
                                 {% endif %}
                             </div>
                         </td>

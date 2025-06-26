@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block header %}
+    {% if loggedin %}
+        <div>
+            <a href="{{ url_for('settings_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+                Back
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block header_title %}
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+        <h4 class="text-secondary font-weight-bold">Terms of Service</h4>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if loggedin %}
+        <form method="POST" action="{{ url_for('settings_bp.edit_terms') }}">
+            <div class="mb-3">
+                <textarea class="form-control" name="terms_text" rows="25">{{ terms_text }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+    {% else %}
+        <div class="mb-3">
+            <textarea class="form-control" name="terms_text" rows="25" readonly>{{ terms_text }}</textarea>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    textarea {
+        font-family: monospace;
+        white-space: pre-wrap;
+    }
+</style>
+{% endblock %}

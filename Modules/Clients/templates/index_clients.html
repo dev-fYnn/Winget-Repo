@@ -1,28 +1,25 @@
 {% extends "base.html" %}
 
 {% block header %}
-    {% if back != 'False' %}
-        <div>
-            <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
-                Back
-            </a>
-        </div>
-    {% endif %}
+    <div>
+        <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+            Back
+        </a>
+    </div>
 {% endblock %}
 
 {% block header_title %}
-    <div style="position: absolute; left: 50%; transform: translateX(-50%);">
-        <h1 class="text-secondary font-weight-bold">Client Management</h1>
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+        <h4 class="text-secondary font-weight-bold">Client Management</h4>
     </div>
 {% endblock %}
 
 {% block content %}
 <div class="container">
     <form action="{{ url_for('client_bp.add_client') }}" method="POST" class="mb-4">
-        <label for="clientName" class="form-label">Add New Client</label>
         <div class="input-group">
-            <input type="text" id="clientName" name="client_name" class="form-control" maxlength="25" required placeholder="Enter client name">
-            <button class="btn btn-success" type="submit">Add Client</button>
+            <input type="text" name="client_name" class="form-control" maxlength="25" required placeholder="Enter Client Name">
+            <button class="btn btn-success" type="submit">Add New Client</button>
         </div>
     </form>
 

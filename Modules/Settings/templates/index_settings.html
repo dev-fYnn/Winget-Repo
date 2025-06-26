@@ -9,8 +9,8 @@
 {% endblock %}
 
 {% block header_title %}
-    <div style="position: absolute; left: 50%; transform: translateX(-50%);">
-        <h1 class="text-secondary font-weight-bold">Server Settings</h1>
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+        <h4 class="text-secondary font-weight-bold">Server Settings</h4>
     </div>
 {% endblock %}
 
@@ -30,9 +30,13 @@
                             <td>{% if setting in texts %} {{ texts[setting] }} {% else %} {{ setting }} {% endif %}</td>
                             <td>
                                 {% if settings[setting]['TYPE'] == "CHECKBOX" %}
-                                    <div class="form-check text-center">
+                                    <div class="form-check d-flex align-items-center gap-3">
                                         <input class="form-check-input" type="checkbox" name="setting_{{ setting }}" value="1"
                                                {% if settings[setting]['VALUE']|int == 1 %}checked{% endif %}>
+
+                                        {% if setting == "TOS" %}
+                                            <a href="{{ url_for('settings_bp.terms') }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                        {% endif %}
                                     </div>
                                 {% else %}
                                     <input type="text" name="setting_{{ setting }}" value="{{ settings[setting]['VALUE'] }}" class="form-control">
@@ -42,7 +46,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <button type="submit" class="btn btn-primary mt-3">Save</button>
+            <button type="submit" class="btn btn-primary">Save</button>
         </form>
     </div>
 

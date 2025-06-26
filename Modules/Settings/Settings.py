@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, session
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import is_ip_address
@@ -40,3 +40,26 @@ def index():
     text = db.get_Fields_by_Section("SETTINGS", "EN")
     del db
     return render_template("index_settings.html", settings=settings, texts=text)
+
+
+@settings_bp.route('/terms', methods=['GET'])
+def terms():
+    loggedin = False
+    if 'logged_in' in session:
+        loggedin = True
+
+    db = SQLiteDatabase()
+    text = db.get_Text_by_Typ("TOS")
+    del db
+    return render_template('index_terms_of_service.html', terms_text=text, loggedin=loggedin)
+
+
+@settings_bp.route('/edit_terms', methods=['POST'])
+@logged_in
+@authenticate
+def edit_terms():
+    db = SQLiteDatabase()
+    db.update_Text_by_Typ("TOS", request.form.get('terms_text', ''))
+    del db
+    flash("Successfully saved the Terms of Service!", "success")
+    return redirect(url_for("settings_bp.terms"))

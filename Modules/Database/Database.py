@@ -222,6 +222,17 @@ class SQLiteDatabase:
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (version_uid,))
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES_SWITCHES WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
 
+    def get_Text_by_Typ(self, text_id: str) -> str:
+        self.__cursor.execute("SELECT TEXT FROM tbl_TEXTS WHERE ID = ?", (text_id,))
+        data = self.__cursor.fetchone()
+        if len(data) > 0 and data[0] is not None:
+            return data[0]
+        return ""
+
+    def update_Text_by_Typ(self, text_id: str, text: str) -> str:
+        self.__cursor.execute("UPDATE tbl_TEXTS SET TEXT = ? WHERE ID = ?", (text, text_id))
+        self.__conn.commit()
+
     def check_User_Credentials(self, username: str) -> dict:
         self.__cursor.execute("""SELECT ID, PW FROM tbl_USER WHERE USERNAME = ?""", (username,))
         data = self.__cursor.fetchone()
