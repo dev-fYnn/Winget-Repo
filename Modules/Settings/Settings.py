@@ -28,9 +28,12 @@ def index():
                 value = request.form.get(form_key, "")
 
             if len(value) > 0:
-                if key in current_app.config:
-                    current_app.config[key] = value
-                db.update_wingetrepo_Setting(key, value)
+                if settings[key]['MAX_LENGTH'] is None or len(value.strip()) <= settings[key]['MAX_LENGTH']:
+                    if key in current_app.config:
+                        current_app.config[key] = value
+                    db.update_wingetrepo_Setting(key, value)
+                else:
+                    flash(f"Setting: {key} is too long!", "error")
         db.db_commit()
         del db
 

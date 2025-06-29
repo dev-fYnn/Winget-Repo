@@ -35,6 +35,22 @@ class SQLiteDatabase:
         data = self.__cursor.fetchall()
         return select_to_dict(data, self.__cursor.description)
 
+    def get_Client_by_IP(self, ip: str) -> list:
+        self.__cursor.execute("SELECT * FROM tbl_CLIENTS WHERE IP = ?", (ip,))
+        data = self.__cursor.fetchone()
+
+        if data is not None:
+            return select_to_dict([data], self.__cursor.description)
+        return[]
+
+    def get_Client_by_ID(self, uid: str) -> list:
+        self.__cursor.execute("SELECT * FROM tbl_CLIENTS WHERE UID = ?", (uid,))
+        data = self.__cursor.fetchone()
+
+        if data is not None:
+            return select_to_dict([data], self.__cursor.description)
+        return[]
+
     def add_New_Client(self, uid: str, client_name: str, ip: str, token: str):
         self.__cursor.execute("""INSERT INTO tbl_CLIENTS (UID, NAME, IP, TOKEN) VALUES (?, ?, ?, ?)""", (uid, client_name, ip, token))
         self.db_commit()
@@ -44,6 +60,7 @@ class SQLiteDatabase:
         self.db_commit()
 
     def delete_Client(self, client_id: str):
+        self.__cursor.execute("""DELETE FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ?""", (client_id,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS WHERE UID = ?""", (client_id,))
 
     def get_All_Packages(self) -> list:
@@ -158,11 +175,11 @@ class SQLiteDatabase:
         return {}
 
     def get_Settings_for_View(self) -> dict:
-        self.__cursor.execute("""SELECT SETTING_NAME, VALUE, TYPE FROM tbl_SETTINGS WHERE SHOW = 1""")
+        self.__cursor.execute("""SELECT SETTING_NAME, VALUE, TYPE, MAX_LENGTH FROM tbl_SETTINGS WHERE SHOW = 1""")
         data = self.__cursor.fetchall()
 
         if len(data) > 0:
-            return {d[0]: {"VALUE": d[1], "TYPE": d[2]} for d in data}
+            return {d[0]: {"VALUE": d[1], "TYPE": d[2], "MAX_LENGTH": d[3]} for d in data}
         return {}
 
     def add_wingetrepo_Setting(self, name: str, value: str, settings_type: str, show: bool) -> bool:
@@ -176,6 +193,15 @@ class SQLiteDatabase:
 
     def update_wingetrepo_Setting(self, name: str, value: str):
         self.__cursor.execute("""UPDATE tbl_SETTINGS SET VALUE = ? WHERE SETTING_NAME = ?""", (value, name))
+
+    def get_Logs_for_Client(self, client_id: str) -> list:
+        self.__cursor.execute("SELECT * FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ? ORDER BY TIMESTAMP DESC", (client_id,))
+        data = self.__cursor.fetchall()
+        return select_to_dict(data, self.__cursor.description)
+
+    def insert_Log(self, client_id: str, log_type: str, log_message: str, timestamp: str):
+        self.__cursor.execute("""INSERT INTO tbl_CLIENTS_LOGS (CLIENT_ID, LOG_TYPE, LOG_MESSAGE, TIMESTAMP) VALUES (?, ?, ?, ?)""", (client_id, log_type, log_message, timestamp))
+        self.db_commit()
 
     def add_New_Group(self, group_name: str, id: str):
         self.__cursor.execute("""INSERT INTO tbl_USER_RIGHTS (ID, NAME) VALUES (?, ?)""", (id, group_name))

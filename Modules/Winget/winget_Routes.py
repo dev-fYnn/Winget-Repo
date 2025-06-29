@@ -1,10 +1,12 @@
 import sys
 import json
 
+from datetime import datetime, timedelta
 from functools import wraps
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, jsonify, request, send_file, current_app
 
-from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client
+from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, \
+    filter_entries_by_package_match_field, authenticate_Client, write_log
 
 winget_routes = Blueprint('winget_routes', __name__)
 
@@ -88,4 +90,10 @@ def manifestSearch():
 
 @winget_routes.route('/download/<package_name>', methods=['GET'])
 def download(package_name):
+    key = (request.remote_addr, package_name)
+    now = datetime.now()
+
+    if key not in current_app.config['active_downloads'] or (now - current_app.config['active_downloads'][key]) > timedelta(seconds=3):
+        write_log(request.remote_addr, package_name, "INSTALLATION/UPDATE")
+    current_app.config['active_downloads'][key] = now
     return send_file(fr"{sys.path[0]}\Files\{package_name}")

@@ -88,3 +88,22 @@ def authenticate_Client(token: str, ip: str, settings: dict) -> bool:
             return True
     del db
     return False
+
+def write_log(client_ip: str, package_name: str, log_type: str):
+    db = SQLiteDatabase()
+    client = db.get_Client_by_IP(client_ip)
+    package = db.get_specfic_Versions_from_Package(package_name.split(".")[0])
+
+    if len(client) == 0:
+        client = {"UID": "EXTERN", "NAME": request.remote_addr}
+    else:
+        client = client[0]
+
+    match log_type:
+        case "INSTALLATION/UPDATE":
+            text = f"Client: {client['NAME']} downloaded the following package: {package['ID']} - {package['Version']}"
+        case _:
+            text = f"Client: {client['NAME']} did something unknown!"
+
+    db.insert_Log(client['UID'], log_type, text, datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
+    del db

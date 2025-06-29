@@ -1,0 +1,23 @@
+.alert-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1050;
+    width: auto;
+    max-width: 100%;
+}
+
+.alert {
+    margin-bottom: 10px;
+}
+
+.success {
+    color: white;
+    background-color: green;
+}
+
+.error {
+    color: white;
+    background-color: tomato;
+}

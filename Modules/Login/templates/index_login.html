@@ -1,29 +1,75 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header text-center">
-                    <h4>Login</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('login_bp.login') }}">
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Login</button>
-                        </div>
-                    </form>
-                </div>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Login</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/alert.css') }}" rel="stylesheet">
+        <style>
+            body {
+                background-color: #f8f9fa;
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .login-container {
+                max-width: 400px;
+                width: 100%;
+                padding: 2rem;
+                background: white;
+                border-radius: 0.5rem;
+                box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+                text-align: center;
+            }
+            .login-logo {
+              font-size: 2.5rem;
+            }
+            .login-title {
+              font-weight: 600;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="login-container">
+            <div class="d-flex align-items-center justify-content-center mb-4">
+                <span class="login-logo fs-1 me-2">📦</span>
+                <h2 class="login-title mb-0">{{ app_name }}</h2>
             </div>
+            <form method="POST" action="{{ url_for('login_bp.login') }}">
+                <div class="mb-3 text-start">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required />
+                </div>
+                <div class="mb-4 text-start">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required />
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Sign In</button>
+            </form>
         </div>
-    </div>
-</div>
-{% endblock %}
+
+        <div class="alert-container" id="alertContainer">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert {{ category }} alert-dismissible fade show" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="{{ url_for('static', filename='js/alert.js') }}"></script>
+        <script>
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bootstrapAlert = new bootstrap.Alert(alert);
+                    bootstrapAlert.close();
+                });
+            }, 2000);
+        </script>
+    </body>
+</html>

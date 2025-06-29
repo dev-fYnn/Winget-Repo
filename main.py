@@ -18,6 +18,7 @@ app.config['SERVERNAME'] = settings['SERVERNAME']
 app.secret_key = settings['SECRET_KEY'].encode()
 app.config['SESSION_COOKIE_NAME'] = app.config['SERVERNAME']
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['active_downloads'] = {}
 app.jinja_env.add_extension('jinja2.ext.do')
 
 app.register_blueprint(login_bp, url_prefix='/')
@@ -37,9 +38,10 @@ def favicon():
 @app.context_processor
 def global_settings():
     return {
-        'app_name': app.config['SERVERNAME']
+        'app_name': app.config['SERVERNAME'],
+        'app_logo': "📦"
     }
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(ssl_context=('SSL/cert.pem', 'SSL/server.key'))

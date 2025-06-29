@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block header %}
+    <div>
+        <a href="{{ url_for('client_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+            Back
+        </a>
+    </div>
+{% endblock %}
+
+{% block header_title %}
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+        <h4 class="text-secondary font-weight-bold">Client Logs</h4>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        {% if client == "EXTERN" %}
+            <h5 class="text-muted">Client: {{ client }}</h5>
+        {% else %}
+            <h5 class="text-muted">Client: {{ client.NAME }} | IP: {{ client.IP }}</h5>
+        {% endif %}
+    </div>
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th style="width: 20%;">Timestamp</th>
+                <th>Log Message</th>
+                <th style="width: 15%;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+                <tr>
+                    <td>{{ log.TIMESTAMP }}</td>
+                    <td>{{ log.LOG_MESSAGE }}</td>
+                    <td>{{ log.LOG_TYPE }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="3" class="text-center">No Logs available.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    th, td {
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}

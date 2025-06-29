@@ -19,7 +19,7 @@ def index():
     return render_template("index_clients.html", clients=clients)
 
 
-@client_bp.route('/clients/add', methods=['POST'])
+@client_bp.route('/add', methods=['POST'])
 @logged_in
 @authenticate
 def add_client():
@@ -42,7 +42,7 @@ def add_client():
     return redirect(url_for('client_bp.index'))
 
 
-@client_bp.route('/clients/delete/<client_id>', methods=['POST'])
+@client_bp.route('/delete/<client_id>', methods=['POST'])
 @logged_in
 @authenticate
 def delete_client(client_id):
@@ -56,3 +56,23 @@ def delete_client(client_id):
         flash("Error. No Data found!", "error")
     return redirect(url_for('client_bp.index'))
 
+
+@client_bp.route('/logs/<client_id>', methods=['GET'])
+@logged_in
+@authenticate
+def view_logs(client_id):
+    db = SQLiteDatabase()
+    logs = db.get_Logs_for_Client(client_id)
+    client = db.get_Client_by_ID(client_id)
+    del db
+
+    if len(client) == 1:
+        client = client[0]
+    elif client_id == "EXTERN":
+        client = client_id
+    else:
+        flash("Client not found!", "error")
+        return redirect(url_for("client_bp.index"))
+
+
+    return render_template("index_clients_logs.html", logs=logs, client=client)

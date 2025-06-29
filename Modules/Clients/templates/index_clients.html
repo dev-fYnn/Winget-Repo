@@ -2,6 +2,12 @@
 
 {% block header %}
     <div>
+        <form action="{{ url_for('client_bp.view_logs', client_id='EXTERN') }}" method="GET" style="display:inline;" class="me-2">
+            <button type="submit" class="btn btn-outline-info" title="View Logs for Unknown Clients">
+                <i class="bi bi-file-text"></i>
+            </button>
+        </form>
+
         <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
             Back
         </a>
@@ -47,6 +53,12 @@
                                 title="Copy Auth-Token">
                             <i class="bi bi-clipboard"></i>
                         </button>
+
+                        <form action="{{ url_for('client_bp.view_logs', client_id=client.UID) }}" method="GET" style="display:inline;" class="me-2">
+                            <button type="submit" class="btn btn-sm btn-outline-info" title="View Logs">
+                                <i class="bi bi-file-text"></i>
+                            </button>
+                        </form>
 
                         <form action="{{ url_for('client_bp.delete_client', client_id=client.UID) }}" method="POST" style="display:inline;">
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Client"
