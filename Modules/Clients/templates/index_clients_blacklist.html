@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block header %}
+    <div>
+        <a href="{{ url_for('client_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+            Back
+        </a>
+    </div>
+{% endblock %}
+
+{% block header_title %}
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+        <h4 class="text-secondary font-weight-bold">Package Blacklist: {{ client.NAME }}</h4>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <form action="{{ url_for('client_bp.blacklist', client_id=client.UID, auth_token=client.TOKEN) }}" method="POST">
+            <div class="mb-4">
+                <h5>Packages:</h5>
+
+                <div class="form-check border rounded p-3 mb-4 bg-light">
+                    <input class="form-check-input" type="checkbox" id="select_all">
+                    <label class="form-check-label fw-bold" for="select_all">
+                        Select all packages
+                    </label>
+                </div>
+
+                <div class="row">
+                    {% for package in packages %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <label class="package-card">
+                                <input class="form-check-input package-checkbox" type="checkbox" name="blacklist" value="{{ package.id }}"
+                                    {% if package.id in blacklisted_packages %}checked{% endif %}>
+                                <div class="card shadow-sm h-100">
+                                    <div class="card-body d-flex align-items-start gap-3">
+                                        <div class="logo-container">
+                                            <img src="{{ url_for('static', filename='images/Logos/' + package.logo) }}" alt="{{ package.name }}" class="package-logo">
+                                        </div>
+
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-1">{{ package.name }}</h6>
+                                            <p class="card-text text-muted small mb-0">{{ package.description }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+    </div>
+
+    <style>
+        .package-card {
+            display: block;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .package-card input[type="checkbox"] {
+            display: none;
+        }
+
+        .package-card .card {
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            border-radius: 10px;
+        }
+
+        .package-card:hover .card {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .package-card input[type="checkbox"]:checked + .card {
+            border-color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+
+        .logo-container {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+        }
+
+        .package-logo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .card-title {
+            margin: 0;
+        }
+
+        .card-text {
+            margin: 0;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectAllCheckbox = document.getElementById('select_all');
+            const packageCheckboxes = document.querySelectorAll('.package-checkbox');
+
+            selectAllCheckbox.addEventListener('change', function () {
+                packageCheckboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+                packageCheckboxes.forEach(cb => cb.dispatchEvent(new Event('change')));
+            });
+        });
+    </script>
+{% endblock %}
+

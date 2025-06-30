@@ -10,6 +10,7 @@ from Modules.UI.UI import ui_bp
 from Modules.User.User import user_bp
 from Modules.Winget.Functions import get_winget_Settings
 from Modules.Winget.winget_Routes import winget_routes
+from Modules.API.API import api_bp
 
 settings = get_winget_Settings(True)
 
@@ -27,6 +28,7 @@ app.register_blueprint(user_bp, url_prefix='/ui/user')
 app.register_blueprint(groups_bp, url_prefix='/ui/groups')
 app.register_blueprint(client_bp, url_prefix='/ui/clients')
 app.register_blueprint(settings_bp, url_prefix='/ui/settings')
+app.register_blueprint(api_bp, url_prefix='/client/api')
 app.register_blueprint(winget_routes, url_prefix='/api')
 
 
@@ -44,4 +46,4 @@ def global_settings():
 
 
 if __name__ == '__main__':
-    app.run(ssl_context=('SSL/cert.pem', 'SSL/server.key'))
+    app.run()

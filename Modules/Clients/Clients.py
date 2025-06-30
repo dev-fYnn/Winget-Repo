@@ -42,13 +42,13 @@ def add_client():
     return redirect(url_for('client_bp.index'))
 
 
-@client_bp.route('/delete/<client_id>', methods=['POST'])
+@client_bp.route('/delete/<client_id>/<auth_token>', methods=['POST'])
 @logged_in
 @authenticate
-def delete_client(client_id):
+def delete_client(client_id, auth_token):
     if len(client_id) > 0:
         db = SQLiteDatabase()
-        db.delete_Client(client_id)
+        db.delete_Client(client_id, auth_token)
         db.db_commit()
         del db
         flash("Client was removed successfully!", "success")
@@ -73,6 +73,31 @@ def view_logs(client_id):
     else:
         flash("Client not found!", "error")
         return redirect(url_for("client_bp.index"))
-
-
     return render_template("index_clients_logs.html", logs=logs, client=client)
+
+
+@client_bp.route('/blacklist/<client_id>/<auth_token>', methods=['GET', 'POST'])
+@logged_in
+@authenticate
+def blacklist(client_id, auth_token):
+    db = SQLiteDatabase()
+
+    if request.method == 'POST':
+        selected_packages = request.form.getlist('blacklist')
+        db.update_Blacklist_Package(auth_token, selected_packages)
+        flash("Blacklist successfully updated!", "success")
+        return redirect(url_for('client_bp.index'))
+
+    client = db.get_Client_by_ID(client_id)
+
+    if len(client) == 1:
+        client = client[0]
+    else:
+        flash("Client not found!", "error")
+        return redirect(url_for('client_bp.index'))
+
+    packages = db.get_All_Packages()
+    blacklisted_packages = db.get_Blacklist_for_client(auth_token)
+    del db
+    return render_template('index_clients_blacklist.html', client=client, packages=packages, blacklisted_packages=blacklisted_packages)
+

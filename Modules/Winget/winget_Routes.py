@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import Blueprint, jsonify, request, send_file, current_app
 
+from Modules.Functions import get_Auth_Token_from_Header
 from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, \
     filter_entries_by_package_match_field, authenticate_Client, write_log
 
@@ -58,17 +59,20 @@ def information():
 @winget_routes.route('/packageManifests/<package_id>', methods=['GET'])
 @check_authentication
 def get_package_manifest(package_id):
+    client_auth_token = get_Auth_Token_from_Header(request.headers)
     version = request.args.get("Version")
-    result = generate_Installer_Manifest(package_id, version)
+    result = generate_Installer_Manifest(package_id, version, client_auth_token)
     return jsonify({"Data": result})
 
 
 @winget_routes.route('/manifestSearch', methods=['POST'])
 @check_authentication
 def manifestSearch():
+    client_auth_token = get_Auth_Token_from_Header(request.headers)
+
     result = {"Data": []}
     if 'Query' in (data := request.json):
-        result['Data'] = generate_search_Manifest(data['Query'].get('KeyWord', ''), data['Query'].get('MatchType', 'Substring'), "PackageName")
+        result['Data'] = generate_search_Manifest(data['Query'].get('KeyWord', ''), data['Query'].get('MatchType', 'Substring'), "PackageName", client_auth_token)
     else:
         key = ""
 
@@ -80,7 +84,7 @@ def manifestSearch():
         if key != "":
             temp = []
             for d in filter_entries_by_package_match_field(data[key]):
-                dum = generate_search_Manifest(d['RequestMatch'].get('KeyWord', ''), d['RequestMatch'].get('MatchType', 'CaseInsensitive'), d.get('PackageMatchField', 'PackageIdentifier'))
+                dum = generate_search_Manifest(d['RequestMatch'].get('KeyWord', ''), d['RequestMatch'].get('MatchType', 'CaseInsensitive'), d.get('PackageMatchField', 'PackageIdentifier'), client_auth_token)
                 for du in dum:
                     if du['PackageIdentifier'] not in [t['PackageIdentifier'] for t in temp]:
                         temp.append(du)

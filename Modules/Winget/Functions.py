@@ -5,9 +5,13 @@ from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import get_hostname_from_ip_dns
 
 
-def generate_search_Manifest(search_text: str, match_typ: str, match_field: str) -> list:
+def generate_search_Manifest(search_text: str, match_typ: str, match_field: str, auth_token: str = "") -> list:
     db = SQLiteDatabase()
     packages = db.search_packages(search_text, match_typ, match_field)
+
+    if auth_token != "":
+        blacklist = db.get_Blacklist_for_client(auth_token)
+        packages = [p for p in packages if p[0] not in blacklist]
 
     data = []
     for p in packages:
@@ -23,11 +27,12 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str)
     return data
 
 
-def generate_Installer_Manifest(package_id: str, version: str) -> dict:
+def generate_Installer_Manifest(package_id: str, version: str, auth_token: str = "") -> dict:
     db = SQLiteDatabase()
     package = db.get_specific_Package(package_id, version)
+    blacklist = db.get_Blacklist_for_client(auth_token)
 
-    if len(package) > 0:
+    if len(package) > 0 and package[0][0] not in blacklist:
         data = {
                     "PackageIdentifier": package[0][0],
                     "Versions": [{

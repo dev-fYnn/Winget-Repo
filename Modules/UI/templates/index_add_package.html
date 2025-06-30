@@ -17,7 +17,7 @@
                     <h4>Add Package</h4>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('ui_bp.add_package') }}">
+                    <form method="POST" action="{{ url_for('ui_bp.add_package') }}" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="package_name" class="form-label">Package ID</label>
                             <input type="text" class="form-control" id="package_id" name="package_id" placeholder="Package id" required>
@@ -33,6 +33,10 @@
                         <div class="mb-3">
                             <label for="package_description" class="form-label">Description</label>
                             <input type="text" class="form-control" id="package_description" name="package_description" placeholder="Description" maxlength="40" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Package Logo</label>
+                            <input type="file" class="form-control" id="file" name="Logo" accept="image/png" required>
                         </div>
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Add Package</button>

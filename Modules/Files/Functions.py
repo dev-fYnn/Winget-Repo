@@ -2,6 +2,6 @@ import os
 import sys
 
 
-def delete_File(file_name: str):
-    if os.path.exists(path := (os.path.join(fr"{sys.path[0]}\Files", file_name))):
+def delete_File(file_name: str, file_path: str = fr"{sys.path[0]}\Files"):
+    if os.path.exists(path := (os.path.join(file_path, file_name))):
         os.remove(path)

@@ -51,8 +51,17 @@ def add_package():
         data = request.form.to_dict()
 
         if len(data) > 0:
+            package_id = data.get("package_id", str(uuid4()))
+            file = request.files.get('Logo')
+
+            if file:
+                logo_path = package_id + ".png"
+                file.save(f"{sys.path[0]}/static/images/Logos/{logo_path}")
+            else:
+                logo_path = "dummy.png"
+
             db = SQLiteDatabase()
-            status = db.add_Package(data.get("package_id", str(uuid4())), data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40])
+            status = db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40], logo_path)
             db.db_commit()
             del db
 
@@ -77,11 +86,20 @@ def edit_package(package_id):
     if not p_exists:
         flash("Package not found!", "error")
     else:
+        package = db.get_Package_by_ID(package_id)
+
         if request.method == "POST":
             data = request.form.to_dict()
 
+            file = request.files.get('Logo')
+            if file:
+                logo_path = package_id + ".png"
+                file.save(f"{sys.path[0]}/static/images/Logos/{logo_path}")
+            else:
+                logo_path = package[4]
+
             if len(data) > 0:
-                status = db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40])
+                status = db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40], logo_path)
                 db.db_commit()
 
                 if status:
@@ -93,7 +111,6 @@ def edit_package(package_id):
             del db
             return redirect(url_for("ui_bp.index"))
         else:
-            package = db.get_Package_by_ID(package_id)
             del db
             return render_template("index_edit_package.html", package_id=package_id,  name=package[1], publisher=package[2], description=package[3])
     del db
@@ -111,6 +128,7 @@ def delete_package(package_id):
             delete_File(f['URL'])
             db.delete_Package_Version(f['UID'])
 
+        delete_File(f"{package_id}.png", f"{sys.path[0]}/static/images/Logos/")
         db.delete_Package(package_id)
         db.db_commit()
         flash("Package was deleted successfully!", "success")

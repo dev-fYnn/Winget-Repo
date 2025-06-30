@@ -1,8 +1,11 @@
 import ipaddress
+import json
 import random
 import string
 import dns.resolver
 import dns.reversename
+
+from werkzeug.datastructures import headers
 
 
 def generate_random_string(length: int) -> string:
@@ -62,3 +65,12 @@ def is_ip_address(text):
         return True
     except ValueError:
         return False
+
+
+def get_Auth_Token_from_Header(header: headers) -> str:
+    try:
+        client_auth_token = json.loads(header.get('Windows-Package-Manager').replace("'", '"'))
+        client_auth_token = client_auth_token.get("Token")
+    except:
+        client_auth_token = ""
+    return client_auth_token

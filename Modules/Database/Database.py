@@ -55,18 +55,26 @@ class SQLiteDatabase:
         self.__cursor.execute("""INSERT INTO tbl_CLIENTS (UID, NAME, IP, TOKEN) VALUES (?, ?, ?, ?)""", (uid, client_name, ip, token))
         self.db_commit()
 
+    def update_Blacklist_Package(self, auth_token: str, packages: list):
+        self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
+
+        for p in packages:
+            self.__cursor.execute("""INSERT INTO tbl_CLIENTS_PACKAGES_BLACKLIST (CLIENT_AUTH_TOKEN, PACKAGE_ID) VALUES (?, ?)""", (auth_token, p))
+        self.db_commit()
+
     def update_Client_Informations(self, ip: str, last_seen: str, uid: str):
         self.__cursor.execute("""UPDATE tbl_CLIENTS SET IP = ?, LASTSEEN = ? WHERE UID = ?""", (ip, last_seen, uid))
         self.db_commit()
 
-    def delete_Client(self, client_id: str):
+    def delete_Client(self, client_id: str, auth_token: str):
+        self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ?""", (client_id,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS WHERE UID = ?""", (client_id,))
 
     def get_All_Packages(self) -> list:
         self.__cursor.execute("""SELECT * FROM tbl_PACKAGES""")
         data = self.__cursor.fetchall()
-        return [{"id": d[0], "name": d[1], "publisher": d[2], "description": d[3]} for d in data]
+        return [{"id": d[0], "name": d[1], "publisher": d[2], "description": d[3], "logo": d[4]} for d in data]
 
     def get_All_Locales(self) -> list:
         self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_LOCALE""")
@@ -109,6 +117,11 @@ class SQLiteDatabase:
         self.__cursor.execute(query, params)
         data = self.__cursor.fetchall()
         return [list(d) for d in data]
+
+    def get_Blacklist_for_client(self, auth_token: str) -> list:
+        self.__cursor.execute("""SELECT PACKAGE_ID FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
+        data = self.__cursor.fetchall()
+        return [d[0] for d in data]
 
     def get_All_Versions_from_Package(self, package_id: str) -> list:
         self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID FROM tbl_PACKAGES_VERSIONS AS PV
@@ -207,10 +220,10 @@ class SQLiteDatabase:
         self.__cursor.execute("""INSERT INTO tbl_USER_RIGHTS (ID, NAME) VALUES (?, ?)""", (id, group_name))
         self.db_commit()
 
-    def add_Package(self, package_id: str, package_name: str, package_publisher: str, package_description: str) -> bool:
-        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES (PACKAGE_ID, PACKAGE_NAME, PACKAGE_PUBLISHER, PACKAGE_DESCRIPTION) 
-                                    VALUES (?, ?, ?, ?)""",
-                              (package_id, package_name, package_publisher, package_description))
+    def add_Package(self, package_id: str, package_name: str, package_publisher: str, package_description: str, package_logo: str) -> bool:
+        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES (PACKAGE_ID, PACKAGE_NAME, PACKAGE_PUBLISHER, PACKAGE_DESCRIPTION, PACKAGE_LOGO) 
+                                    VALUES (?, ?, ?, ?, ?)""",
+                              (package_id, package_name, package_publisher, package_description, package_logo))
 
         if self.__cursor.lastrowid > 0:
             return True
