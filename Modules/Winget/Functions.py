@@ -27,7 +27,7 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str,
     return data
 
 
-def generate_Installer_Manifest(package_id: str, version: str, auth_token: str = "") -> dict:
+def generate_Installer_Manifest(package_id: str, version: str, auth_token: str = "") -> dict | list:
     db = SQLiteDatabase()
     package = db.get_specific_Package(package_id, version)
     blacklist = db.get_Blacklist_for_client(auth_token)
@@ -46,7 +46,6 @@ def generate_Installer_Manifest(package_id: str, version: str, auth_token: str =
                         "Installers": []
                     }]
                 }
-
         for p in package:
             dum_data = {
                     "Architecture": p[6],
@@ -62,11 +61,12 @@ def generate_Installer_Manifest(package_id: str, version: str, auth_token: str =
             #    data["NestedInstallerFiles"] =
 
             data['Versions'][0]['Installers'].append(dum_data)
+        output = {"Data": data}
     else:
-        data = {}
+        output = {}
 
     del db
-    return data
+    return output
 
 
 def filter_entries_by_package_match_field(data: list[dict]):

@@ -56,7 +56,7 @@ def add_package():
 
             if file:
                 logo_path = package_id + ".png"
-                file.save(f"{sys.path[0]}/static/images/Logos/{logo_path}")
+                file.save(fr"{sys.path[0]}\static\images\Logos\{logo_path}")
             else:
                 logo_path = "dummy.png"
 
@@ -94,7 +94,7 @@ def edit_package(package_id):
             file = request.files.get('Logo')
             if file:
                 logo_path = package_id + ".png"
-                file.save(f"{sys.path[0]}/static/images/Logos/{logo_path}")
+                file.save(fr"{sys.path[0]}\static\images\Logos\{logo_path}")
             else:
                 logo_path = package[4]
 
@@ -112,7 +112,7 @@ def edit_package(package_id):
             return redirect(url_for("ui_bp.index"))
         else:
             del db
-            return render_template("index_edit_package.html", package_id=package_id,  name=package[1], publisher=package[2], description=package[3])
+            return render_template("index_edit_package.html", package_id=package_id,  name=package[1], publisher=package[2], description=package[3], logo=package[4])
     del db
     return redirect(url_for("ui_bp.index"))
 
@@ -128,7 +128,7 @@ def delete_package(package_id):
             delete_File(f['URL'])
             db.delete_Package_Version(f['UID'])
 
-        delete_File(f"{package_id}.png", f"{sys.path[0]}/static/images/Logos/")
+        delete_File(f"{package_id}.png", f"{sys.path[0]}\static\images\Logos")
         db.delete_Package(package_id)
         db.db_commit()
         flash("Package was deleted successfully!", "success")

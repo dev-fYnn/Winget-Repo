@@ -99,5 +99,10 @@ def blacklist(client_id, auth_token):
     packages = db.get_All_Packages()
     blacklisted_packages = db.get_Blacklist_for_client(auth_token)
     del db
+
+    if len(packages) == 0:
+        flash("No packages found!", "error")
+        return redirect(url_for('client_bp.index'))
+
     return render_template('index_clients_blacklist.html', client=client, packages=packages, blacklisted_packages=blacklisted_packages)
 

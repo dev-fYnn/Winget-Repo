@@ -255,6 +255,7 @@ class SQLiteDatabase:
         self.db_commit()
 
     def delete_Package(self, package_id: str):
+        self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE PACKAGE_ID = ?""", (package_id,))
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES WHERE PACKAGE_ID = ?""", (package_id,))
 
     def delete_Package_Version(self, version_uid: str):

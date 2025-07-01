@@ -62,7 +62,7 @@ def get_package_manifest(package_id):
     client_auth_token = get_Auth_Token_from_Header(request.headers)
     version = request.args.get("Version")
     result = generate_Installer_Manifest(package_id, version, client_auth_token)
-    return jsonify({"Data": result})
+    return jsonify(result)
 
 
 @winget_routes.route('/manifestSearch', methods=['POST'])

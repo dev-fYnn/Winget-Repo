@@ -18,13 +18,12 @@
     <div class="container">
         <form action="{{ url_for('client_bp.blacklist', client_id=client.UID, auth_token=client.TOKEN) }}" method="POST">
             <div class="mb-4">
-                <h5>Packages:</h5>
-
-                <div class="form-check border rounded p-3 mb-4 bg-light">
-                    <input class="form-check-input" type="checkbox" id="select_all">
-                    <label class="form-check-label fw-bold" for="select_all">
-                        Select all packages
-                    </label>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Packages:</h5>
+                    <div id="select_group">
+                        <input class="form-check-input align-middle" type="checkbox" id="select_all">
+                        <label class="form-check-label ms-1 align-middle" for="select_all">Select all</label>
+                    </div>
                 </div>
 
                 <div class="row">
@@ -101,6 +100,14 @@
 
         .card-text {
             margin: 0;
+        }
+
+        #select_group {
+            transform: translateY(3px);
+        }
+
+        #select_all {
+            transform: translateY(-3px);
         }
     </style>
 

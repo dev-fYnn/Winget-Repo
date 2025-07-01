@@ -9,53 +9,68 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header text-center">
-                    <h4>Edit Package</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('ui_bp.edit_package', package_id=package_id) }}" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="package_name" class="form-label">Package Name</label>
-                            <input type="text" class="form-control" id="package_name" name="package_name" placeholder="Package name"  value="{{ name }}" maxlength="25" required>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex align-items-center justify-content-center position-relative">
+                        <div class="position-absolute start-0 ms-3 d-flex align-items-center">
+                            <img src="{{ url_for('static', filename='images/Logos/' + logo) }}" alt="Package Logo" class="package-logo">
                         </div>
-                        <div class="mb-3">
-                            <label for="package_publisher" class="form-label">Publisher</label>
-                            <input type="text" class="form-control" id="package_publisher" name="package_publisher" placeholder="Publisher" value="{{ publisher }}" maxlength="25" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="package_description" class="form-label">Description</label>
-                            <input type="text" class="form-control" id="package_description" name="package_description" placeholder="Description" value="{{ description }}" maxlength="40" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="file" class="form-label">Package Logo</label>
-                            <input type="file" class="form-control" id="file" name="Logo" accept="image/png">
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Save Package</button>
-                        </div>
-                    </form>
-                    <form method="POST" action="{{ url_for('ui_bp.delete_package', package_id=package_id) }}" style="margin-top: 5px;" onsubmit="sure();">
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-outline-danger">Delete Package</button>
-                        </div>
-                    </form>
+                        <h4 class="mb-0 mx-auto">Edit Package</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('ui_bp.edit_package', package_id=package_id) }}" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="package_name" class="form-label">Package Name</label>
+                                <input type="text" class="form-control" id="package_name" name="package_name" placeholder="Package name"  value="{{ name }}" maxlength="25" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="package_publisher" class="form-label">Publisher</label>
+                                <input type="text" class="form-control" id="package_publisher" name="package_publisher" placeholder="Publisher" value="{{ publisher }}" maxlength="25" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="package_description" class="form-label">Description</label>
+                                <input type="text" class="form-control" id="package_description" name="package_description" placeholder="Description" value="{{ description }}" maxlength="40" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Package Logo</label>
+                                <input type="file" class="form-control" id="file" name="Logo" accept="image/png">
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Save Package</button>
+                            </div>
+                        </form>
+                        <form method="POST" action="{{ url_for('ui_bp.delete_package', package_id=package_id) }}" style="margin-top: 5px;" onsubmit="sure();">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-outline-danger">Delete Package</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<script>
-    function sure(){
-        const isConfirmed = confirm("Are you sure you want to continue?");
-
-        if (!isConfirmed) {
-            event.preventDefault();
+    <style>
+        .package-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 6px;
         }
-    }
-</script>
+
+        .card-header {
+            height: 50px;
+        }
+    </style>
+    <script>
+        function sure(){
+            const isConfirmed = confirm("Are you sure you want to continue?");
+
+            if (!isConfirmed) {
+                event.preventDefault();
+            }
+        }
+    </script>
 {% endblock %}
 
