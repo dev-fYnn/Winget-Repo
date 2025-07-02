@@ -30,17 +30,17 @@
                     {% for package in packages %}
                         <div class="col-md-6 col-lg-4 mb-3">
                             <label class="package-card">
-                                <input class="form-check-input package-checkbox" type="checkbox" name="blacklist" value="{{ package.id }}"
-                                    {% if package.id in blacklisted_packages %}checked{% endif %}>
+                                <input class="form-check-input package-checkbox" type="checkbox" name="blacklist" value="{{ package.PACKAGE_ID }}"
+                                    {% if package.PACKAGE_ID in blacklisted_packages %}checked{% endif %}>
                                 <div class="card shadow-sm h-100">
                                     <div class="card-body d-flex align-items-start gap-3">
                                         <div class="logo-container">
-                                            <img src="{{ url_for('static', filename='images/Logos/' + package.logo) }}" alt="{{ package.name }}" class="package-logo">
+                                            <img src="{{ url_for('static', filename='images/Logos/' + package.PACKAGE_LOGO) }}" alt="{{ package.PACKAGE_NAME }}" class="package-logo">
                                         </div>
 
                                         <div class="flex-grow-1">
-                                            <h6 class="card-title mb-1">{{ package.name }}</h6>
-                                            <p class="card-text text-muted small mb-0">{{ package.description }}</p>
+                                            <h6 class="card-title mb-1">{{ package.PACKAGE_NAME }}</h6>
+                                            <p class="card-text text-muted small mb-0">{{ package.PACKAGE_DESCRIPTION }}</p>
                                         </div>
                                     </div>
                                 </div>

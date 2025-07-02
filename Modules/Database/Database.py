@@ -1,11 +1,11 @@
 import sqlite3
-import sys
 
-from Modules.Functions import generate_random_string, select_to_dict
+from Modules.Functions import generate_random_string, all_to_dict, row_to_dict
+from settings import PATH_DATABASE
 
 
 class SQLiteDatabase:
-    def __init__(self, db_file=rf"{sys.path[0]}\Modules\Database\Database.db"):
+    def __init__(self, db_file=PATH_DATABASE):
         self.__conn = sqlite3.connect(db_file)
         self.__cursor = self.__conn.cursor()
 
@@ -17,49 +17,91 @@ class SQLiteDatabase:
         if self.__conn and (self.__cursor.rowcount > 0 or without):
             self.__conn.commit()
 
+    #----------------Settings--------------------
+    ##############Fields##################
     def get_Fields_by_Section(self, section: str, lang: str) -> dict:
         self.__cursor.execute("SELECT FIELD_ID, TEXT FROM tbl_FIELDS WHERE SECTION = ? AND LANGUAGE = ?", (section, lang))
         data = self.__cursor.fetchall()
         return {d[0]: d[1] for d in data}
 
-    def authenticate_client(self, token: str) -> list:
+    ##############Settings##################
+    def get_winget_Settings(self, secret: bool = False) -> dict:
+        self.__cursor.execute("""SELECT SETTING_NAME, VALUE FROM tbl_SETTINGS""")
+        data = self.__cursor.fetchall()
+
+        if len(data) > 0:
+            data = dict(data)
+
+            if secret is False and 'SECRET_KEY' in data.keys():
+                data.pop('SECRET_KEY')
+            elif secret is True and 'SECRET_KEY' not in data.keys():
+                data['SECRET_KEY'] = generate_random_string(32)
+                self.add_wingetrepo_Setting("SECRET_KEY", data['SECRET_KEY'], "TEXT", False)
+                self.db_commit()
+
+            return data
+        return {}
+
+    def get_Settings_for_View(self) -> dict:
+        self.__cursor.execute("""SELECT SETTING_NAME, VALUE, TYPE, MAX_LENGTH FROM tbl_SETTINGS WHERE SHOW = 1""")
+        data = self.__cursor.fetchall()
+        return {d[0]: {"VALUE": d[1], "TYPE": d[2], "MAX_LENGTH": d[3]} for d in data}
+
+    def add_wingetrepo_Setting(self, name: str, value: str, settings_type: str, show: bool) -> bool:
+        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_SETTINGS (SETTING_NAME, VALUE, TYPE, SHOW) 
+                                    VALUES (?, ?, ?, ?)""",
+                              (name, value, settings_type, int(show)))
+
+        if self.__cursor.lastrowid > 0:
+            return True
+        return False
+
+    def update_wingetrepo_Setting(self, name: str, value: str):
+        self.__cursor.execute("""UPDATE tbl_SETTINGS SET VALUE = ? WHERE SETTING_NAME = ?""", (value, name))
+
+    ##############Texts##################
+    def get_Text_by_Typ(self, text_id: str) -> dict:
+        self.__cursor.execute("SELECT IFNULL(TEXT, '') AS TEXT FROM tbl_TEXTS WHERE ID = ?", (text_id,))
+        data = self.__cursor.fetchone()
+        return row_to_dict(data, self.__cursor.description)
+
+    def update_Text_by_Typ(self, text_id: str, text: str) -> str:
+        self.__cursor.execute("UPDATE tbl_TEXTS SET TEXT = ? WHERE ID = ?", (text, text_id))
+        self.__conn.commit()
+
+
+    #-----------------Clients-------------------
+    ##############Clients##################
+    def authenticate_client(self, token: str) -> dict:
         self.__cursor.execute("""SELECT * FROM tbl_CLIENTS WHERE TOKEN = ?""", (token,))
         client = self.__cursor.fetchone()
-
-        if client is not None and len(client) > 0:
-            return client
-        return []
+        return row_to_dict(client, self.__cursor.description)
 
     def get_All_Clients(self) -> list:
         self.__cursor.execute("SELECT * FROM tbl_CLIENTS")
         data = self.__cursor.fetchall()
-        return select_to_dict(data, self.__cursor.description)
+        return all_to_dict(data, self.__cursor.description)
 
-    def get_Client_by_IP(self, ip: str) -> list:
+    def get_Client_by_IP(self, ip: str) -> dict:
         self.__cursor.execute("SELECT * FROM tbl_CLIENTS WHERE IP = ?", (ip,))
         data = self.__cursor.fetchone()
+        return row_to_dict(data, self.__cursor.description)
 
-        if data is not None:
-            return select_to_dict([data], self.__cursor.description)
-        return[]
-
-    def get_Client_by_ID(self, uid: str) -> list:
+    def get_Client_by_ID(self, uid: str) -> dict:
         self.__cursor.execute("SELECT * FROM tbl_CLIENTS WHERE UID = ?", (uid,))
         data = self.__cursor.fetchone()
+        return row_to_dict(data, self.__cursor.description)
 
-        if data is not None:
-            return select_to_dict([data], self.__cursor.description)
-        return[]
-
-    def add_New_Client(self, uid: str, client_name: str, ip: str, token: str):
+    def add_New_Client(self, uid: str, client_name: str, ip: str, token: str) -> bool:
         self.__cursor.execute("""INSERT INTO tbl_CLIENTS (UID, NAME, IP, TOKEN) VALUES (?, ?, ?, ?)""", (uid, client_name, ip, token))
         self.db_commit()
 
-    def update_Blacklist_Package(self, auth_token: str, packages: list):
-        self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
+        if self.__cursor.lastrowid > 0:
+            return True
+        return False
 
-        for p in packages:
-            self.__cursor.execute("""INSERT INTO tbl_CLIENTS_PACKAGES_BLACKLIST (CLIENT_AUTH_TOKEN, PACKAGE_ID) VALUES (?, ?)""", (auth_token, p))
+    def update_Client_Enable_Status(self, client_id: str, status: int):
+        self.__cursor.execute("""UPDATE tbl_CLIENTS SET ENABLED = ? WHERE UID = ?""", (status, client_id,))
         self.db_commit()
 
     def update_Client_Informations(self, ip: str, last_seen: str, uid: str):
@@ -70,23 +112,33 @@ class SQLiteDatabase:
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ?""", (client_id,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS WHERE UID = ?""", (client_id,))
+        self.db_commit()
 
-    def get_All_Packages(self) -> list:
-        self.__cursor.execute("""SELECT * FROM tbl_PACKAGES""")
+    ##############Blacklist##################
+    def get_Blacklist_for_client(self, auth_token: str) -> list:
+        self.__cursor.execute("""SELECT PACKAGE_ID FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
         data = self.__cursor.fetchall()
-        return [{"id": d[0], "name": d[1], "publisher": d[2], "description": d[3], "logo": d[4]} for d in data]
+        return [d[0] for d in data]
 
-    def get_All_Locales(self) -> list:
-        self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_LOCALE""")
+    def update_Blacklist_Package(self, auth_token: str, packages: list):
+        self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
+
+        for p in packages:
+            self.__cursor.execute("""INSERT INTO tbl_CLIENTS_PACKAGES_BLACKLIST (CLIENT_AUTH_TOKEN, PACKAGE_ID) VALUES (?, ?)""", (auth_token, p))
+        self.db_commit()
+
+    ##############Logs##################
+    def get_Logs_for_Client(self, client_id: str) -> list:
+        self.__cursor.execute("SELECT * FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ? ORDER BY TIMESTAMP DESC", (client_id,))
         data = self.__cursor.fetchall()
-        return [{"id": d[0], "name": d[1]} for d in data]
+        return all_to_dict(data, self.__cursor.description)
 
-    def get_All_Permission_Groups(self) -> list:
-        self.__cursor.execute("SELECT * FROM tbl_USER_RIGHTS")
-        data = self.__cursor.fetchall()
-        data = select_to_dict(data, self.__cursor.description)
-        return data
+    def insert_Log(self, client_id: str, log_type: str, log_message: str, timestamp: str):
+        self.__cursor.execute("""INSERT INTO tbl_CLIENTS_LOGS (CLIENT_ID, LOG_TYPE, LOG_MESSAGE, TIMESTAMP) VALUES (?, ?, ?, ?)""", (client_id, log_type, log_message, timestamp))
+        self.db_commit()
 
+
+    #-------------------Packages--------------------
     def check_Package_exists(self, package_id: str) -> bool:
         self.__cursor.execute("""SELECT PACKAGE_ID FROM tbl_PACKAGES WHERE PACKAGE_ID = ?""", (package_id,))
         data = self.__cursor.fetchone()
@@ -116,32 +168,17 @@ class SQLiteDatabase:
 
         self.__cursor.execute(query, params)
         data = self.__cursor.fetchall()
-        return [list(d) for d in data]
+        return all_to_dict(data, self.__cursor.description)
 
-    def get_Blacklist_for_client(self, auth_token: str) -> list:
-        self.__cursor.execute("""SELECT PACKAGE_ID FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
+    def get_All_Packages(self) -> list:
+        self.__cursor.execute("""SELECT * FROM tbl_PACKAGES""")
         data = self.__cursor.fetchall()
-        return [d[0] for d in data]
+        return all_to_dict(data, self.__cursor.description)
 
-    def get_All_Versions_from_Package(self, package_id: str) -> list:
-        self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID FROM tbl_PACKAGES_VERSIONS AS PV
-                                    INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
-                                WHERE PV.PACKAGE_ID = ?""", (package_id,))
-        data = self.__cursor.fetchall()
-        return [{"ID": d[0], "Version": d[1], "Locale": d[2], "Architecture": d[3], "Type": d[4], "URL": d[5], "SHA256": d[6], "Scope": d[7], "UID": d[8]} for d in data]
-
-    def get_specfic_Versions_from_Package(self, uid: str) -> dict:
-        self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (uid,))
-        data = self.__cursor.fetchone()
-
-        if data is not None:
-            return {"ID": data[0], "Version": data[1], "Locale": data[2], "Architecture": data[3], "Type": data[4], "URL": data[5], "SHA256": data[6], "Scope": data[7], "UID": data[8]}
-        return {}
-
-    def get_Package_by_ID(self, package_id: str) -> list:
+    def get_Package_by_ID(self, package_id: str) -> dict:
         self.__cursor.execute("""SELECT * FROM tbl_PACKAGES WHERE PACKAGE_ID = ?""", (package_id,))
         data = self.__cursor.fetchone()
-        return list(data)
+        return row_to_dict(data, self.__cursor.description)
 
     def get_specific_Package(self, package_id: str, version: str) -> list:
         if version is None:
@@ -161,65 +198,6 @@ class SQLiteDatabase:
             return data
         return []
 
-    def get_Package_Switche(self, package_version_uid: str) -> dict:
-        self.__cursor.execute("""SELECT SWITCH_TYPE, SWITCH_TEXT FROM tbl_PACKAGES_SWITCHES 
-                                    WHERE PACKAGE_VERSION_UID = ?""", (package_version_uid,))
-        data = self.__cursor.fetchall()
-
-        if len(data) > 0:
-            return {d[0]: d[1] for d in data}
-        return {}
-
-    def get_winget_Settings(self, secret: bool = False) -> dict:
-        self.__cursor.execute("""SELECT SETTING_NAME, VALUE FROM tbl_SETTINGS""")
-        data = self.__cursor.fetchall()
-
-        if len(data) > 0:
-            data = dict(data)
-
-            if secret is False and 'SECRET_KEY' in data.keys():
-                data.pop('SECRET_KEY')
-            elif secret is True and 'SECRET_KEY' not in data.keys():
-                data['SECRET_KEY'] = generate_random_string(32)
-                self.add_wingetrepo_Setting("SECRET_KEY", data['SECRET_KEY'], "TEXT", False)
-                self.db_commit()
-
-            return data
-        return {}
-
-    def get_Settings_for_View(self) -> dict:
-        self.__cursor.execute("""SELECT SETTING_NAME, VALUE, TYPE, MAX_LENGTH FROM tbl_SETTINGS WHERE SHOW = 1""")
-        data = self.__cursor.fetchall()
-
-        if len(data) > 0:
-            return {d[0]: {"VALUE": d[1], "TYPE": d[2], "MAX_LENGTH": d[3]} for d in data}
-        return {}
-
-    def add_wingetrepo_Setting(self, name: str, value: str, settings_type: str, show: bool) -> bool:
-        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_SETTINGS (SETTING_NAME, VALUE, TYPE, SHOW) 
-                                    VALUES (?, ?, ?, ?)""",
-                              (name, value, settings_type, int(show)))
-
-        if self.__cursor.lastrowid > 0:
-            return True
-        return False
-
-    def update_wingetrepo_Setting(self, name: str, value: str):
-        self.__cursor.execute("""UPDATE tbl_SETTINGS SET VALUE = ? WHERE SETTING_NAME = ?""", (value, name))
-
-    def get_Logs_for_Client(self, client_id: str) -> list:
-        self.__cursor.execute("SELECT * FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ? ORDER BY TIMESTAMP DESC", (client_id,))
-        data = self.__cursor.fetchall()
-        return select_to_dict(data, self.__cursor.description)
-
-    def insert_Log(self, client_id: str, log_type: str, log_message: str, timestamp: str):
-        self.__cursor.execute("""INSERT INTO tbl_CLIENTS_LOGS (CLIENT_ID, LOG_TYPE, LOG_MESSAGE, TIMESTAMP) VALUES (?, ?, ?, ?)""", (client_id, log_type, log_message, timestamp))
-        self.db_commit()
-
-    def add_New_Group(self, group_name: str, id: str):
-        self.__cursor.execute("""INSERT INTO tbl_USER_RIGHTS (ID, NAME) VALUES (?, ?)""", (id, group_name))
-        self.db_commit()
-
     def add_Package(self, package_id: str, package_name: str, package_publisher: str, package_description: str, package_logo: str) -> bool:
         self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES (PACKAGE_ID, PACKAGE_NAME, PACKAGE_PUBLISHER, PACKAGE_DESCRIPTION, PACKAGE_LOGO) 
                                     VALUES (?, ?, ?, ?, ?)""",
@@ -228,6 +206,24 @@ class SQLiteDatabase:
         if self.__cursor.lastrowid > 0:
             return True
         return False
+
+    def delete_Package(self, package_id: str):
+        self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE PACKAGE_ID = ?""", (package_id,))
+        self.__cursor.execute("""DELETE FROM tbl_PACKAGES WHERE PACKAGE_ID = ?""", (package_id,))
+
+
+    #----------------Package-Version----------------
+    def get_All_Versions_from_Package(self, package_id: str) -> list:
+        self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID FROM tbl_PACKAGES_VERSIONS AS PV
+                                    INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
+                                WHERE PV.PACKAGE_ID = ?""", (package_id,))
+        data = self.__cursor.fetchall()
+        return all_to_dict(data, self.__cursor.description)
+
+    def get_specfic_Versions_from_Package(self, uid: str) -> dict:
+        self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (uid,))
+        data = self.__cursor.fetchone()
+        return row_to_dict(data, self.__cursor.description)
 
     def add_Package_Version(self, package_id: str, package_version: str, package_local: str, file_architecture: str, file_type: str, file_download: str, file_sha: str, file_scope: str, uid: str) -> bool:
         self.__cursor.execute("""INSERT OR IGNORE INTO tbl_PACKAGES_VERSIONS (PACKAGE_ID, VERSION, LOCALE_ID, ARCHITECTURE, INSTALLER_TYPE, INSTALLER_URL, INSTALLER_SHA256, INSTALLER_SCOPE, UID) 
@@ -238,6 +234,17 @@ class SQLiteDatabase:
             return True
         return False
 
+    def delete_Package_Version(self, version_uid: str):
+        self.__cursor.execute("""DELETE FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (version_uid,))
+        self.__cursor.execute("""DELETE FROM tbl_PACKAGES_SWITCHES WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
+
+    ####################Switch######################
+    def get_Package_Switche(self, package_version_uid: str) -> dict:
+        self.__cursor.execute("""SELECT SWITCH_TYPE, SWITCH_TEXT FROM tbl_PACKAGES_SWITCHES 
+                                    WHERE PACKAGE_VERSION_UID = ?""", (package_version_uid,))
+        data = self.__cursor.fetchall()
+        return {d[0]: d[1] for d in data}
+
     def add_Package_Version_Switch(self, package_version_uid: str, switch_type: str, switch_text: str) -> bool:
         self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES_SWITCHES (PACKAGE_VERSION_UID, SWITCH_TYPE, SWITCH_TEXT)
                                     VALUES (?, ?, ?)""",
@@ -247,75 +254,62 @@ class SQLiteDatabase:
             return True
         return False
 
-    def update_Permission(self, group_id: str, permission_name: str, state: int):
-        self.__cursor.execute(f"""UPDATE tbl_USER_RIGHTS SET "{permission_name}" = ? WHERE ID = ?""", (state, group_id))
-
-    def update_User_Password(self, user_id: str, password: str):
-        self.__cursor.execute(f"""UPDATE tbl_USER SET PW = ? WHERE ID = ?""", (password, user_id))
-        self.db_commit()
-
-    def delete_Package(self, package_id: str):
-        self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE PACKAGE_ID = ?""", (package_id,))
-        self.__cursor.execute("""DELETE FROM tbl_PACKAGES WHERE PACKAGE_ID = ?""", (package_id,))
-
-    def delete_Package_Version(self, version_uid: str):
-        self.__cursor.execute("""DELETE FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (version_uid,))
-        self.__cursor.execute("""DELETE FROM tbl_PACKAGES_SWITCHES WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
-
-    def get_Text_by_Typ(self, text_id: str) -> str:
-        self.__cursor.execute("SELECT TEXT FROM tbl_TEXTS WHERE ID = ?", (text_id,))
-        data = self.__cursor.fetchone()
-        if len(data) > 0 and data[0] is not None:
-            return data[0]
-        return ""
-
-    def update_Text_by_Typ(self, text_id: str, text: str) -> str:
-        self.__cursor.execute("UPDATE tbl_TEXTS SET TEXT = ? WHERE ID = ?", (text, text_id))
-        self.__conn.commit()
-
-    def check_User_Credentials(self, username: str) -> dict:
-        self.__cursor.execute("""SELECT ID, PW FROM tbl_USER WHERE USERNAME = ?""", (username,))
-        data = self.__cursor.fetchone()
-
-        if data is not None and len(data) > 0:
-            return {"id": data[0], "hash": data[1]}
-        return {}
-
-    def check_User_Authentication(self, username: str) -> dict:
-        self.__cursor.execute("""SELECT TUR.* FROM tbl_USER_RIGHTS AS TUR 
-                                            LEFT JOIN tbl_USER AS TU ON TUR.ID = TU."GROUP"
-                                        WHERE TU.ID = ?""", (username,))
+    ####################Locales######################
+    def get_All_Locales(self) -> list:
+        self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_LOCALE""")
         data = self.__cursor.fetchall()
-        data = select_to_dict(data, self.__cursor.description)
-        if len(data) > 0:
-            return data[0]
-        return {}
+        return all_to_dict(data, self.__cursor.description)
 
-    def check_Username_exists(self, username: str, user_id="") -> tuple[bool, int, str, str]:
-        if len(user_id) > 0:
-            self.__cursor.execute("""SELECT USERNAME, DELETABLE, "GROUP" FROM tbl_USER WHERE ID = ?""", (user_id,))
-        else:
-            self.__cursor.execute("""SELECT USERNAME, DELETABLE, "GROUP" FROM tbl_USER WHERE USERNAME = ?""", (username,))
-        data = self.__cursor.fetchone()
 
-        if data is not None and len(data) > 0:
-            return True, data[1], data[0], data[2]
-        return False, 0, "", ""
-
+    #------------------Permissions-------------------
     def check_Group_exists(self, group_id: str) -> bool:
         self.__cursor.execute("""SELECT * FROM tbl_USER_RIGHTS WHERE ID = ?""", (group_id,))
         data = self.__cursor.fetchone()
+        data = row_to_dict(data, self.__cursor.description)
 
-        if data is not None and len(data) > 0:
+        if data:
             return True
         return False
+
+    def get_All_Permission_Groups(self) -> list:
+        self.__cursor.execute("SELECT * FROM tbl_USER_RIGHTS")
+        data = self.__cursor.fetchall()
+        return all_to_dict(data, self.__cursor.description)
+
+    def add_New_Group(self, group_name: str, id: str) -> bool:
+        self.__cursor.execute("""INSERT INTO tbl_USER_RIGHTS (ID, NAME) VALUES (?, ?)""", (id, group_name))
+        self.db_commit()
+
+        if self.__cursor.lastrowid > 0:
+            return True
+        return False
+
+    def update_Permission(self, group_id: str, permission_name: str, state: int):
+        self.__cursor.execute(f"""UPDATE tbl_USER_RIGHTS SET "{permission_name}" = ? WHERE ID = ?""", (state, group_id))
+
+    def delete_Group(self, group_id: str):
+        self.__cursor.execute("""DELETE FROM tbl_USER_RIGHTS WHERE ID = ?""", (group_id,))
+        self.db_commit()
+
+
+    #-------------------User----------------------
+    def check_Username_exists(self, username: str, user_id="") -> tuple[bool, dict]:
+        if len(user_id) > 0:
+            self.__cursor.execute("""SELECT DELETABLE, USERNAME, "GROUP" FROM tbl_USER WHERE ID = ?""", (user_id,))
+        else:
+            self.__cursor.execute("""SELECT USERNAME, DELETABLE, "GROUP" FROM tbl_USER WHERE USERNAME = ?""", (username,))
+        data = self.__cursor.fetchone()
+        data = row_to_dict(data, self.__cursor.description)
+
+        if data:
+            return True, data
+        return False, data
 
     def get_All_User(self):
         self.__cursor.execute("""SELECT TU.*, TUR.NAME FROM tbl_USER AS TU
                                     LEFT JOIN tbl_USER_RIGHTS AS TUR ON TU."GROUP" = TUR.ID""")
         data = self.__cursor.fetchall()
-        data = select_to_dict(data, self.__cursor.description)
-        return data
+        return all_to_dict(data, self.__cursor.description)
 
     def add_User(self, uid: str, username: str, password: str, group: str, deletable: int = 1) -> bool:
         self.__cursor.execute("""INSERT OR IGNORE INTO tbl_USER (ID, USERNAME, PW, DELETABLE, "GROUP") VALUES (?, ?, ?, ?, ?)""", (uid, username, password, deletable, group))
@@ -333,7 +327,22 @@ class SQLiteDatabase:
 
     def delete_User(self, user_id: str):
         self.__cursor.execute("""DELETE FROM tbl_USER WHERE ID = ? AND DELETABLE = 1""", (user_id,))
+        self.db_commit()
 
-    def delete_Group(self, group_id: str):
-        self.__cursor.execute("""DELETE FROM tbl_USER_RIGHTS WHERE ID = ?""", (group_id,))
+
+    #-------------------User-Authentication----------------------
+    def check_User_Credentials(self, username: str) -> dict:
+        self.__cursor.execute("""SELECT ID, PW FROM tbl_USER WHERE USERNAME = ?""", (username,))
+        data = self.__cursor.fetchone()
+        return row_to_dict(data, self.__cursor.description)
+
+    def check_User_Authentication(self, username: str) -> dict:
+        self.__cursor.execute("""SELECT TUR.* FROM tbl_USER_RIGHTS AS TUR 
+                                            LEFT JOIN tbl_USER AS TU ON TUR.ID = TU."GROUP"
+                                        WHERE TU.ID = ?""", (username,))
+        data = self.__cursor.fetchone()
+        return row_to_dict(data, self.__cursor.description)
+
+    def update_User_Password(self, user_id: str, password: str):
+        self.__cursor.execute(f"""UPDATE tbl_USER SET PW = ? WHERE ID = ?""", (password, user_id))
         self.db_commit()

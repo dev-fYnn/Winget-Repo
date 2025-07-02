@@ -2,17 +2,14 @@
 
 {% block header %}
 <div class="d-flex align-items-center justify-content-between" style="margin-right: 10px;">
-    <!-- Text zentrieren -->
     <h6 class="text-center text-secondary mb-0 flex-grow-1" style="margin-right: 30px;">{{ username }}</h6>
 
-    <!-- Dropdown-Menü für Einstellungen -->
     {% if user_mng_btn %}
         <div class="dropdown me-2">
             <button class="btn btn-light dropdown-toggle" type="button" id="settingsButton" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="fas fa-cog"></i>
             </button>
 
-            <!-- Dropdown Menü, links ausgerichtet -->
             <ul class="dropdown-menu dropdown-menu-start" aria-labelledby="settingsButton">
                 {% if client_mng_btn %}
                     <li><a class="dropdown-item" href="{{ url_for('client_bp.index') }}">Manage Clients</a></li>
@@ -33,7 +30,6 @@
         </div>
     {% endif %}
 
-    <!-- Logout-Button -->
     <a href="{{ url_for('login_bp.logout') }}" class="btn btn-danger">
         Logout
     </a>
@@ -42,74 +38,44 @@
 
 {% block content %}
     <div class="row justify-content-center">
-        <!-- Add Package Box -->
-        <div class="col-md-5 d-flex">
-            <div class="card shadow-lg border-0 rounded-lg w-100 d-flex flex-column">
-                <div class="card-body p-4 text-center flex-grow-1 d-flex flex-column">
-                    <h3 class="card-title text-primary mb-3">Manage Packages</h3>
-                    <div class="d-flex flex-grow-1">
-                        <!-- Linke Hälfte: Dropdown Auswahl -->
-                        <div class="flex-fill">
+        <div class="col-md-7">
+            <div class="card shadow-lg border-0 rounded-lg w-100">
+                <div class="card-body p-4">
+                    <h3 class="card-title text-primary mb-4 text-center">Manage Packages & Versions</h3>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4 mb-md-0">
                             <form method="POST" action="{{ url_for('ui_bp.index') }}">
                                 <div class="form-group">
-                                    <label for="selected_package_edit" class="h5 font-weight-bold">Choose a Package</label>
-                                    <select name="selected_package_edit" id="selected_package_edit" class="form-control form-control-lg" required>
+                                    <label for="selected_package" class="h5 font-weight-bold">Choose a Package</label>
+                                    <select name="selected_package" id="selected_package" class="form-control form-control-lg" required>
                                         {% for p in packages %}
-                                            <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+                                            <option value="{{ p['PACKAGE_ID'] }}">{{ p['PACKAGE_NAME'] }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
-                                {% if packages|length > 0 %}
-                                    <button type="submit" class="btn btn-outline-primary btn-lg mt-3 px-4 py-2 shadow-sm">Edit Package</button>
-                                {% else %}
-                                    <button type="button" class="btn btn-outline-primary btn-lg mt-3 px-4 py-2 shadow-sm" disabled>Edit Package</button>
-                                {% endif %}
-                            </form>
-                        </div>
 
-                        <!-- Rechte Hälfte: Button -->
-                        <div class="flex-fill d-flex align-items-center justify-content-center">
-                            <form method="GET" action="{{ url_for('ui_bp.add_package') }}">
-                                <button type="submit" class="btn btn-primary btn-lg mt-3 px-4 py-2 shadow-sm">Add New Package</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Select Package Box -->
-        <div class="col-md-5 d-flex">
-            <div class="card shadow-lg border-0 rounded-lg w-100 d-flex flex-column">
-                <div class="card-body p-4 text-center flex-grow-1 d-flex flex-column">
-                    <h3 class="card-title text-success mb-3">Manage Package Versions</h3>
-                    <div class="d-flex flex-grow-1">
-                        <!-- Linke Hälfte: Dropdown Auswahl -->
-                        <div class="flex-fill">
-                            <form method="POST" action="{{ url_for('ui_bp.index') }}">
-                                <div class="form-group">
-                                    <label for="selected_package1" class="h5 font-weight-bold">Choose a Package</label>
-                                    <select name="selected_package" id="selected_package1" class="form-control form-control-lg" required>
-                                        {% for p in packages %}
-                                            <option value="{{ p['id'] }}">{{ p['name'] }}</option>
-                                        {% endfor %}
-                                    </select>
+                                <div class="d-flex mt-3 gap-3">
+                                    {% if packages|length > 0 %}
+                                        <button type="submit" name="action" value="edit" class="btn btn-outline-primary btn-lg w-50 shadow-sm">Edit</button>
+                                        <button type="submit" name="action" value="open_versions" class="btn btn-outline-success btn-lg w-50 shadow-sm">Versions</button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-outline-primary btn-lg w-50 shadow-sm" disabled>Edit</button>
+                                        <button type="button" class="btn btn-outline-success btn-lg w-50 shadow-sm" disabled>Versions</button>
+                                    {% endif %}
                                 </div>
-                                {% if packages|length > 0 %}
-                                    <button type="submit" class="btn btn-outline-success btn-lg mt-3 px-4 py-2 shadow-sm">Open Package Versions</button>
-                                {% else %}
-                                    <button type="button" class="btn btn-outline-success btn-lg mt-3 px-4 py-2 shadow-sm" disabled>Open Package Versions</button>
-                                {% endif %}
                             </form>
                         </div>
 
-                        <!-- Rechte Hälfte: Button -->
-                        <div class="flex-fill d-flex align-items-center justify-content-center">
-                            <form method="GET" action="{{ url_for('ui_bp.add_package_version') }}">
+                        <div class="col-md-6 d-flex flex-column align-items-center justify-content-center">
+                            <form method="GET" action="{{ url_for('ui_bp.add_package') }}" class="mb-3 w-75">
+                                <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm">Add New Package</button>
+                            </form>
+                            <form method="GET" action="{{ url_for('ui_bp.add_package_version') }}" class="w-75">
                                 {% if packages|length > 0 %}
-                                    <button type="submit" class="btn btn-success btn-lg mt-3 px-4 py-2 shadow-sm">Add New Package Version</button>
+                                    <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm">Add New Version</button>
                                 {% else %}
-                                    <button type="submit" class="btn btn-success btn-lg mt-3 px-4 py-2 shadow-sm" disabled>Add New Package Version</button>
+                                    <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm" disabled>Add New Version</button>
                                 {% endif %}
                             </form>
                         </div>
@@ -126,6 +92,28 @@
             if (!settingsButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
                 dropdownMenu.style.display = 'none';
             }
+        });
+
+        const packages = document.getElementById("selected_package");
+        const savedPackage = sessionStorage.getItem("selected_package");
+
+        let found = false;
+        for (let i = 0; i < packages.options.length; i++) {
+            if (packages.options[i].value === savedPackage) {
+                found = true;
+                break;
+            }
+        }
+
+        if (savedPackage && found) {
+            packages.value = savedPackage;
+        } else if (packages.options.length > 0) {
+            packages.value = packages.options[0].value;
+            sessionStorage.setItem("selected_package", packages.value);
+        }
+
+        packages.addEventListener("change", function () {
+            sessionStorage.setItem("selected_package", packages.value);
         });
     </script>
 {% endblock %}

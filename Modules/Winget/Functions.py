@@ -11,18 +11,17 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str,
 
     if auth_token != "":
         blacklist = db.get_Blacklist_for_client(auth_token)
-        packages = [p for p in packages if p[0] not in blacklist]
+        packages = [p for p in packages if p['PACKAGE_ID'] not in blacklist]
 
     data = []
     for p in packages:
         temp = {
-            "PackageIdentifier": p[0],
-            "PackageName": p[1],
-            "Publisher": p[2],
-            "Versions": [{"PackageVersion": d['Version']} for d in db.get_All_Versions_from_Package(p[0])]
+            "PackageIdentifier": p['PACKAGE_ID'],
+            "PackageName": p['PACKAGE_NAME'],
+            "Publisher": p['PACKAGE_PUBLISHER'],
+            "Versions": [{"PackageVersion": d['VERSION']} for d in db.get_All_Versions_from_Package(p['PACKAGE_ID'])]
         }
         data.append(temp)
-
     del db
     return data
 
@@ -87,8 +86,8 @@ def authenticate_Client(token: str, ip: str, settings: dict) -> bool:
 
     if data:
         hostname = get_hostname_from_ip_dns(ip, settings.get('DNS_SERVER', '192.168.1.1'))
-        if hostname.upper() == data[1]:
-            db.update_Client_Informations(ip, datetime.now().strftime("%d.%m.%Y %H:%M:%S"), data[0])
+        if hostname.upper() == data['NAME'] and data['ENABLED'] == 1:
+            db.update_Client_Informations(ip, datetime.now().strftime("%d.%m.%Y %H:%M:%S"), data['UID'])
             del db
             return True
     del db
@@ -101,12 +100,10 @@ def write_log(client_ip: str, package_name: str, log_type: str):
 
     if len(client) == 0:
         client = {"UID": "EXTERN", "NAME": request.remote_addr}
-    else:
-        client = client[0]
 
     match log_type:
         case "INSTALLATION/UPDATE":
-            text = f"Client: {client['NAME']} downloaded the following package: {package['ID']} - {package['Version']}"
+            text = f"Client: {client['NAME']} downloaded the following package: {package['PACKAGE_ID']} - {package['VERSION']}"
         case _:
             text = f"Client: {client['NAME']} did something unknown!"
 

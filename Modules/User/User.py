@@ -37,7 +37,7 @@ def add_user():
                 group = data.getlist('group')
 
             if len(group) == 1 and check_Group_Exists(group[0]):
-                if check_User_Exists(data['username']) is False:
+                if check_User_Exists(data['username'])[0] is False:
                     if len(data['password']) >= 10 and len(data['username']) > 0:
                         status = add_User(data['username'], data['password'], group[0], flag)
                         if status:
@@ -65,19 +65,19 @@ def add_user():
 @logged_in
 @authenticate
 def edit_user(user_id):
-    u_status, c_username, deletable, p_group = check_User_Exists("", user_id, False)
+    u_status, u_attributes = check_User_Exists("", user_id)
 
-    if u_status is True and deletable == 1:
+    if u_status is True and u_attributes.get('DELETABLE', 0) == 1:
         if request.method == 'POST':
             data = request.form
             group = data.getlist('group')
             username = data.get("username", '')
 
-            if len(username) == 0 or c_username == username:
+            if len(username) == 0 or u_attributes.get('USERNAME', '') == username:
                 username = None
 
             if (len(group) == 1 and check_Group_Exists(group[0])) or len(group) == 0:
-                if check_User_Exists(username) is False:
+                if check_User_Exists(username)[0] is False:
                     status = edit_User(user_id, username, group)
 
                     if status:
@@ -95,8 +95,8 @@ def edit_user(user_id):
             db = SQLiteDatabase()
             groups = db.get_All_Permission_Groups()
             del db
-            return render_template("index_edit_user.html", user_id=user_id, username=c_username, groups=groups, current_group=p_group)
-    elif u_status is True and deletable == 0:
+            return render_template("index_edit_user.html", user_id=user_id, username=u_attributes.get('USERNAME', ''), groups=groups, current_group=u_attributes.get('GROUP', ''))
+    elif u_status is True and u_attributes.get('DELETABLE', 0) == 0:
         flash("User can't be changed!", "error")
     else:
         flash("User doesn't exist!", "error")

@@ -2,6 +2,7 @@ import os
 
 from flask import Flask, send_from_directory
 
+from Modules.Functions import start_up_check
 from Modules.Clients.Clients import client_bp
 from Modules.Groups.Functions import groups_bp
 from Modules.Login.Login import login_bp
@@ -46,4 +47,5 @@ def global_settings():
 
 
 if __name__ == '__main__':
+    start_up_check()
     app.run()

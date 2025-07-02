@@ -1,4 +1,3 @@
-import sys
 import json
 
 from datetime import datetime, timedelta
@@ -6,8 +5,8 @@ from functools import wraps
 from flask import Blueprint, jsonify, request, send_file, current_app
 
 from Modules.Functions import get_Auth_Token_from_Header
-from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, \
-    filter_entries_by_package_match_field, authenticate_Client, write_log
+from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client, write_log
+from settings import PATH_FILES
 
 winget_routes = Blueprint('winget_routes', __name__)
 
@@ -100,4 +99,4 @@ def download(package_name):
     if key not in current_app.config['active_downloads'] or (now - current_app.config['active_downloads'][key]) > timedelta(seconds=3):
         write_log(request.remote_addr, package_name, "INSTALLATION/UPDATE")
     current_app.config['active_downloads'][key] = now
-    return send_file(fr"{sys.path[0]}\Files\{package_name}")
+    return send_file(fr"{PATH_FILES}\{package_name}")

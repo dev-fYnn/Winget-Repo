@@ -8,7 +8,7 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 - **Easy-to-use Web Interface** for managing packages and package versions 🌐
 - **Search, List, Show, Install, and Upgrade Packages** via Winget 🔍📦
 - **Cross-platform**: The server runs on all environments that support Python 🖥️💻
-- **Client Overview**: Track which clients are accessing Winget-Repo 🖥️👀 -> early stage
+- **Client Overview**: Track and manage your clients and control who is accessing Winget-Repo 🖥️👀
 - **Permission Management**: Control access and user rights 🔐
 - **Terms of Service**: Request the agreement of your Terms of Service 📑
 

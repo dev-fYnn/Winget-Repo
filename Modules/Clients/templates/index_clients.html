@@ -36,12 +36,12 @@
                 <th>IP Address</th>
                 <th>Last seen</th>
                 <th>Client</th>
-                <th style="width: 15%;">Actions</th>
+                <th style="width: 20%;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for client in clients %}
-                <tr>
+                <tr class="{% if client.ENABLED == 0 %}table-secondary opacity-50{% endif %}">
                     <td>{{ client.NAME }}</td>
                     <td>{{ client.IP }}</td>
                     <td>{{ client.LASTSEEN }}</td>
@@ -63,6 +63,12 @@
                         <form action="{{ url_for('client_bp.view_logs', client_id=client.UID) }}" method="GET" style="display:inline;" class="me-2">
                             <button type="submit" class="btn btn-sm btn-outline-info" title="View Logs">
                                 <i class="bi bi-file-text"></i>
+                            </button>
+                        </form>
+
+                        <form action="{{ url_for('client_bp.block_client', client_id=client.UID) }}" method="POST" style="display:inline;" class="me-2">
+                            <button type="submit" class="btn btn-sm btn-outline-dark" title="Enable/Disable Client">
+                                <i class="bi bi-shield-lock"></i>
                             </button>
                         </form>
 

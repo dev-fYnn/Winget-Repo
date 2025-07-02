@@ -1,5 +1,3 @@
-import json
-
 from functools import wraps
 from flask import Blueprint, jsonify, request
 
@@ -37,7 +35,7 @@ def get_packages():
     else:
         data = db.get_All_Packages()
         blacklist = db.get_Blacklist_for_client(auth_key)
-        data = [d for d in data if d['id'] not in blacklist]
+        data = [d for d in data if d['PACKAGE_ID'] not in blacklist]
 
     del db
     return jsonify(data), 200

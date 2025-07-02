@@ -1,11 +1,13 @@
 import ipaddress
 import json
+import os
 import random
 import string
 import dns.resolver
 import dns.reversename
 
 from werkzeug.datastructures import headers
+from settings import PATH_FILES
 
 
 def generate_random_string(length: int) -> string:
@@ -14,7 +16,7 @@ def generate_random_string(length: int) -> string:
     return random_string
 
 
-def select_to_dict(data: list, header_data: tuple) -> list:
+def all_to_dict(data: list, header_data: tuple) -> list:
     if len(data) > 0:
         header = []
         for item in header_data:
@@ -22,6 +24,13 @@ def select_to_dict(data: list, header_data: tuple) -> list:
         data = [dict(zip(header, d)) for d in data]
         return data
     return []
+
+
+def row_to_dict(row: tuple, header_data: tuple) -> dict:
+    if row is not None and len(row) > 0:
+        return {desc[0]: val for desc, val in zip(header_data, row)}
+    else:
+        return {}
 
 
 def get_ip_from_hostname(hostname: str, suffix: str, dns_server: str) -> str:
@@ -74,3 +83,8 @@ def get_Auth_Token_from_Header(header: headers) -> str:
     except:
         client_auth_token = ""
     return client_auth_token
+
+
+def start_up_check():
+    if not os.path.exists(PATH_FILES):
+        os.makedirs(PATH_FILES)

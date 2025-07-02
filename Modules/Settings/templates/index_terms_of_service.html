@@ -21,13 +21,13 @@
     {% if loggedin %}
         <form method="POST" action="{{ url_for('settings_bp.edit_terms') }}">
             <div class="mb-3">
-                <textarea class="form-control" name="terms_text" rows="25">{{ terms_text }}</textarea>
+                <textarea class="form-control" name="terms_text" rows="25">{{ terms_text.TEXT }}</textarea>
             </div>
             <button type="submit" class="btn btn-primary">Save</button>
         </form>
     {% else %}
         <div class="mb-3">
-            <textarea class="form-control" name="terms_text" rows="25" readonly>{{ terms_text }}</textarea>
+            <textarea class="form-control" name="terms_text" rows="25" readonly>{{ terms_text.TEXT }}</textarea>
         </div>
     {% endif %}
 </div>

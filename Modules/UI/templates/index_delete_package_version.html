@@ -36,11 +36,11 @@
                                     <tbody>
                                         {% for v in versions %}
                                             <tr>
-                                                <td class="text-center">{{ v['Version'] }}</td>
-                                                <td class="text-center">{{ v['Locale'] }}</td>
-                                                <td class="text-center d-none d-md-table-cell">{{ v['Architecture'] }}</td>
-                                                <td class="text-center d-none d-lg-table-cell">{{ v['Scope'] }}</td>
-                                                <td class="text-center">{{ v['Type'] }}</td>
+                                                <td class="text-center">{{ v['VERSION'] }}</td>
+                                                <td class="text-center">{{ v['LOCALE'] }}</td>
+                                                <td class="text-center d-none d-md-table-cell">{{ v['ARCHITECTURE'] }}</td>
+                                                <td class="text-center d-none d-lg-table-cell">{{ v['INSTALLER_SCOPE'] }}</td>
+                                                <td class="text-center">{{ v['INSTALLER_TYPE'] }}</td>
                                                 <td class="text-center">
                                                     {% if v['SWITCHES'] | length > 0 %}
                                                         <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#modal_{{ v['UID'] }}">Show</button>
@@ -55,7 +55,7 @@
                                                     <div class="modal-dialog">
                                                         <div class="modal-content">
                                                             <div class="modal-header">
-                                                                <h5 class="modal-title" id="modalLabel_{{ v['UID'] }}">Switches for Version: {{ v['Version'] }}</h5>
+                                                                <h5 class="modal-title" id="modalLabel_{{ v['UID'] }}">Switches for Version: {{ v['VERSION'] }}</h5>
                                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                             </div>
                                                             <div class="modal-body">

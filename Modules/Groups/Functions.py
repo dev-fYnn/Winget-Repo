@@ -26,9 +26,13 @@ def add_group():
 
     if 15 >= len(group_name) > 0:
         db = SQLiteDatabase()
-        db.add_New_Group(group_name, str(uuid4()))
+        status = db.add_New_Group(group_name, str(uuid4()))
         del db
-        flash("Successfully added!", "success")
+
+        if status:
+            flash("Successfully added!", "success")
+        else:
+            flash("Failed!", "success")
     else:
         flash("Error!", "error")
     return redirect(url_for("groups_bp.index"))

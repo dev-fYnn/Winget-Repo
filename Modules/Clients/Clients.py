@@ -31,10 +31,13 @@ def add_client():
 
         if len(ip) > 0:
             db = SQLiteDatabase()
-            db.add_New_Client(str(uuid4()), name.upper()[:25], ip, str(uuid4()))
-            db.db_commit()
+            status = db.add_New_Client(str(uuid4()), name.upper()[:25], ip, str(uuid4()))
             del db
-            flash("Client was added successfully!", "success")
+
+            if status:
+                flash("Client was added successfully!", "success")
+            else:
+                flash("Failed to add client!", "error")
         else:
             flash("Can't get ip from entered hostname! Check the input or dns config!", "error")
     else:
@@ -42,14 +45,35 @@ def add_client():
     return redirect(url_for('client_bp.index'))
 
 
+@client_bp.route('/block/<client_id>', methods=['POST'])
+@logged_in
+@authenticate
+def block_client(client_id):
+    db = SQLiteDatabase()
+    client = db.get_Client_by_ID(client_id)
+
+    if client:
+        if client['ENABLED'] == 1:
+            status = 0
+            flash("Client successfully disabled!", "success")
+        else:
+            status = 1
+            flash("Client successfully enabled!", "success")
+
+        db.update_Client_Enable_Status(client_id, status)
+    else:
+        flash("Client not found!", "error")
+    del db
+    return redirect(url_for("client_bp.index"))
+
+
 @client_bp.route('/delete/<client_id>/<auth_token>', methods=['POST'])
 @logged_in
 @authenticate
 def delete_client(client_id, auth_token):
-    if len(client_id) > 0:
+    if len(client_id) > 0 and len(auth_token) > 0:
         db = SQLiteDatabase()
         db.delete_Client(client_id, auth_token)
-        db.db_commit()
         del db
         flash("Client was removed successfully!", "success")
     else:
@@ -66,11 +90,10 @@ def view_logs(client_id):
     client = db.get_Client_by_ID(client_id)
     del db
 
-    if len(client) == 1:
-        client = client[0]
-    elif client_id == "EXTERN":
+    if client_id == "EXTERN":
         client = client_id
-    else:
+
+    if not client:
         flash("Client not found!", "error")
         return redirect(url_for("client_bp.index"))
     return render_template("index_clients_logs.html", logs=logs, client=client)
@@ -90,9 +113,7 @@ def blacklist(client_id, auth_token):
 
     client = db.get_Client_by_ID(client_id)
 
-    if len(client) == 1:
-        client = client[0]
-    else:
+    if not client:
         flash("Client not found!", "error")
         return redirect(url_for('client_bp.index'))
 

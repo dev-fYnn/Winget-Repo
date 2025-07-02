@@ -12,7 +12,6 @@ def index():
     if user_setup_finished():
         if "logged_in" in session and len(session['logged_in']) > 0:
             return redirect(url_for("ui_bp.index"))
-
         return render_template("index_login.html")
     else:
         return redirect(url_for("user_bp.add_user", back=False))
@@ -43,10 +42,10 @@ def login():
 @login_bp.route('/logout')
 def logout():
     if 'logged_in' in session:
+        flash("Logout successfully!", "success")
         session.pop('logged_in')
     if 'logged_in_username' in session:
         session.pop('logged_in_username')
-    flash("Logout successfully!", "success")
     return redirect(url_for("login_bp.index"))
 
 

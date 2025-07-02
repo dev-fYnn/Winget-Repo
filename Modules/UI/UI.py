@@ -1,6 +1,3 @@
-import sys
-import os
-
 from flask import Blueprint, request, flash, redirect, url_for, render_template, session
 from uuid import uuid4
 from hashlib import sha256
@@ -9,6 +6,7 @@ from Modules.Database.Database import SQLiteDatabase
 from Modules.Files.Functions import delete_File
 from Modules.Login.Functions import check_Rights
 from Modules.Login.Login import logged_in, authenticate
+from settings import PATH_LOGOS, PATH_FILES
 
 ui_bp = Blueprint('ui_bp', __name__, template_folder='templates', static_folder='static')
 
@@ -17,10 +15,17 @@ ui_bp = Blueprint('ui_bp', __name__, template_folder='templates', static_folder=
 @logged_in
 def index():
     if request.method == "POST":
-        if "selected_package_edit" in request.form:
-            return redirect(url_for('ui_bp.edit_package', package_id=request.form.get("selected_package_edit", "")))
-        else:
-            return redirect(url_for('ui_bp.delete_package_version', package_id=request.form.get("selected_package", "")))
+        package_id = request.form.get("selected_package", "")
+
+        if len(package_id) > 0:
+            match request.form.get('action', ''):
+                case "edit":
+                    return redirect(url_for('ui_bp.edit_package', package_id=package_id))
+                case "open_versions":
+                    return redirect(url_for('ui_bp.delete_package_version', package_id=package_id))
+                case _:
+                    flash("Action not found!", "error")
+        flash("Package not found!", "error")
     else:
         db = SQLiteDatabase()
         packages = db.get_All_Packages()
@@ -41,6 +46,7 @@ def index():
             settings_btn = True
 
         return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn)
+    return redirect(url_for("ui_bp.index"))
 
 
 @ui_bp.route('/add_package', methods=['GET', 'POST'])
@@ -56,7 +62,7 @@ def add_package():
 
             if file:
                 logo_path = package_id + ".png"
-                file.save(fr"{sys.path[0]}\static\images\Logos\{logo_path}")
+                file.save(fr"{PATH_LOGOS}\{logo_path}")
             else:
                 logo_path = "dummy.png"
 
@@ -94,9 +100,9 @@ def edit_package(package_id):
             file = request.files.get('Logo')
             if file:
                 logo_path = package_id + ".png"
-                file.save(fr"{sys.path[0]}\static\images\Logos\{logo_path}")
+                file.save(fr"{PATH_LOGOS}\{logo_path}")
             else:
-                logo_path = package[4]
+                logo_path = package['PACKAGE_LOGO']
 
             if len(data) > 0:
                 status = db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40], logo_path)
@@ -112,7 +118,7 @@ def edit_package(package_id):
             return redirect(url_for("ui_bp.index"))
         else:
             del db
-            return render_template("index_edit_package.html", package_id=package_id,  name=package[1], publisher=package[2], description=package[3], logo=package[4])
+            return render_template("index_edit_package.html", package_id=package_id,  name=package['PACKAGE_NAME'], publisher=package['PACKAGE_PUBLISHER'], description=package['PACKAGE_DESCRIPTION'], logo=package['PACKAGE_LOGO'])
     del db
     return redirect(url_for("ui_bp.index"))
 
@@ -125,10 +131,10 @@ def delete_package(package_id):
 
     if db.check_Package_exists(package_id):
         for f in db.get_All_Versions_from_Package(package_id):
-            delete_File(f['URL'])
+            delete_File(f['INSTALLER_URL'])
             db.delete_Package_Version(f['UID'])
 
-        delete_File(f"{package_id}.png", f"{sys.path[0]}\static\images\Logos")
+        delete_File(f"{package_id}.png", PATH_LOGOS)
         db.delete_Package(package_id)
         db.db_commit()
         flash("Package was deleted successfully!", "success")
@@ -151,16 +157,12 @@ def add_package_version():
 
             if db.check_Package_exists(package_id):
                 version_uid = str(uuid4())
-                path = fr"{sys.path[0]}\Files"
-
-                if not os.path.exists(path):
-                    os.makedirs(path)
 
                 file = request.files['file']
                 filename = f"{version_uid}.{file.filename.split('.')[-1]}"
-                file.save(fr"{path}\{filename}")
+                file.save(fr"{PATH_FILES}\{filename}")
 
-                with open(fr"{path}\{filename}", 'rb') as f:
+                with open(fr"{PATH_FILES}\{filename}", 'rb') as f:
                     readable_hash = sha256(f.read()).hexdigest()
 
                 status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], data.get("package_local", ""), data.get("file_architect", ""), file.filename.split('.')[-1].lower(), filename, readable_hash, data.get("file_scope", ""), version_uid)
@@ -206,7 +208,7 @@ def delete_package_version(package_id):
             if len(ids) > 0:
                 for i in ids:
                     url = db.get_specfic_Versions_from_Package(i)
-                    delete_File(url['URL'])
+                    delete_File(url['INSTALLER_URL'])
                     db.delete_Package_Version(i)
                 db.db_commit(True)
                 flash("Packages deleted successfully!", "success")
@@ -221,7 +223,7 @@ def delete_package_version(package_id):
                 v['SWITCHES'] = db.get_Package_Switche(v['UID'])
             package = db.get_Package_by_ID(package_id)
             del db
-            return render_template("index_delete_package_version.html", package_id=package_id, versions=versions, Package_Name=package[1])
+            return render_template("index_delete_package_version.html", package_id=package_id, versions=versions, Package_Name=package['PACKAGE_NAME'])
         else:
             flash("No package found!", "error")
     del db

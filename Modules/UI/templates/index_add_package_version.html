@@ -23,7 +23,7 @@
                                 <label for="package_id" class="form-label">Choose a Package</label>
                                 <select name="package_id" id="package_id" class="form-control form-control" required>
                                     {% for p in packages %}
-                                        <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+                                        <option value="{{ p['PACKAGE_ID'] }}">{{ p['PACKAGE_NAME'] }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -39,7 +39,7 @@
                                 <label for="package_local" class="form-label">Locale</label>
                                 <select name="package_local" id="package_local" class="form-control" required>
                                     {% for l in locales %}
-                                        <option value="{{ l['id'] }}">{{ l['name'] }}</option>
+                                        <option value="{{ l['LOCALE_ID'] }}">{{ l['LOCALE'] }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -93,4 +93,16 @@
             </div>
         </div>
     </div>
+    <script>
+        const packages = document.getElementById("package_id");
+        const savedPackage = sessionStorage.getItem("selected_package");
+
+        if (savedPackage) {
+            packages.value = savedPackage;
+        }
+
+        packages.addEventListener("change", function () {
+            sessionStorage.setItem("selected_package", packages.value);
+        });
+    </script>
 {% endblock %}
