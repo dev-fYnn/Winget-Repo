@@ -37,7 +37,7 @@ def add_client():
             if status:
                 flash("Client was added successfully!", "success")
             else:
-                flash("Failed to add client!", "error")
+                flash("Hostname alreay exists!", "error")
         else:
             flash("Can't get ip from entered hostname! Check the input or dns config!", "error")
     else:

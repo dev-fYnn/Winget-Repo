@@ -96,7 +96,7 @@ def download(package_name):
     key = (request.remote_addr, package_name)
     now = datetime.now()
 
-    if key not in current_app.config['active_downloads'] or (now - current_app.config['active_downloads'][key]) > timedelta(seconds=3):
+    if key not in current_app.config['active_downloads'] or (now - current_app.config['active_downloads'][key]) > timedelta(seconds=4):
         write_log(request.remote_addr, package_name, "INSTALLATION/UPDATE")
     current_app.config['active_downloads'][key] = now
     return send_file(fr"{PATH_FILES}\{package_name}")

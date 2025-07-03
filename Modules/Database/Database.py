@@ -6,7 +6,7 @@ from settings import PATH_DATABASE
 
 class SQLiteDatabase:
     def __init__(self, db_file=PATH_DATABASE):
-        self.__conn = sqlite3.connect(db_file)
+        self.__conn = sqlite3.connect(db_file, timeout=10)
         self.__cursor = self.__conn.cursor()
 
     def __del__(self):
@@ -78,7 +78,7 @@ class SQLiteDatabase:
         return row_to_dict(client, self.__cursor.description)
 
     def get_All_Clients(self) -> list:
-        self.__cursor.execute("SELECT * FROM tbl_CLIENTS")
+        self.__cursor.execute("SELECT * FROM tbl_CLIENTS ORDER BY NAME")
         data = self.__cursor.fetchall()
         return all_to_dict(data, self.__cursor.description)
 
@@ -93,8 +93,12 @@ class SQLiteDatabase:
         return row_to_dict(data, self.__cursor.description)
 
     def add_New_Client(self, uid: str, client_name: str, ip: str, token: str) -> bool:
-        self.__cursor.execute("""INSERT INTO tbl_CLIENTS (UID, NAME, IP, TOKEN) VALUES (?, ?, ?, ?)""", (uid, client_name, ip, token))
-        self.db_commit()
+        self.__cursor.execute("""SELECT * FROM tbl_CLIENTS WHERE NAME = ?""", (client_name,))
+        data = self.__cursor.fetchone()
+
+        if data is None:
+            self.__cursor.execute("""INSERT INTO tbl_CLIENTS (UID, NAME, IP, TOKEN) VALUES (?, ?, ?, ?)""", (uid, client_name, ip, token))
+            self.db_commit()
 
         if self.__cursor.lastrowid > 0:
             return True
@@ -171,7 +175,7 @@ class SQLiteDatabase:
         return all_to_dict(data, self.__cursor.description)
 
     def get_All_Packages(self) -> list:
-        self.__cursor.execute("""SELECT * FROM tbl_PACKAGES""")
+        self.__cursor.execute("""SELECT * FROM tbl_PACKAGES ORDER BY PACKAGE_ID""")
         data = self.__cursor.fetchall()
         return all_to_dict(data, self.__cursor.description)
 
@@ -216,7 +220,8 @@ class SQLiteDatabase:
     def get_All_Versions_from_Package(self, package_id: str) -> list:
         self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID FROM tbl_PACKAGES_VERSIONS AS PV
                                     INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
-                                WHERE PV.PACKAGE_ID = ?""", (package_id,))
+                                WHERE PV.PACKAGE_ID = ?
+                                ORDER BY PV.VERSION DESC""", (package_id,))
         data = self.__cursor.fetchall()
         return all_to_dict(data, self.__cursor.description)
 
