@@ -50,7 +50,10 @@
                                     <label for="selected_package" class="h5 font-weight-bold">Choose a Package</label>
                                     <select name="selected_package" id="selected_package" class="form-control form-control-lg" required>
                                         {% for p in packages %}
-                                            <option value="{{ p['PACKAGE_ID'] }}">{{ p['PACKAGE_NAME'] }}</option>
+                                            <option value="{{ p['PACKAGE_ID'] }}"
+                                                {% if p['PACKAGE_ACTIVE'] == 0 %} class="inactive" {% endif %}>
+                                                {{ p['PACKAGE_NAME'] }}
+                                            </option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -84,6 +87,12 @@
             </div>
         </div>
     </div>
+    <style>
+        option.inactive {
+            color: #6c757d; /* Bootstrap's text-muted Farbe */
+            font-style: italic;
+        }
+    </style>
     <script>
         const settingsButton = document.getElementById('settingsButton');
         const dropdownMenu = document.getElementById('dropdownMenu');

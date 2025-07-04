@@ -153,7 +153,8 @@ class SQLiteDatabase:
     def search_packages(self, search_text: str, search_type: str, search_field: str):
         search_text = search_text.strip()
         query = f"""SELECT * FROM tbl_PACKAGES
-                    WHERE """
+                    WHERE PACKAGE_ACTIVE = 1
+                        AND """
 
         if search_field == "PackageName":
             query += "PACKAGE_NAME"
@@ -174,8 +175,11 @@ class SQLiteDatabase:
         data = self.__cursor.fetchall()
         return all_to_dict(data, self.__cursor.description)
 
-    def get_All_Packages(self) -> list:
-        self.__cursor.execute("""SELECT * FROM tbl_PACKAGES ORDER BY PACKAGE_ID""")
+    def get_All_Packages(self, disabled: bool = True) -> list:
+        if disabled:
+            self.__cursor.execute("""SELECT * FROM tbl_PACKAGES ORDER BY PACKAGE_ID""")
+        else:
+            self.__cursor.execute("""SELECT * FROM tbl_PACKAGES WHERE PACKAGE_ACTIVE = 1 ORDER BY PACKAGE_ID""")
         data = self.__cursor.fetchall()
         return all_to_dict(data, self.__cursor.description)
 
@@ -190,22 +194,24 @@ class SQLiteDatabase:
                                             INNER JOIN tbl_PACKAGES_VERSIONS AS PV ON P.PACKAGE_ID = PV.PACKAGE_ID
                                             INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
                                         WHERE P.PACKAGE_ID = ?
+                                            AND P.PACKAGE_ACTIVE = 1
                                         ORDER BY PV.VERSION DESC""", (package_id,))
         else:
             self.__cursor.execute("""SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION, PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID FROM tbl_PACKAGES AS P
                                             INNER JOIN tbl_PACKAGES_VERSIONS AS PV ON P.PACKAGE_ID = PV.PACKAGE_ID
                                             INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
                                         WHERE P.PACKAGE_ID = ?
+                                            AND P.PACKAGE_ACTIVE = 1
                                             AND PV.VERSION = ?""", (package_id, version))
         data = self.__cursor.fetchall()
         if len(data) > 0:
             return data
         return []
 
-    def add_Package(self, package_id: str, package_name: str, package_publisher: str, package_description: str, package_logo: str) -> bool:
-        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES (PACKAGE_ID, PACKAGE_NAME, PACKAGE_PUBLISHER, PACKAGE_DESCRIPTION, PACKAGE_LOGO) 
-                                    VALUES (?, ?, ?, ?, ?)""",
-                              (package_id, package_name, package_publisher, package_description, package_logo))
+    def add_Package(self, package_id: str, package_name: str, package_publisher: str, package_description: str, package_logo: str, package_active: int = 1) -> bool:
+        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES (PACKAGE_ID, PACKAGE_NAME, PACKAGE_PUBLISHER, PACKAGE_DESCRIPTION, PACKAGE_LOGO, PACKAGE_ACTIVE) 
+                                    VALUES (?, ?, ?, ?, ?, ?)""",
+                              (package_id, package_name, package_publisher, package_description, package_logo, package_active))
 
         if self.__cursor.lastrowid > 0:
             return True
@@ -217,6 +223,14 @@ class SQLiteDatabase:
 
 
     #----------------Package-Version----------------
+    def check_Package_Version_not_exists(self, package_id: str, package_version: str, package_local: str, file_architecture: str, file_type: str, file_scope: str) -> bool:
+        self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_VERSIONS WHERE PACKAGE_ID = ? AND VERSION = ? AND LOCALE_ID = ? AND ARCHITECTURE = ? AND INSTALLER_TYPE = ? AND INSTALLER_SCOPE = ?""", (package_id, package_version, package_local, file_architecture, file_type, file_scope))
+        data = self.__cursor.fetchone()
+
+        if data is None:
+            return True
+        return False
+
     def get_All_Versions_from_Package(self, package_id: str) -> list:
         self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID FROM tbl_PACKAGES_VERSIONS AS PV
                                     INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID

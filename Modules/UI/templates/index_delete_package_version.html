@@ -30,6 +30,7 @@
                                             <th class="text-center d-none d-lg-table-cell">Scope</th>
                                             <th class="text-center">Type</th>
                                             <th class="text-center">Switches</th>
+                                            <th class="text-center d-none d-lg-table-cell">Download</th>
                                             <th class="text-center">Delete</th>
                                         </tr>
                                     </thead>
@@ -47,6 +48,11 @@
                                                     {% else %}
                                                         Not found!
                                                     {% endif %}
+                                                </td>
+                                                <td class="text-center d-none d-lg-table-cell">
+                                                    <a href="{{ url_for('winget_routes.download', package_name=v['INSTALLER_URL']) }}" class="btn btn-sm btn-secondary" download>
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
                                                 </td>
                                                 <td class="text-center"><input type="checkbox" name="version_select" value="{{ v['UID'] }}"></td>
                                             </tr>

@@ -39,7 +39,10 @@
                                         </div>
 
                                         <div class="flex-grow-1">
-                                            <h6 class="card-title mb-1">{{ package.PACKAGE_NAME }}</h6>
+                                            <h6 class="card-title mb-1">
+                                                {{ package.PACKAGE_NAME }}
+                                                {% if package.PACKAGE_ACTIVE == 0 %}<i class="bi bi-x-circle" style="color: red;" title="Disabled"></i>{% endif %}
+                                            </h6>
                                             <p class="card-text text-muted small mb-0">{{ package.PACKAGE_DESCRIPTION }}</p>
                                         </div>
                                     </div>

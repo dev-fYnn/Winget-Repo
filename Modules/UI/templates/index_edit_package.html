@@ -37,6 +37,16 @@
                                 <label for="file" class="form-label">Package Logo</label>
                                 <input type="file" class="form-control" id="file" name="Logo" accept="image/png">
                             </div>
+                            <div class="mb-3">
+                                <button type="button"
+                                        onclick="switch_btn(this);"
+                                        class="btn {{ 'btn-success' if active else 'btn-danger' }}"
+                                        data-active="{{ 'true' if active else 'false' }}">
+                                    <i class="bi {{ 'bi-check-circle' if active else 'bi-x-circle' }}"></i>
+                                    {{ 'Enabled' if active else 'Disabled' }}
+                                </button>
+                                <input type="hidden" name="package_active" id="package_active" value="{{ '1' if active else '0' }}">
+                            </div>
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">Save Package</button>
                             </div>
@@ -69,6 +79,25 @@
 
             if (!isConfirmed) {
                 event.preventDefault();
+            }
+        }
+
+        function switch_btn(btn) {
+            const isActive = btn.getAttribute('data-active') === 'true';
+            const hiddenInput = document.getElementById("package_active");
+
+            if (isActive) {
+                btn.classList.remove("btn-success");
+                btn.classList.add("btn-danger");
+                btn.setAttribute("data-active", "false");
+                btn.innerHTML = '<i class="bi bi-x-circle"></i> Disabled';
+                hiddenInput.value = "0";
+            } else {
+                btn.classList.remove("btn-danger");
+                btn.classList.add("btn-success");
+                btn.setAttribute("data-active", "true");
+                btn.innerHTML = '<i class="bi bi-check-circle"></i> Enabled';
+                hiddenInput.value = "1";
             }
         }
     </script>

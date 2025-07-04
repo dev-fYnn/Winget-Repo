@@ -21,7 +21,9 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str,
             "Publisher": p['PACKAGE_PUBLISHER'],
             "Versions": [{"PackageVersion": d['VERSION']} for d in db.get_All_Versions_from_Package(p['PACKAGE_ID'])]
         }
-        data.append(temp)
+
+        if len(temp["Versions"]) > 0:
+            data.append(temp)
     del db
     return data
 

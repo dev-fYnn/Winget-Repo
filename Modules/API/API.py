@@ -31,9 +31,9 @@ def get_packages():
     auth_key = request.form.get('Auth-Token', '')
 
     if auth_key == '':
-        data = db.get_All_Packages()
+        data = db.get_All_Packages(False)
     else:
-        data = db.get_All_Packages()
+        data = db.get_All_Packages(False)
         blacklist = db.get_Blacklist_for_client(auth_key)
         data = [d for d in data if d['PACKAGE_ID'] not in blacklist]
 

@@ -105,7 +105,7 @@ def edit_package(package_id):
                 logo_path = package['PACKAGE_LOGO']
 
             if len(data) > 0:
-                status = db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40], logo_path)
+                status = db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40], logo_path, int(data.get("package_active", 1)))
                 db.db_commit()
 
                 if status:
@@ -118,7 +118,7 @@ def edit_package(package_id):
             return redirect(url_for("ui_bp.index"))
         else:
             del db
-            return render_template("index_edit_package.html", package_id=package_id,  name=package['PACKAGE_NAME'], publisher=package['PACKAGE_PUBLISHER'], description=package['PACKAGE_DESCRIPTION'], logo=package['PACKAGE_LOGO'])
+            return render_template("index_edit_package.html", package_id=package_id,  name=package['PACKAGE_NAME'], publisher=package['PACKAGE_PUBLISHER'], description=package['PACKAGE_DESCRIPTION'], logo=package['PACKAGE_LOGO'], active=package['PACKAGE_ACTIVE'])
     del db
     return redirect(url_for("ui_bp.index"))
 
@@ -160,22 +160,25 @@ def add_package_version():
 
                 file = request.files['file']
                 filename = f"{version_uid}.{file.filename.split('.')[-1]}"
-                file.save(fr"{PATH_FILES}\{filename}")
+                if file and db.check_Package_Version_not_exists(package_id, data.get("package_version", "")[:25], data.get("package_local", ""), data.get("file_architect", ""), file.filename.split('.')[-1].lower(), data.get("file_scope", "")):
+                    file.save(fr"{PATH_FILES}\{filename}")
 
-                with open(fr"{PATH_FILES}\{filename}", 'rb') as f:
-                    readable_hash = sha256(f.read()).hexdigest()
+                    with open(fr"{PATH_FILES}\{filename}", 'rb') as f:
+                        readable_hash = sha256(f.read()).hexdigest()
 
-                status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], data.get("package_local", ""), data.get("file_architect", ""), file.filename.split('.')[-1].lower(), filename, readable_hash, data.get("file_scope", ""), version_uid)
+                    status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], data.get("package_local", ""), data.get("file_architect", ""), file.filename.split('.')[-1].lower(), filename, readable_hash, data.get("file_scope", ""), version_uid)
 
-                if status:
-                    switches = {key.replace("switch_", ""): value for key, value in data.items() if key.startswith('switch_')}
-                    for s in ["Silent", "SilentWithProgress", "Interactive", "InstallLocation", "Log", "Upgrade", "Custom", "Repair"]:
-                        if s in switches.keys() and switches[s] != "":
-                            db.add_Package_Version_Switch(version_uid, s, switches[s])
-                    flash("Package version was added successfully!", "success")
+                    if status:
+                        switches = {key.replace("switch_", ""): value for key, value in data.items() if key.startswith('switch_')}
+                        for s in ["Silent", "SilentWithProgress", "Interactive", "InstallLocation", "Log", "Upgrade", "Custom", "Repair"]:
+                            if s in switches.keys() and switches[s] != "":
+                                db.add_Package_Version_Switch(version_uid, s, switches[s])
+                        flash("Package version was added successfully!", "success")
+                    else:
+                        flash("Error adding the package version. Try again!", "error")
+                    db.db_commit()
                 else:
-                    flash("Package version couldn't be added. Try again!", "error")
-                db.db_commit()
+                    flash("Package version already exists!", "error")
             else:
                 flash("Package doesnt exist!", "error")
 
