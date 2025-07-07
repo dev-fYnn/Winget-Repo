@@ -3,9 +3,8 @@
     <head>
         <meta charset="UTF-8">
         <title>{{ app_name }}</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+        <link href="{{ url_for('static', filename='css/Bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+        <link href="{{ url_for('static', filename='css/Bootstrap/bootstrap-icons.css') }}" rel="stylesheet">
         <link href="{{ url_for('static', filename='css/base.css') }}" rel="stylesheet">
         <link href="{{ url_for('static', filename='css/alert.css') }}" rel="stylesheet">
     </head>
@@ -34,7 +33,7 @@
             {% endwith %}
         </div>
     </body>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/Bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/alert.js') }}"></script>
     <script>
         function button_Loading(btn_id) {
