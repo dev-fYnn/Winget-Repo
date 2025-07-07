@@ -82,14 +82,14 @@ def get_winget_Settings(s: bool = False) -> dict:
     return data
 
 
-def authenticate_Client(token: str, ip: str, settings: dict) -> bool:
+def authenticate_Client(token: str, ip: str, settings: dict, client: int = 0) -> bool:
     db = SQLiteDatabase()
     data = db.authenticate_client(token)
 
     if data:
         hostname = get_hostname_from_ip_dns(ip, settings.get('DNS_SERVER', '192.168.1.1'))
         if hostname.upper() == data['NAME'] and data['ENABLED'] == 1:
-            db.update_Client_Informations(ip, datetime.now().strftime("%d.%m.%Y %H:%M:%S"), data['UID'])
+            db.update_Client_Informations(ip, datetime.now().strftime("%d.%m.%Y %H:%M:%S"), data['UID'], client)
             del db
             return True
     del db

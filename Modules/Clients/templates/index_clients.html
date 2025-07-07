@@ -45,7 +45,7 @@
                     <td>{{ client.NAME }}</td>
                     <td>{{ client.IP }}</td>
                     <td>{{ client.LASTSEEN }}</td>
-                    <td>{{ client.CLIENT }}</td>
+                    <td>{% if client.CLIENT %}True{% else %}False{% endif %}</td>
                     <td class="text-center">
                         <button class="btn btn-sm btn-outline-primary me-2 copy-btn"
                                 data-token="{{ client.TOKEN }}"

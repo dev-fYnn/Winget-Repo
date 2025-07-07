@@ -108,8 +108,8 @@ class SQLiteDatabase:
         self.__cursor.execute("""UPDATE tbl_CLIENTS SET ENABLED = ? WHERE UID = ?""", (status, client_id,))
         self.db_commit()
 
-    def update_Client_Informations(self, ip: str, last_seen: str, uid: str):
-        self.__cursor.execute("""UPDATE tbl_CLIENTS SET IP = ?, LASTSEEN = ? WHERE UID = ?""", (ip, last_seen, uid))
+    def update_Client_Informations(self, ip: str, last_seen: str, uid: str, client: int = 0):
+        self.__cursor.execute("""UPDATE tbl_CLIENTS SET IP = ?, LASTSEEN = ?, CLIENT = ? WHERE UID = ?""", (ip, last_seen, client, uid))
         self.db_commit()
 
     def delete_Client(self, client_id: str, auth_token: str):
