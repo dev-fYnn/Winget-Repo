@@ -1,7 +1,8 @@
 
-# Winget-Repo 📦
+# ![Winget-Repo](https://winget-repo.io/wp-content/uploads/2025/07/logo-e1752093406888.png)
 
-Winget-Repo is a private repository for the Windows Package Manager (Winget), designed to provide software and updates within local networks without internet access. It allows centralized management and efficient installation and updating of software on multiple Windows clients.
+Winget-Repo is a private repository for the Windows Package Manager (Winget), designed to provide software and updates within local networks without internet access. It allows centralized management and efficient installation and updating of software on multiple Windows clients. [Website and Docs](https://winget-repo.io/)
+
 
 # 🌟 Current Features
 
