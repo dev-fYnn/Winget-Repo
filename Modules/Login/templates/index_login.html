@@ -23,9 +23,6 @@
                 box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
                 text-align: center;
             }
-            .login-logo {
-              font-size: 2.5rem;
-            }
             .login-title {
               font-weight: 600;
             }
@@ -34,7 +31,7 @@
     <body>
         <div class="login-container">
             <div class="d-flex align-items-center justify-content-center mb-4">
-                <span class="login-logo fs-1 me-2">📦</span>
+                <img src="{{ app_logo }}" style="width: auto; height: 45px; margin-right: 10px;">
                 <h2 class="login-title mb-0">{{ app_name }}</h2>
             </div>
             <form method="POST" action="{{ url_for('login_bp.login') }}">

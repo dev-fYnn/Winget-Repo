@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, url_for
 
 from Modules.Functions import start_up_check
 from Modules.Clients.Clients import client_bp
@@ -35,14 +35,14 @@ app.register_blueprint(winget_routes, url_prefix='/api')
 
 @app.route('/favicon.ico')
 def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static/images'),'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    return send_from_directory(os.path.join(app.root_path, 'static/images'),'favicon.png', mimetype='image/png')
 
 
 @app.context_processor
 def global_settings():
     return {
         'app_name': app.config['SERVERNAME'],
-        'app_logo': "📦"
+        'app_logo': url_for('static', filename='images/logo.png')
     }
 
 
