@@ -2,6 +2,12 @@
 
 {% block header %}
     <div>
+        <form action="{{ url_for('client_bp.clear_logs', client_id=client_id) }}" method="GET" style="display:inline;" class="me-2">
+            <button type="submit" class="btn btn-outline-danger" title="Clear logs" onclick="return confirm('Are you sure you want to clear the logs?')">
+                <i class="bi bi-trash"></i>
+            </button>
+        </form>
+
         <a href="{{ url_for('client_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
             Back
         </a>

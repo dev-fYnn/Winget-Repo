@@ -29,6 +29,7 @@
                                             <th class="text-center d-none d-md-table-cell">Architecture</th>
                                             <th class="text-center d-none d-lg-table-cell">Scope</th>
                                             <th class="text-center">Type</th>
+                                            <th class="text-center d-none d-lg-table-cell">Nested</th>
                                             <th class="text-center">Switches</th>
                                             <th class="text-center d-none d-lg-table-cell">Download</th>
                                             <th class="text-center">Delete</th>
@@ -42,6 +43,7 @@
                                                 <td class="text-center d-none d-md-table-cell">{{ v['ARCHITECTURE'] }}</td>
                                                 <td class="text-center d-none d-lg-table-cell">{{ v['INSTALLER_SCOPE'] }}</td>
                                                 <td class="text-center">{{ v['INSTALLER_TYPE'] }}</td>
+                                                <td class="text-center d-none d-lg-table-cell">{{ v['INSTALLER_NESTED_TYPE'] }}</td>
                                                 <td class="text-center">
                                                     {% if v['SWITCHES'] | length > 0 %}
                                                         <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#modal_{{ v['UID'] }}">Show</button>

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block header %}
+    <div>
+        <a href="{{ url_for('store_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+            Back
+        </a>
+    </div>
+{% endblock %}
+
+{% block header_title %}
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+        <h4 class="text-secondary font-weight-bold">Configure Store Package</h4>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <form method="POST" action="{{ url_for('store_bp.add_package', package_id=package_id) }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
+            <div class="row">
+                {% if not p_exists %}
+                    <div class="col-md-6">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header text-center">
+                                <h4>Package</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="package_name" class="form-label">Package Name</label>
+                                    <input type="text" class="form-control" id="package_name" name="package_name" placeholder="Package name" maxlength="25" value="{{ p_infos.Packagename }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="package_publisher" class="form-label">Publisher</label>
+                                    <input type="text" class="form-control" id="package_publisher" name="package_publisher" placeholder="Publisher" maxlength="25" value="{{ p_infos.Author }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="package_description" class="form-label">Description</label>
+                                    <input type="text" class="form-control" id="package_description" name="package_description" placeholder="Description" maxlength="40" value="{{ p_infos.Description }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="Logo" class="form-label">Package Logo</label>
+                                    <input type="file" class="form-control" id="Logo" name="Logo" accept="image/png" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="{% if p_exists %}col-md-6 mx-auto{% else %}col-md-6{% endif %}">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header text-center">
+                            <h4>Installer for Version: {{ version }}</h4>
+                        </div>
+                        <div class="card-body table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light text-center">
+                                    <tr>
+                                        <th>Locale</th>
+                                        <th>Architecture</th>
+                                        <th>Scope</th>
+                                        <th>Type</th>
+                                        <th>Nested</th>
+                                        <th>Select</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for inst in p_infos.Installers %}
+                                        <tr class="text-center">
+                                            <td>{{ p_infos.Locale }}</td>
+                                            <td>{{ inst.Architecture }}</td>
+                                            <td>{{ p_infos.Scope }}</td>
+                                            <td>{{ inst.InstallerType }}</td>
+                                            <td>{{ inst.NestedInstallerType }}</td>
+                                            <td>
+                                                {% if not inst.EXISTS %}
+                                                    <input type="checkbox" name="installer_ids" value="{{ loop.index - 1 }}">
+                                                {% else %}
+                                                    Already added
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="6" class="text-center">No Versions available.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <input type="hidden" name="version" value="{{ version }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-4">
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success" id="submit_form">Check & Add</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}

@@ -96,7 +96,19 @@ def view_logs(client_id):
     if not client:
         flash("Client not found!", "error")
         return redirect(url_for("client_bp.index"))
-    return render_template("index_clients_logs.html", logs=logs, client=client)
+    return render_template("index_clients_logs.html", logs=logs, client=client, client_id=client_id)
+
+
+@client_bp.route('/logs/<client_id>/clear', methods=['GET'])
+@logged_in
+@authenticate
+def clear_logs(client_id):
+    db = SQLiteDatabase()
+    db.remove_logs(client_id)
+    del db
+
+    flash("Successfully cleared logs!", "success")
+    return redirect(url_for("client_bp.view_logs", client_id=client_id))
 
 
 @client_bp.route('/blacklist/<client_id>/<auth_token>', methods=['GET', 'POST'])

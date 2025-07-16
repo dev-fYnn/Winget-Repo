@@ -17,7 +17,6 @@
                         <h4>Add Package Version</h4>
                     </div>
                     <div class="card-body">
-                        <!-- Formular für das obere Formular -->
                         <form method="POST" action="{{ url_for('ui_bp.add_package_version') }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
                             <div class="mb-3">
                                 <label for="package_id" class="form-label">Choose a Package</label>
@@ -28,13 +27,11 @@
                                 </select>
                             </div>
 
-                            <!-- Paket Version -->
                             <div class="mb-3">
                                 <label for="package_version" class="form-label">Package Version</label>
                                 <input type="text" class="form-control" id="package_version" name="package_version" placeholder="Package version" maxlength="25" required>
                             </div>
 
-                            <!-- Paket Locale Auswahl -->
                             <div class="mb-3">
                                 <label for="package_local" class="form-label">Locale</label>
                                 <select name="package_local" id="package_local" class="form-control" required>
@@ -44,7 +41,6 @@
                                 </select>
                             </div>
 
-                            <!-- Architektur Auswahl -->
                             <div class="mb-3">
                                 <label for="file_architect" class="form-label">Architecture</label>
                                 <select name="file_architect" id="file_architect" class="form-control" required>
@@ -53,13 +49,48 @@
                                 </select>
                             </div>
 
-                            <!-- Datei Upload -->
+                            <div class="row mb-3">
+                                <div class="col-md-6" id="fileTypeCol">
+                                    <label for="file_type" class="form-label">File Type</label>
+                                    <select name="file_type" id="file_type" class="form-control" required>
+                                        <option value="EXE">EXE</option>
+                                        <option value="MSI">MSI</option>
+                                        <option value="MSIX">MSIX</option>
+                                        <option value="APPX">APPX</option>
+                                        <option value="ZIP">ZIP</option>
+                                        <option value="INNO">INNO</option>
+                                        <option value="NULLSOFT">NULLSOFT</option>
+                                        <option value="WIX">WIX</option>
+                                        <option value="BURN">BURN</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6" id="nestedTypeGroup">
+                                    <label for="file_type_nested" class="form-label">Nested File Type (Only for ZIP)</label>
+                                    <select name="file_type_nested" id="file_type_nested" class="form-control">
+                                        <option value="" selected></option>
+                                        <option value="EXE">EXE</option>
+                                        <option value="MSI">MSI</option>
+                                        <option value="MSIX">MSIX</option>
+                                        <option value="APPX">APPX</option>
+                                        <option value="INNO">INNO</option>
+                                        <option value="NULLSOFT">NULLSOFT</option>
+                                        <option value="WIX">WIX</option>
+                                        <option value="BURN">BURN</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3" id="nestedPathGroup">
+                                <label for="file_nested_path" class="form-label">Nested File Path (in ZIP)</label>
+                                <input type="text" class="form-control" id="file_nested_path" name="file_nested_path" placeholder="Nested File Path">
+                            </div>
+
                             <div class="mb-3">
                                 <label for="file" class="form-label">Package File</label>
                                 <input type="file" class="form-control" id="file" name="file" required>
                             </div>
 
-                            <!-- File Scope Auswahl -->
                             <div class="mb-3">
                                 <label for="file_scope" class="form-label">Scope</label>
                                 <select name="file_scope" id="file_scope" class="form-control" required>
@@ -68,7 +99,6 @@
                                 </select>
                             </div>
 
-                            <!-- Zusätzliche Switch Optionen -->
                             <div class="mb-3">
                                 <label class="form-label">Switch Options</label>
                                 <div class="d-flex flex-column">
@@ -83,7 +113,6 @@
                                 </div>
                             </div>
 
-                            <!-- Submit Button -->
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary" id="submit_form">Add Package Version</button>
                             </div>
@@ -103,6 +132,31 @@
 
         packages.addEventListener("change", function () {
             sessionStorage.setItem("selected_package", packages.value);
+        });
+
+
+        function toggleNestedFields() {
+            const fileType = document.getElementById("file_type").value;
+            const nestedTypeGroup = document.getElementById("nestedTypeGroup");
+            const nestedPathGroup = document.getElementById("nestedPathGroup");
+            const nestedType = document.getElementById("file_type_nested");
+            const nestedPath = document.getElementById("file_nested_path");
+            const fileTypeCol = document.getElementById("fileTypeCol");
+
+            const showNested = fileType === "ZIP";
+
+            nestedTypeGroup.style.display = showNested ? "block" : "none";
+            nestedPathGroup.style.display = showNested ? "block" : "none";
+
+            nestedType.required = showNested;
+            nestedPath.required = showNested;
+
+            fileTypeCol.className = showNested ? "col-md-6" : "col-md-12";
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("file_type").addEventListener("change", toggleNestedFields);
+            toggleNestedFields();
         });
     </script>
 {% endblock %}

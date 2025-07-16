@@ -4,4 +4,4 @@ setTimeout(function() {
         const bootstrapAlert = new bootstrap.Alert(alert);
         bootstrapAlert.close();
     });
-}, 2000);
+}, 5000);

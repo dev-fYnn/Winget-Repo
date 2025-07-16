@@ -7,6 +7,7 @@ from Modules.Clients.Clients import client_bp
 from Modules.Groups.Functions import groups_bp
 from Modules.Login.Login import login_bp
 from Modules.Settings.Settings import settings_bp
+from Modules.Store.store import store_bp
 from Modules.UI.UI import ui_bp
 from Modules.User.User import user_bp
 from Modules.Winget.Functions import get_winget_Settings
@@ -29,6 +30,7 @@ app.register_blueprint(user_bp, url_prefix='/ui/user')
 app.register_blueprint(groups_bp, url_prefix='/ui/groups')
 app.register_blueprint(client_bp, url_prefix='/ui/clients')
 app.register_blueprint(settings_bp, url_prefix='/ui/settings')
+app.register_blueprint(store_bp, url_prefix='/ui/store')
 app.register_blueprint(api_bp, url_prefix='/client/api')
 app.register_blueprint(winget_routes, url_prefix='/api')
 

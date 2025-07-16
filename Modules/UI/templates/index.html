@@ -2,7 +2,10 @@
 
 {% block header %}
 <div class="d-flex align-items-center justify-content-between" style="margin-right: 10px;">
-    <h6 class="text-center text-secondary mb-0 flex-grow-1" style="margin-right: 30px;">{{ username }}</h6>
+    <div class="d-flex flex-column align-items-center" style="margin-right: 30px;">
+        <h6 class="text-secondary mb-1 text-center">{{ username }}</h6>
+        <h6 class="text-secondary mb-0 text-center">{{ version_counter }}</h6>
+    </div>
 
     {% if user_mng_btn %}
         <div class="dropdown me-2">
@@ -39,10 +42,9 @@
 {% block content %}
     <div class="row justify-content-center">
         <div class="col-md-7">
-            <div class="card shadow-lg border-0 rounded-lg w-100">
+            <div class="card shadow-lg border-0 rounded-lg w-100 mb-4">
                 <div class="card-body p-4">
                     <h3 class="card-title text-primary mb-4 text-center">Manage Packages & Versions</h3>
-
                     <div class="row">
                         <div class="col-md-6 mb-4 mb-md-0">
                             <form method="POST" action="{{ url_for('ui_bp.index') }}">
@@ -85,11 +87,77 @@
                     </div>
                 </div>
             </div>
+            {% if store == "1" %}
+                <div class="card shadow-lg border-0 rounded-lg w-100 mt-4 mb-4">
+                    <div class="card-body p-4">
+                        <h3 class="card-title text-primary mb-3 text-center">Available Updates</h3>
+                        <div class="table-responsive">
+                            {% if update_status %}
+                                <table class="table table-hover align-middle">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th scope="col">Package</th>
+                                            <th scope="col">Installed Version</th>
+                                            <th scope="col">Available Version</th>
+                                            <th scope="col">View</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for p in packages %}
+                                            {% if p['NEW_VERSION'][0] %}
+                                                <tr>
+                                                    <td><strong>{{ p['PACKAGE_NAME'] }}</strong></td>
+                                                    <td>{{ p['NEW_VERSION'][1] }}</td>
+                                                    <td class="text-success">{{ p['NEW_VERSION'][2] }}</td>
+                                                    <td>
+                                                        <form method="GET" action="{{ url_for('store_bp.add_package', package_id=p['PACKAGE_ID']) }}">
+                                                            <button type="submit" class="btn btn-primary btn-sm" title="Show update">
+                                                                <i class="bi bi-eye"></i>
+                                                            </button>
+                                                            <input type="hidden" name="version" value="{{ p['NEW_VERSION'][2] }}">
+                                                        </form>
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p class="text-muted text-center mb-0">All packages are up to date.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="card shadow-lg border-0 rounded-lg w-100">
+                <div class="card-body p-4 text-center">
+                    <h3 class="card-title text-primary mb-3">Package Store</h3>
+                    <div class="d-flex justify-content-center align-items-center gap-3 text-muted mb-4 flex-wrap">
+                        <span>Status
+                            {% if store == '0' %}<i class="bi bi-bag-x" style="color: red;" title="Disabled"></i>{% else %}<i class="bi bi-bag-check" style="color: green;" title="Enabled"></i>{% endif %}
+                        </span>
+                        <span></span>
+                        <span>
+                            📦 <strong>9300+</strong> available packages!
+                        </span>
+                        <span></span>
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Package data from the Winget Community Repository">
+                            🛈 Based on <a href="https://github.com/microsoft/winget-pkgs" target="_blank" rel="noopener">
+                                Winget Community Repository
+                            </a>
+                        </span>
+                    </div>
+                    <form method="GET" action="{{ url_for('store_bp.index') }}" onsubmit="button_Loading('submit_form');">
+                        <button type="submit" id="submit_form" class="btn btn-primary btn-lg w-50 shadow-sm" {% if store == '0' %}disabled{% endif %}>Visit Package Store</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
     <style>
         option.inactive {
-            color: #6c757d; /* Bootstrap's text-muted Farbe */
+            color: #6c757d;
             font-style: italic;
         }
     </style>

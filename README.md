@@ -10,13 +10,13 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 - **Search, List, Show, Install, and Upgrade Packages** via Winget 🔍📦
 - **Cross-platform**: The server runs on all environments that support Python 🖥️💻
 - **Client Overview**: Track and manage your clients and control who is accessing Winget-Repo 🖥️👀
+- **Library for Click and Deploy Software**: Simplified deployment of software with just a click 🖱️📲
+- **Support for Nested Installers** 🛠️🔄
 - **Permission Management**: Control access and user rights 🔐
 - **Terms of Service**: Request the agreement of your Terms of Service 📑
 
 # 🚀 Upcoming Features
-
-- **Library for Click and Deploy Software**: Simplified deployment of software with just a click 🖱️📲
-- **Support for Nested Installers** 🛠️🔄
+- **Version Migration**: Easily upgrade to the latest version of Winget-Repo ⬆️🆕
 - **Winget-Client**: Use Winget easily on your client 🖥️💿
 - **And much more**: Continuous improvements and new features on the way! 🌱✨
 
@@ -33,8 +33,9 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
    ```bash
    python -m pip install Flask
    python -m pip install dnspython
+   python -m pip install pyyaml
+   python -m pip install requests
    ```
-   Flask and dnspython are the only packages that needed to be installed.
 
 4. **Set Up Reverse Proxy (Recommended)** 🔒  
    Since the connection between Winget and the repository only works over HTTPS, it is recommended to set up a reverse proxy (e.g., Apache) in front of the repository for secure communication.

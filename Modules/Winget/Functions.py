@@ -57,9 +57,9 @@ def generate_Installer_Manifest(package_id: str, version: str, auth_token: str =
                     "InstallerSwitches": db.get_Package_Switche(p[11])
                 }
 
-            #ToDo if p[7] == "zip":
-            #    data["NestedInstallerType"] =
-            #    data["NestedInstallerFiles"] =
+            if p[7] == "zip":
+                dum_data["NestedInstallerType"] = p[12]
+                dum_data["NestedInstallerFiles"] = db.get_Nested_Installer(p[11])
 
             data['Versions'][0]['Installers'].append(dum_data)
         output = {"Data": data}

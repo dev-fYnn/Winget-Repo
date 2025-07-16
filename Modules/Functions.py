@@ -2,11 +2,13 @@ import ipaddress
 import json
 import os
 import random
+import socket
 import string
 import dns.resolver
 import dns.reversename
 
 from werkzeug.datastructures import headers
+
 from settings import PATH_FILES
 
 
@@ -68,11 +70,20 @@ def get_hostname_from_ip_dns(ip_address: str, dns_server: str) -> str:
         return ""
 
 
-def is_ip_address(text):
+def is_ip_address(text: str) -> bool:
     try:
         ipaddress.ip_address(text)
         return True
     except ValueError:
+        return False
+
+
+def check_Internet_Connection() -> bool:
+    try:
+        socket.setdefaulttimeout(3)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
+        return True
+    except socket.error:
         return False
 
 
@@ -83,6 +94,24 @@ def get_Auth_Token_from_Header(header: headers) -> str:
     except:
         client_auth_token = ""
     return client_auth_token
+
+
+def parse_version(version_str: str) -> tuple:
+    parts = version_str.split('.')
+    numeric_parts = []
+
+    for p in parts:
+        try:
+            numeric_parts.append(int(p))
+        except ValueError:
+            break
+
+    if not numeric_parts:
+        return (-1,)
+
+    while len(numeric_parts) < 3:
+        numeric_parts.append(0)
+    return tuple(numeric_parts)
 
 
 def start_up_check():

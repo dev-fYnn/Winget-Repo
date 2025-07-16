@@ -6,6 +6,7 @@ from Modules.Database.Database import SQLiteDatabase
 from Modules.Files.Functions import delete_File
 from Modules.Login.Functions import check_Rights
 from Modules.Login.Login import logged_in, authenticate
+from Modules.Store.Functions import check_for_new_Version
 from settings import PATH_LOGOS, PATH_FILES
 
 ui_bp = Blueprint('ui_bp', __name__, template_folder='templates', static_folder='static')
@@ -29,7 +30,12 @@ def index():
     else:
         db = SQLiteDatabase()
         packages = db.get_All_Packages()
+        settings = db.get_winget_Settings()
         del db
+
+        update_status=False
+        if settings['PACKAGE_STORE'] == "1":
+            packages, update_status = check_for_new_Version(packages)
 
         user_mng_btn = False
         group_mng_btn = False
@@ -45,7 +51,7 @@ def index():
         if check_Rights(session['logged_in'], "SETTINGS_BP.INDEX"):
             settings_btn = True
 
-        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn)
+        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, version_counter=settings.get('VERSION_COUNTER', '1.0.0'))
     return redirect(url_for("ui_bp.index"))
 
 
@@ -67,7 +73,7 @@ def add_package():
                 logo_path = "dummy.png"
 
             db = SQLiteDatabase()
-            status = db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40], logo_path)
+            status = db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:150], logo_path)
             db.db_commit()
             del db
 
@@ -105,7 +111,7 @@ def edit_package(package_id):
                 logo_path = package['PACKAGE_LOGO']
 
             if len(data) > 0:
-                status = db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:40], logo_path, int(data.get("package_active", 1)))
+                status = db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:150], logo_path, int(data.get("package_active", 1)))
                 db.db_commit()
 
                 if status:
@@ -160,15 +166,19 @@ def add_package_version():
 
                 file = request.files['file']
                 filename = f"{version_uid}.{file.filename.split('.')[-1]}"
-                if file and db.check_Package_Version_not_exists(package_id, data.get("package_version", "")[:25], data.get("package_local", ""), data.get("file_architect", ""), file.filename.split('.')[-1].lower(), data.get("file_scope", "")):
+                file_type = data.get('file_type', 'msi').lower()
+                if file and db.check_Package_Version_not_exists(package_id, data.get("package_version", "")[:25], data.get("package_local", 1), data.get("file_architect", ""), file_type, data.get("file_scope", "")):
                     file.save(fr"{PATH_FILES}\{filename}")
 
                     with open(fr"{PATH_FILES}\{filename}", 'rb') as f:
                         readable_hash = sha256(f.read()).hexdigest()
 
-                    status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], data.get("package_local", ""), data.get("file_architect", ""), file.filename.split('.')[-1].lower(), filename, readable_hash, data.get("file_scope", ""), version_uid)
+                    status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], data.get("package_local", 1), data.get("file_architect", ""), file_type, filename, readable_hash, data.get("file_scope", ""), version_uid, data.get('file_type_nested', None).lower())
 
                     if status:
+                        if file_type == "zip" and len(data.get('file_nested_path', '')) > 0:
+                            db.add_Nested_Installer(version_uid, 'RelativeFilePath', data.get('file_nested_path', ''))
+
                         switches = {key.replace("switch_", ""): value for key, value in data.items() if key.startswith('switch_')}
                         for s in ["Silent", "SilentWithProgress", "Interactive", "InstallLocation", "Log", "Upgrade", "Custom", "Repair"]:
                             if s in switches.keys() and switches[s] != "":

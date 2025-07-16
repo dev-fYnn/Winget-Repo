@@ -43,9 +43,9 @@ class SQLiteDatabase:
         return {}
 
     def get_Settings_for_View(self) -> dict:
-        self.__cursor.execute("""SELECT SETTING_NAME, VALUE, TYPE, MAX_LENGTH FROM tbl_SETTINGS WHERE SHOW = 1""")
+        self.__cursor.execute("""SELECT SETTING_NAME, VALUE, TYPE, MAX_LENGTH, INTERNET FROM tbl_SETTINGS WHERE SHOW = 1""")
         data = self.__cursor.fetchall()
-        return {d[0]: {"VALUE": d[1], "TYPE": d[2], "MAX_LENGTH": d[3]} for d in data}
+        return {d[0]: {"VALUE": d[1], "TYPE": d[2], "MAX_LENGTH": d[3], "INTERNET": d[4]} for d in data}
 
     def add_wingetrepo_Setting(self, name: str, value: str, settings_type: str, show: bool) -> bool:
         self.__cursor.execute("""INSERT OR IGNORE INTO tbl_SETTINGS (SETTING_NAME, VALUE, TYPE, SHOW) 
@@ -141,6 +141,9 @@ class SQLiteDatabase:
         self.__cursor.execute("""INSERT INTO tbl_CLIENTS_LOGS (CLIENT_ID, LOG_TYPE, LOG_MESSAGE, TIMESTAMP) VALUES (?, ?, ?, ?)""", (client_id, log_type, log_message, timestamp))
         self.db_commit()
 
+    def remove_logs(self, client_id: str):
+        self.__cursor.execute("""DELETE FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ?""", (client_id,))
+        self.db_commit()
 
     #-------------------Packages--------------------
     def check_Package_exists(self, package_id: str) -> bool:
@@ -190,14 +193,14 @@ class SQLiteDatabase:
 
     def get_specific_Package(self, package_id: str, version: str) -> list:
         if version is None:
-            self.__cursor.execute("""SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION, PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID FROM tbl_PACKAGES AS P
+            self.__cursor.execute("""SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION, PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE FROM tbl_PACKAGES AS P
                                             INNER JOIN tbl_PACKAGES_VERSIONS AS PV ON P.PACKAGE_ID = PV.PACKAGE_ID
                                             INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
                                         WHERE P.PACKAGE_ID = ?
                                             AND P.PACKAGE_ACTIVE = 1
                                         ORDER BY PV.VERSION DESC""", (package_id,))
         else:
-            self.__cursor.execute("""SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION, PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID FROM tbl_PACKAGES AS P
+            self.__cursor.execute("""SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION, PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE FROM tbl_PACKAGES AS P
                                             INNER JOIN tbl_PACKAGES_VERSIONS AS PV ON P.PACKAGE_ID = PV.PACKAGE_ID
                                             INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
                                         WHERE P.PACKAGE_ID = ?
@@ -223,7 +226,7 @@ class SQLiteDatabase:
 
 
     #----------------Package-Version----------------
-    def check_Package_Version_not_exists(self, package_id: str, package_version: str, package_local: str, file_architecture: str, file_type: str, file_scope: str) -> bool:
+    def check_Package_Version_not_exists(self, package_id: str, package_version: str, package_local: int, file_architecture: str, file_type: str, file_scope: str) -> bool:
         self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_VERSIONS WHERE PACKAGE_ID = ? AND VERSION = ? AND LOCALE_ID = ? AND ARCHITECTURE = ? AND INSTALLER_TYPE = ? AND INSTALLER_SCOPE = ?""", (package_id, package_version, package_local, file_architecture, file_type, file_scope))
         data = self.__cursor.fetchone()
 
@@ -232,7 +235,7 @@ class SQLiteDatabase:
         return False
 
     def get_All_Versions_from_Package(self, package_id: str) -> list:
-        self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID FROM tbl_PACKAGES_VERSIONS AS PV
+        self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE FROM tbl_PACKAGES_VERSIONS AS PV
                                     INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
                                 WHERE PV.PACKAGE_ID = ?
                                 ORDER BY PV.VERSION DESC""", (package_id,))
@@ -244,10 +247,15 @@ class SQLiteDatabase:
         data = self.__cursor.fetchone()
         return row_to_dict(data, self.__cursor.description)
 
-    def add_Package_Version(self, package_id: str, package_version: str, package_local: str, file_architecture: str, file_type: str, file_download: str, file_sha: str, file_scope: str, uid: str) -> bool:
-        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_PACKAGES_VERSIONS (PACKAGE_ID, VERSION, LOCALE_ID, ARCHITECTURE, INSTALLER_TYPE, INSTALLER_URL, INSTALLER_SHA256, INSTALLER_SCOPE, UID) 
-                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                              (package_id, package_version, package_local, file_architecture, file_type, file_download, file_sha, file_scope, uid))
+    def add_Package_Version(self, package_id: str, package_version: str, package_local: int, file_architecture: str, file_type: str, file_download: str, file_sha: str, file_scope: str, uid: str, nested_type: str = None) -> bool:
+        if nested_type is not None:
+            self.__cursor.execute("""INSERT OR IGNORE INTO tbl_PACKAGES_VERSIONS (PACKAGE_ID, VERSION, LOCALE_ID, ARCHITECTURE, INSTALLER_TYPE, INSTALLER_NESTED_TYPE, INSTALLER_URL, INSTALLER_SHA256, INSTALLER_SCOPE, UID) 
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                  (package_id, package_version, package_local, file_architecture, file_type, nested_type, file_download, file_sha, file_scope, uid))
+        else:
+            self.__cursor.execute("""INSERT OR IGNORE INTO tbl_PACKAGES_VERSIONS (PACKAGE_ID, VERSION, LOCALE_ID, ARCHITECTURE, INSTALLER_TYPE, INSTALLER_URL, INSTALLER_SHA256, INSTALLER_SCOPE, UID) 
+                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                  (package_id, package_version, package_local, file_architecture, file_type, file_download, file_sha, file_scope, uid))
 
         if self.__cursor.lastrowid > 0:
             return True
@@ -256,6 +264,23 @@ class SQLiteDatabase:
     def delete_Package_Version(self, version_uid: str):
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (version_uid,))
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES_SWITCHES WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
+        self.__cursor.execute("""DELETE FROM tbl_PACKAGES_NESTED WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
+
+    ####################Nested Installer######################
+    def get_Nested_Installer(self, package_version_uid: str) -> list[dict]:
+        self.__cursor.execute("""SELECT NAME, PATH FROM tbl_PACKAGES_NESTED
+                                    WHERE PACKAGE_VERSION_UID = ?""", (package_version_uid,))
+        data = self.__cursor.fetchall()
+        return [{d[0]: d[1]} for d in data]
+
+    def add_Nested_Installer(self, version_uid: str, name: str, path: str) -> bool:
+        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES_NESTED (PACKAGE_VERSION_UID, NAME, PATH)
+                                    VALUES (?, ?, ?)""",
+                              (version_uid, name, path))
+
+        if self.__cursor.lastrowid > 0:
+            return True
+        return False
 
     ####################Switch######################
     def get_Package_Switche(self, package_version_uid: str) -> dict:
@@ -278,6 +303,13 @@ class SQLiteDatabase:
         self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_LOCALE""")
         data = self.__cursor.fetchall()
         return all_to_dict(data, self.__cursor.description)
+
+    def get_Locale_ID_by_Value(self, locale: str) -> int:
+        self.__cursor.execute("""SELECT IFNULL(LOCALE_ID, 1) FROM tbl_PACKAGES_LOCALE WHERE LOCALE = ?""", (locale,))
+        data = self.__cursor.fetchone()
+        if data is None:
+            return 1
+        return data[0]
 
 
     #------------------Permissions-------------------

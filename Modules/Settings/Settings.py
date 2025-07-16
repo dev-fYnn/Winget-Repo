@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, session
 
 from Modules.Database.Database import SQLiteDatabase
-from Modules.Functions import is_ip_address
+from Modules.Functions import is_ip_address, check_Internet_Connection
 from Modules.Login.Login import logged_in, authenticate
 
 settings_bp = Blueprint('settings_bp', __name__, template_folder='templates', static_folder='static')
@@ -26,6 +26,10 @@ def index():
                     continue
             else:
                 value = request.form.get(form_key, "")
+
+            if settings[key]['INTERNET'] == 1 and not check_Internet_Connection():
+                flash(f"Setting: {key} requires an internet connection!", "error")
+                continue
 
             if len(value) > 0:
                 if settings[key]['MAX_LENGTH'] is None or len(value.strip()) <= settings[key]['MAX_LENGTH']:
