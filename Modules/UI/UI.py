@@ -4,6 +4,7 @@ from hashlib import sha256
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Files.Functions import delete_File
+from Modules.Functions import parse_version
 from Modules.Login.Functions import check_Rights
 from Modules.Login.Login import logged_in, authenticate
 from Modules.Store.Functions import check_for_new_Version
@@ -232,6 +233,7 @@ def delete_package_version(package_id):
     else:
         if db.check_Package_exists(package_id):
             versions = db.get_All_Versions_from_Package(package_id)
+            versions = sorted(versions, key=lambda x: parse_version(x["VERSION"]), reverse=True)
             for v in versions:
                 v['SWITCHES'] = db.get_Package_Switche(v['UID'])
             package = db.get_Package_by_ID(package_id)

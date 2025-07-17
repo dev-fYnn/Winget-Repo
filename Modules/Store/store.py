@@ -71,7 +71,7 @@ def index():
 @authenticate
 @store_enabled
 def refresh_source():
-    status = download_source_msix()
+    status = download_source_msix(True)
 
     if status:
         flash("Successfully updated winget source!", "success")
@@ -86,19 +86,29 @@ def refresh_source():
 @store_enabled
 def add_package(package_id):
     if request.method == "POST":
-        version = request.form.get("version", "")
+        f_a_data = request.form
     else:
-        version = request.args.get("version", "")
+        f_a_data = request.args
+
+    version = f_a_data.get("version", "")
+    back = f_a_data.get("main", 0, int)
+    search = f_a_data.get("search", '')
+    page = f_a_data.get("page", 1, int)
+
+    if bool(back):
+        redir = "ui_bp.index"
+    else:
+        redir = "store_bp.index"
 
     package_path, manifest_name = get_package_path(package_id, version)
     if not package_path:
         flash("No package found!", "error")
-        return redirect(url_for("store_bp.index"))
+        return redirect(url_for(redir))
 
     p_infos = get_All_InstallerInfos_from_Manifest(package_path, manifest_name)
     if not p_infos:
         flash("No versions found!", "error")
-        return redirect(url_for("store_bp.index"))
+        return redirect(url_for(redir))
 
     db = SQLiteDatabase()
     package_exists = db.check_Package_exists(package_id)
@@ -109,7 +119,7 @@ def add_package(package_id):
 
         if not data:
             flash("No data found!", "error")
-            return redirect(url_for("store_bp.index"))
+            return redirect(url_for(redir))
 
         if not package_exists:
             file = request.files.get('Logo')
@@ -122,7 +132,7 @@ def add_package(package_id):
 
             if len(installer_ids) == 0:
                 flash("Successfully added package. No versions found!", "success")
-                return redirect(url_for("store_bp.index"))
+                return redirect(url_for(redir))
 
         for i in installer_ids:
             if i > (len(p_infos['Installers']) - 1) < i:
@@ -161,10 +171,10 @@ def add_package(package_id):
         else:
             flash("No versions found!", "error")
         del db
-        return redirect(url_for("store_bp.index"))
+        return redirect(url_for(redir))
 
     for p in p_infos['Installers']:
         locale_id = db.get_Locale_ID_by_Value(p_infos.get('Locale', 'en-US'))
         p['EXISTS'] = not db.check_Package_Version_not_exists(package_id, version, locale_id, p.get('Architecture', 'x64'), p.get('InstallerType', 'msi'), p_infos.get('Scope', 'machine'))
     del db
-    return render_template("index_add_store_package.html", package_id=package_id, p_infos=p_infos, version=request.args.get("version", ""), p_exists=package_exists)
+    return render_template("index_add_store_package.html", package_id=package_id, p_infos=p_infos, version=request.args.get("version", ""), p_exists=package_exists, back=back, search=search, page=page)

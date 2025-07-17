@@ -2,7 +2,7 @@
 
 {% block header %}
     <div>
-        <a href="{{ url_for('store_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+        <a href="{% if back == 1 %}{{ url_for('ui_bp.index') }}{% else %}{{ url_for('store_bp.index', search=search, page=page) }}{% endif %}" class="btn btn-secondary" style="margin-right: 25px;">
             Back
         </a>
     </div>
@@ -87,6 +87,7 @@
                                 </tbody>
                             </table>
                             <input type="hidden" name="version" value="{{ version }}">
+                            <input type="hidden" name="main" value="{{ back }}">
                         </div>
                     </div>
                 </div>

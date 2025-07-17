@@ -12,9 +12,7 @@ from settings import PATH_WINGET_REPOSITORY, PATH_WINGET_REPOSITORY_DB, URL_WING
 
 #SQL-DB
 def get_All_Packages_from_DB(search: str = "") -> list:
-    if not os.path.exists(PATH_WINGET_REPOSITORY_DB):
-        download_source_msix()
-        time.sleep(2)
+    download_source_msix()
 
     db = StoreDB()
     packages = db.get_All_Packages_from_DB(search)
@@ -23,6 +21,8 @@ def get_All_Packages_from_DB(search: str = "") -> list:
 
 
 def check_for_new_Version(packages: list) -> tuple[list[dict], bool]:
+    download_source_msix()
+
     db = StoreDB()
     ddb = SQLiteDatabase()
 
@@ -56,22 +56,25 @@ def get_package_path(package_id: str, version: str) -> tuple[str, str]:
 
 
 #Requests, etc.
-def download_source_msix() -> bool:
-    try:
-        response = requests.get(f"{URL_WINGET_REPOSITORY}/source.msix", stream=True)
-        if response.status_code == 200:
-            if not os.path.exists(PATH_WINGET_REPOSITORY):
-                os.makedirs(PATH_WINGET_REPOSITORY)
+def download_source_msix(update: bool = False) -> bool:
+    if not os.path.exists(PATH_WINGET_REPOSITORY_DB) or update:
+        try:
+            response = requests.get(f"{URL_WINGET_REPOSITORY}/source.msix", stream=True)
+            if response.status_code == 200:
+                if not os.path.exists(PATH_WINGET_REPOSITORY):
+                    os.makedirs(PATH_WINGET_REPOSITORY)
 
-            with open(fr"{PATH_WINGET_REPOSITORY}\source.msix", "wb") as f:
-                f.write(response.content)
+                with open(fr"{PATH_WINGET_REPOSITORY}\source.msix", "wb") as f:
+                    f.write(response.content)
 
-            with zipfile.ZipFile(fr"{PATH_WINGET_REPOSITORY}\source.msix", "r") as zip_ref:
-                zip_ref.extractall(PATH_WINGET_REPOSITORY)
-            return True
-        return False
-    except:
-        return False
+                with zipfile.ZipFile(fr"{PATH_WINGET_REPOSITORY}\source.msix", "r") as zip_ref:
+                    zip_ref.extractall(PATH_WINGET_REPOSITORY)
+                time.sleep(2)
+                return True
+            return False
+        except:
+            return False
+    return False
 
 
 def get_All_InstallerInfos_from_Manifest(p_path: str, manifest_name: str) -> dict:

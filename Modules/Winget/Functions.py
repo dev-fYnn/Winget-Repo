@@ -101,7 +101,7 @@ def write_log(client_ip: str, package_name: str, log_type: str):
     package = db.get_specfic_Versions_from_Package(package_name.split(".")[0])
 
     if len(client) == 0:
-        client = {"UID": "EXTERN", "NAME": request.remote_addr}
+        client = {"UID": "EXTERN", "NAME": client_ip}
 
     match log_type:
         case "INSTALLATION/UPDATE":
