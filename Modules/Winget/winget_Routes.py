@@ -1,7 +1,7 @@
 import json
 
 from functools import wraps
-from flask import Blueprint, jsonify, request, send_file, current_app
+from flask import Blueprint, jsonify, request, send_from_directory, current_app
 
 from Modules.Functions import get_Auth_Token_from_Header
 from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client
@@ -95,5 +95,4 @@ def download(package_name):
     key = (request.remote_addr, package_name)
     if key not in current_app.config['active_downloads']:
         current_app.config['active_downloads'][key] = "INSTALLATION/UPDATE"
-    print(current_app.config['active_downloads'])
-    return send_file(fr"{PATH_FILES}\{package_name}", conditional=True)
+    return send_from_directory(PATH_FILES, package_name, as_attachment=True)
