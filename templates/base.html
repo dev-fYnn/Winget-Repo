@@ -7,6 +7,7 @@
         <link href="{{ url_for('static', filename='css/Bootstrap/bootstrap-icons.css') }}" rel="stylesheet">
         <link href="{{ url_for('static', filename='css/base.css') }}" rel="stylesheet">
         <link href="{{ url_for('static', filename='css/alert.css') }}" rel="stylesheet">
+        {% block custom_links %}{% endblock %}
     </head>
     <body>
         <div class="container-fluid">

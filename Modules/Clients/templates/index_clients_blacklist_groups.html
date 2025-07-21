@@ -14,39 +14,22 @@
 
 {% block header_title %}
     <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
-        <h4 class="text-secondary font-weight-bold">Package Blacklist: {{ client.NAME }}</h4>
+        <h4 class="text-secondary font-weight-bold">{% if action == 'CREATE' %}Create{% else %}Edit{% endif %} Blacklist Group</h4>
     </div>
 {% endblock %}
 
 {% block content %}
     <div class="container">
-        <form action="{{ url_for('client_bp.blacklist', client_id=client.UID, auth_token=client.TOKEN) }}" method="POST">
-            <div class="mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Groups:</h5>
-                </div>
+        <form action="{{ url_for('client_bp.blacklist_groups', action=action) }}" method="POST">
 
-                <div class="row">
-                    {% for group in blacklist_groups %}
-                        <div class="col-md-6 col-lg-4 mb-3">
-                            <label class="package-card">
-                                <input class="form-check-input group-checkbox" type="checkbox" name="group_blacklist" value="{{ group.UID }}"
-                                    {% if group.UID in blacklisted_groups %}checked{% endif %}>
-                                <div class="card shadow-sm h-100">
-                                    <div class="card-body d-flex align-items-center gap-3">
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-1">{{ group.NAME }}</h6>
-                                        </div>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                    {% endfor %}
-                </div>
+            <div class="mb-4">
+                <label for="group_name" class="form-label fw-bold">Name:</label>
+                <input type="text" class="form-control" id="group_name" name="group_name" {% if action == 'EDIT' %}value="{{ group.NAME }}"{% endif %} required>
             </div>
+
             <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Packages:</h5>
+                    <h5 class="mb-0">Select Packages:</h5>
                     <div id="select_group">
                         <input class="form-check-input align-middle" type="checkbox" id="select_all">
                         <label class="form-check-label ms-1 align-middle" for="select_all">Select all</label>
@@ -68,7 +51,9 @@
                                         <div class="flex-grow-1">
                                             <h6 class="card-title mb-1">
                                                 {{ package.PACKAGE_NAME }}
-                                                {% if package.PACKAGE_ACTIVE == 0 %}<i class="bi bi-x-circle" style="color: red;" title="Disabled"></i>{% endif %}
+                                                {% if package.PACKAGE_ACTIVE == 0 %}
+                                                    <i class="bi bi-x-circle" style="color: red;" title="Disabled"></i>
+                                                {% endif %}
                                             </h6>
                                             <p class="card-text text-muted small mb-0">{{ package.PACKAGE_DESCRIPTION }}</p>
                                         </div>
@@ -79,6 +64,9 @@
                     {% endfor %}
                 </div>
             </div>
+            {% if action == 'EDIT' %}
+                <input type="hidden" name="group_id" value="{{ group.UID }}">
+            {% endif %}
             <button type="submit" class="btn btn-primary">Save</button>
         </form>
     </div>
@@ -94,4 +82,5 @@
         });
     </script>
 {% endblock %}
+
 

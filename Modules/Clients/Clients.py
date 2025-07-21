@@ -1,5 +1,5 @@
-from uuid import uuid4
 from flask import Blueprint, render_template, redirect, url_for, request, flash
+from uuid import uuid4
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import get_ip_from_hostname
@@ -15,8 +15,9 @@ client_bp = Blueprint('client_bp', __name__, template_folder='templates', static
 def index():
     db = SQLiteDatabase()
     clients = db.get_All_Clients()
+    groups = db.get_All_Blacklist_Groups()
     del db
-    return render_template("index_clients.html", clients=clients)
+    return render_template("index_clients.html", clients=clients, groups=groups)
 
 
 @client_bp.route('/add', methods=['POST'])
@@ -119,7 +120,11 @@ def blacklist(client_id, auth_token):
 
     if request.method == 'POST':
         selected_packages = request.form.getlist('blacklist')
+        selected_groups = request.form.getlist('group_blacklist')
+
         db.update_Blacklist_Package(auth_token, selected_packages)
+        db.update_Blacklist_Groups_Clients(auth_token, selected_groups)
+
         flash("Blacklist successfully updated!", "success")
         return redirect(url_for('client_bp.index'))
 
@@ -130,12 +135,66 @@ def blacklist(client_id, auth_token):
         return redirect(url_for('client_bp.index'))
 
     packages = db.get_All_Packages()
-    blacklisted_packages = db.get_Blacklist_for_client(auth_token)
+    blacklisted_packages = db.get_Blacklist_for_client(auth_token, False)
+    blacklist_groups = db.get_All_Blacklist_Groups()
+    blacklisted_groups = db.get_Blacklist_Groups_for_Client(auth_token)
     del db
 
     if len(packages) == 0:
         flash("No packages found!", "error")
         return redirect(url_for('client_bp.index'))
 
-    return render_template('index_clients_blacklist.html', client=client, packages=packages, blacklisted_packages=blacklisted_packages)
+    return render_template('index_clients_blacklist.html', client=client, packages=packages, blacklisted_packages=blacklisted_packages, blacklist_groups=blacklist_groups, blacklisted_groups=blacklisted_groups)
 
+
+@client_bp.route('/blacklist/groups/<action>', methods=['GET', 'POST'])
+@logged_in
+@authenticate
+def blacklist_groups(action):
+    action = action.upper()
+    if action not in ("CREATE", "EDIT"):
+        flash("Action is not available!", "error")
+        return redirect(url_for('client_bp.index'))
+
+    db = SQLiteDatabase()
+
+    if request.method == 'POST':
+        g_id = request.form.get('group_id', str(uuid4()))
+        group_name = request.form.get('group_name', 'Dummy')
+        selected_packages = request.form.getlist('blacklist')
+        db.insert_update_Blacklist_Group(g_id, group_name, selected_packages)
+
+        if action == "CREATE":
+            flash("Blacklist group successfully created!", "success")
+        else:
+            flash("Blacklist group successfully updated!", "success")
+
+        del db
+        return redirect(url_for('client_bp.index'))
+
+    packages = db.get_All_Packages()
+
+    if len(packages) == 0:
+        flash("No packages found!", "error")
+        return redirect(url_for('client_bp.index'))
+
+    if action == "EDIT":
+        g_id = request.args.get('group_id', '')
+
+        if "remove" in request.args:
+            db.remove_Blacklist_Group(g_id)
+            flash("Blacklist group successfully removed!", "success")
+            return redirect(url_for('client_bp.index'))
+
+        group = db.get_Blacklist_Group(g_id)
+        blacklisted_packages = db.get_Packages_from_Blacklist_Group(g_id)
+
+        if len(group) == 0:
+            flash("Group not found!", "error")
+            return redirect(url_for('client_bp.index'))
+
+        del db
+        return render_template('index_clients_blacklist_groups.html', packages=packages, action=action, group=group, blacklisted_packages=blacklisted_packages)
+    else:
+        del db
+        return render_template('index_clients_blacklist_groups.html', packages=packages, action=action)

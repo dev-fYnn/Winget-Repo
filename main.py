@@ -1,5 +1,4 @@
 import os
-import threading
 
 from flask import Flask, send_from_directory, url_for
 
@@ -7,7 +6,6 @@ from Modules.Functions import start_up_check
 from Modules.Clients.Clients import client_bp
 from Modules.Groups.Functions import groups_bp
 from Modules.Login.Login import login_bp
-from Modules.Scheduled_Tasks import log_flusher
 from Modules.Settings.Settings import settings_bp
 from Modules.Store.store import store_bp
 from Modules.UI.UI import ui_bp
@@ -52,5 +50,4 @@ def global_settings():
 
 if __name__ == '__main__':
     start_up_check()
-    threading.Thread(target=log_flusher, args=(app,), daemon=True).start()
     app.run()

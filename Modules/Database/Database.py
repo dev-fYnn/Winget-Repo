@@ -113,22 +113,75 @@ class SQLiteDatabase:
         self.db_commit()
 
     def delete_Client(self, client_id: str, auth_token: str):
+        self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_GROUPS_CLIENTS WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ?""", (client_id,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS WHERE UID = ?""", (client_id,))
         self.db_commit()
 
     ##############Blacklist##################
-    def get_Blacklist_for_client(self, auth_token: str) -> list:
+    def get_Blacklist_for_client(self, auth_token: str, groups: bool=True) -> list:
         self.__cursor.execute("""SELECT PACKAGE_ID FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
         data = self.__cursor.fetchall()
-        return [d[0] for d in data]
+        dummy = [d[0] for d in data]
+
+        if groups:
+            self.__cursor.execute("""SELECT DISTINCT BP.PACKAGE_ID FROM tbl_BLACKLIST_GROUPS_CLIENTS AS BGC
+                                            INNER JOIN tbl_BLACKLIST_PACKAGES AS BP ON BGC.GROUP_ID = BP.GROUP_ID
+                                        WHERE BGC.CLIENT_AUTH_TOKEN = ?""", (auth_token,))
+            data = self.__cursor.fetchall()
+            dummy.extend([d[0] for d in data])
+        return list(set(dummy))
 
     def update_Blacklist_Package(self, auth_token: str, packages: list):
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
 
         for p in packages:
             self.__cursor.execute("""INSERT INTO tbl_CLIENTS_PACKAGES_BLACKLIST (CLIENT_AUTH_TOKEN, PACKAGE_ID) VALUES (?, ?)""", (auth_token, p))
+        self.db_commit()
+
+    ##############Blacklist-Groups################
+    def get_All_Blacklist_Groups(self) -> list:
+        self.__cursor.execute("""SELECT TBG.UID, TBG.NAME, COUNT(TBP.PACKAGE_ID) AS PACKAGE_COUNT FROM tbl_BLACKLIST_GROUPS AS TBG
+                                    LEFT JOIN tbl_BLACKLIST_PACKAGES AS TBP ON TBG.UID = TBP.GROUP_ID
+                                GROUP BY TBG.UID, TBG.NAME""")
+        data = self.__cursor.fetchall()
+        return all_to_dict(data, self.__cursor.description)
+
+    def get_Blacklist_Group(self, group_id: str) -> dict:
+        self.__cursor.execute("""SELECT * FROM tbl_BLACKLIST_GROUPS WHERE UID = ?""", (group_id,))
+        data = self.__cursor.fetchone()
+        return row_to_dict(data, self.__cursor.description)
+
+    def get_Blacklist_Groups_for_Client(self, client_auth_token: str) -> list:
+        self.__cursor.execute("""SELECT GROUP_ID FROM tbl_BLACKLIST_GROUPS_CLIENTS WHERE CLIENT_AUTH_TOKEN = ?""", (client_auth_token,))
+        data = self.__cursor.fetchall()
+        return [d[0] for d in data]
+
+    def get_Packages_from_Blacklist_Group(self, group_id: str) -> list:
+        self.__cursor.execute("""SELECT PACKAGE_ID FROM tbl_BLACKLIST_PACKAGES WHERE GROUP_ID = ?""", (group_id,))
+        data = self.__cursor.fetchall()
+        return [d[0] for d in data]
+
+    def update_Blacklist_Groups_Clients(self, auth_token: str, groups: list):
+        self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_GROUPS_CLIENTS WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
+
+        for g in groups:
+            self.__cursor.execute("""INSERT INTO tbl_BLACKLIST_GROUPS_CLIENTS (GROUP_ID, CLIENT_AUTH_TOKEN) VALUES (?, ?)""", (g, auth_token))
+        self.db_commit(True)
+
+    def insert_update_Blacklist_Group(self, uid: str, name: str, packages: list):
+        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_BLACKLIST_GROUPS (UID, NAME) VALUES (?, ?)""", (uid, name))
+
+        self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_PACKAGES WHERE GROUP_ID = ?""", (uid,))
+        for p in packages:
+            self.__cursor.execute("""INSERT INTO tbl_BLACKLIST_PACKAGES (GROUP_ID, PACKAGE_ID) VALUES (?, ?)""", (uid, p))
+        self.db_commit(True)
+
+    def remove_Blacklist_Group(self, group_id: str):
+        self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_PACKAGES WHERE GROUP_ID = ?""", (group_id,))
+        self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_GROUPS_CLIENTS WHERE GROUP_ID = ?""", (group_id,))
+        self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_GROUPS WHERE UID = ?""", (group_id,))
         self.db_commit()
 
     ##############Logs##################
@@ -221,6 +274,7 @@ class SQLiteDatabase:
         return False
 
     def delete_Package(self, package_id: str):
+        self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_PACKAGES WHERE PACKAGE_ID = ?""", (package_id,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE PACKAGE_ID = ?""", (package_id,))
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES WHERE PACKAGE_ID = ?""", (package_id,))
 
