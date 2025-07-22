@@ -1,4 +1,5 @@
 import ipaddress
+import configparser
 import json
 import os
 import random
@@ -8,7 +9,7 @@ import dns.resolver
 import dns.reversename
 
 from werkzeug.datastructures import headers
-
+from io import StringIO, BytesIO
 from settings import PATH_FILES
 
 
@@ -112,6 +113,24 @@ def parse_version(version_str: str) -> tuple:
     while len(numeric_parts) < 3:
         numeric_parts.append(0)
     return tuple(numeric_parts)
+
+
+def generate_Client_INI(token: str, host: str) -> BytesIO:
+    config = configparser.ConfigParser()
+    config['Settings'] = {
+        'URL': f'https://{host}/client/api',
+        'Token': token,
+        'Repo': 'Winget-Repo'
+    }
+
+    ini_stream = BytesIO()
+    temp_stream = StringIO()
+    config.write(temp_stream)
+    data = temp_stream.getvalue().encode('utf-8')
+
+    ini_stream.write(data)
+    ini_stream.seek(0)
+    return ini_stream
 
 
 def start_up_check():

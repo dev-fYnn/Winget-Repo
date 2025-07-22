@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block header %}
+    <div>
+        <a href="{{ url_for('client_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+            Back
+        </a>
+    </div>
+{% endblock %}
+
+{% block header_title %}
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+        <h4 class="text-secondary font-weight-bold">Client Setup - {{ client.NAME }}</h4>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <p class="text-muted">Follow the instructions below to install and connect the Winget-Repo client to your repository!<br>
+            {% if authentication == '1' %}
+                <b>Client-Authentication: <j style="color: green;">Enabled</j></b>
+            {% else %}
+                <b>Client-Authentication: <j style="color: Tomato;">Disabled</j></b>
+            {% endif %}
+        </p>
+
+        <div class="mb-4">
+            <form action="{{ url_for('client_bp.setup_client', client_id=client.UID) }}" method="POST">
+                <button class="btn btn-success">
+                    <i class="bi bi-download"></i> Download Configuration File
+                </button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Setup Instructions</h5>
+                <ol class="list-group list-group-numbered">
+                    <li class="list-group-item">
+                        Download the configuration file above if you are using the Winget-Repo client.
+                    </li>
+                    <li class="list-group-item">
+                        Download and unpack the <a href="https://github.com/dev-fYnn/Winget-Repo-Client">Winget-Repo client</a> at a safe directory on your client, e.g.:
+                        <code>C:\Program Files\Winget\Winget-Repo.exe</code>
+                    </li>
+                    <li class="list-group-item">
+                        Copy the configuration file to your client machine and place it in the same folder as the Winget-Repo Client, e.g.:
+                        <code>C:\Program Files\Winget\config.ini</code>
+                    </li>
+                    <li class="list-group-item">
+                        Add the Winget-Repo as a source to your system. Make sure to run the command as the same user that will execute the client. <b>Administrator privileges are required.</b>
+                        <br><code>winget source add -n Winget-Repo -t "Microsoft.Rest" -a https://{{ host_url }}/api/ {% if authentication == '1' %}--header "{{ '{' }}'Token': '{{ client.TOKEN }}'{{ '}' }}"{% endif %}</code>
+                    </li>
+                    <li class="list-group-item">
+                        Start the client and enjoy Winget-Repo!
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+{% endblock %}

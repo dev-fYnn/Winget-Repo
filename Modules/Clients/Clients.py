@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, send_file
 from uuid import uuid4
 
 from Modules.Database.Database import SQLiteDatabase
-from Modules.Functions import get_ip_from_hostname
+from Modules.Functions import get_ip_from_hostname, generate_Client_INI
 from Modules.Login.Login import logged_in, authenticate
 from Modules.Winget.Functions import get_winget_Settings
 
@@ -31,12 +31,15 @@ def add_client():
         ip = get_ip_from_hostname(name, settings.get('DNS_SUFFIX', ''), settings.get('DNS_SERVER', '192.168.1.1'))
 
         if len(ip) > 0:
+            c_id = str(uuid4())
+
             db = SQLiteDatabase()
-            status = db.add_New_Client(str(uuid4()), name.upper()[:25], ip, str(uuid4()))
+            status = db.add_New_Client(c_id, name.upper()[:25], ip, str(uuid4()))
             del db
 
             if status:
                 flash("Client was added successfully!", "success")
+                return redirect(url_for("client_bp.setup_client", client_id=c_id))
             else:
                 flash("Hostname alreay exists!", "error")
         else:
@@ -80,6 +83,25 @@ def delete_client(client_id, auth_token):
     else:
         flash("Error. No Data found!", "error")
     return redirect(url_for('client_bp.index'))
+
+
+@client_bp.route('/setup/<client_id>', methods=['GET', 'POST'])
+@logged_in
+@authenticate
+def setup_client(client_id):
+    db = SQLiteDatabase()
+    data = db.get_Client_by_ID(client_id)
+    settings = db.get_winget_Settings()
+    del db
+
+    if data:
+        if request.method == "POST":
+            ini = generate_Client_INI(data.get('TOKEN', ''), request.host)
+            return send_file(ini, as_attachment=True, download_name='config.ini', mimetype='text/plain')
+
+        return render_template("index_clients_setup.html", client=data, authentication=settings.get('CLIENT_AUTHENTICATION', '0'), host_url=request.host)
+    flash("No client found!", "error")
+    return redirect(url_for("client_bp.index"))
 
 
 @client_bp.route('/logs/<client_id>', methods=['GET'])
