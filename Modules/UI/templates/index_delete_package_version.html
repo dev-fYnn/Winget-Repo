@@ -21,7 +21,7 @@
 
                         {% if versions | length > 0 %}
                             <form method="POST" action="{{ url_for('ui_bp.delete_package_version', package_id=package_id) }}" onsubmit="sure();">
-                                <table class="table table-striped">
+                                <table class="table table-striped table-hover">
                                     <thead>
                                         <tr>
                                             <th class="text-center">Version</th>

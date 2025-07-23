@@ -78,7 +78,11 @@ class SQLiteDatabase:
         return row_to_dict(client, self.__cursor.description)
 
     def get_All_Clients(self) -> list:
-        self.__cursor.execute("SELECT * FROM tbl_CLIENTS ORDER BY NAME")
+        self.__cursor.execute("""SELECT C.*, GROUP_CONCAT(DISTINCT BG.NAME) AS B_GROUPS FROM tbl_CLIENTS AS C
+                                    LEFT JOIN tbl_BLACKLIST_GROUPS_CLIENTS AS BGC ON C.TOKEN = BGC.CLIENT_AUTH_TOKEN
+                                    LEFT JOIN tbl_BLACKLIST_GROUPS AS BG ON BGC.GROUP_ID = BG.UID
+                                GROUP BY C.UID
+                                ORDER BY C.NAME;""")
         data = self.__cursor.fetchall()
         return all_to_dict(data, self.__cursor.description)
 

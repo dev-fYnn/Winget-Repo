@@ -24,7 +24,7 @@
 
             <div class="mb-4">
                 <label for="group_name" class="form-label fw-bold">Name:</label>
-                <input type="text" class="form-control" id="group_name" name="group_name" {% if action == 'EDIT' %}value="{{ group.NAME }}"{% endif %} required>
+                <input type="text" class="form-control" id="group_name" maxlength="30" name="group_name" {% if action == 'EDIT' %}value="{{ group.NAME }}"{% endif %} required>
             </div>
 
             <div class="mb-4">

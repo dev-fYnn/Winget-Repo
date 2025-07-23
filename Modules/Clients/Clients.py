@@ -184,7 +184,7 @@ def blacklist_groups(action):
         g_id = request.form.get('group_id', str(uuid4()))
         group_name = request.form.get('group_name', 'Dummy')
         selected_packages = request.form.getlist('blacklist')
-        db.insert_update_Blacklist_Group(g_id, group_name, selected_packages)
+        db.insert_update_Blacklist_Group(g_id, group_name[:30], selected_packages)
 
         if action == "CREATE":
             flash("Blacklist group successfully created!", "success")
@@ -195,10 +195,6 @@ def blacklist_groups(action):
         return redirect(url_for('client_bp.index'))
 
     packages = db.get_All_Packages()
-
-    if len(packages) == 0:
-        flash("No packages found!", "error")
-        return redirect(url_for('client_bp.index'))
 
     if action == "EDIT":
         g_id = request.args.get('group_id', '')

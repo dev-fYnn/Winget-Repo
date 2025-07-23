@@ -33,11 +33,12 @@
             </div>
         </form>
 
-        <table class="table table-bordered">
+        <table class="table table-bordered table-hover">
             <thead class="table-light">
                 <tr>
                     <th>Computer Name</th>
                     <th>IP Address</th>
+                    <th>Blacklist Groups</th>
                     <th>Last seen</th>
                     <th>Client</th>
                     <th style="width: 20%;">Actions</th>
@@ -48,6 +49,7 @@
                     <tr class="{% if client.ENABLED == 0 %}table-secondary opacity-50{% endif %}">
                         <td>{{ client.NAME }}</td>
                         <td>{{ client.IP }}</td>
+                        <td>{% if client.B_GROUPS is not none %}{{ client.B_GROUPS }}{% endif %}</td>
                         <td>{{ client.LASTSEEN }}</td>
                         <td>{% if client.CLIENT %}True{% else %}False{% endif %}</td>
                         <td class="text-center">
@@ -86,7 +88,7 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="5" class="text-center">No Clients available.</td>
+                        <td colspan="6" class="text-center">No Clients available.</td>
                     </tr>
                 {% endfor %}
             </tbody>
