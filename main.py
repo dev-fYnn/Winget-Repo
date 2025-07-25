@@ -1,7 +1,9 @@
 import os
+import sys
 
 from flask import Flask, send_from_directory, url_for
 
+from Modules.DevMode.Functions import generate_dev_certificate
 from Modules.Functions import start_up_check
 from Modules.Clients.Clients import client_bp
 from Modules.Groups.Functions import groups_bp
@@ -50,4 +52,13 @@ def global_settings():
 
 if __name__ == '__main__':
     start_up_check()
-    app.run()
+
+    if len(sys.argv) > 1 and sys.argv[1] == "/dev":
+        status = generate_dev_certificate()
+        if status:
+            app.config['dev_mode'] = True
+            app.run(ssl_context=('SSL/cert.pem', 'SSL/key.pem'), threaded=True)
+        else:
+            print("Error while starting the development server! Please check the certificates!")
+    else:
+        app.run()

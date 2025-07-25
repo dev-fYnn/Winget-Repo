@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, send_file
+from flask import Blueprint, render_template, redirect, url_for, request, flash, send_file, current_app
 from uuid import uuid4
 
 from Modules.Database.Database import SQLiteDatabase
@@ -27,8 +27,14 @@ def add_client():
     name = request.form.get('client_name', "")
 
     if len(name) > 0:
-        settings = get_winget_Settings()
-        ip = get_ip_from_hostname(name, settings.get('DNS_SUFFIX', ''), settings.get('DNS_SERVER', '192.168.1.1'))
+        dev_mode = current_app.config.get('dev_mode', False)
+
+        if dev_mode:
+            ip = "127.0.0.1"
+            name = "LOCALHOST"
+        else:
+            settings = get_winget_Settings()
+            ip = get_ip_from_hostname(name, settings.get('DNS_SUFFIX', ''), settings.get('DNS_SERVER', '192.168.1.1'))
 
         if len(ip) > 0:
             c_id = str(uuid4())

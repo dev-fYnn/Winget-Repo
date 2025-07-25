@@ -39,6 +39,14 @@
 </div>
 {% endblock %}
 
+{% block header_title %}
+    {% if dev_mode %}
+        <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+            <h4 class="font-weight-bold" style="color: Tomato">Dev-Mode</h4>
+        </div>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     <div class="row justify-content-center">
         <div class="col-md-7">

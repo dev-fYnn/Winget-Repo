@@ -1,4 +1,4 @@
-from flask import Blueprint, request, flash, redirect, url_for, render_template, session
+from flask import Blueprint, request, flash, redirect, url_for, render_template, session, current_app
 from uuid import uuid4
 from hashlib import sha256
 
@@ -52,7 +52,7 @@ def index():
         if check_Rights(session['logged_in'], "SETTINGS_BP.INDEX"):
             settings_btn = True
 
-        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, version_counter=settings.get('VERSION_COUNTER', '1.0.0'))
+        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, version_counter=settings.get('VERSION_COUNTER', '1.0.0'), dev_mode=current_app.config.get('dev_mode', False))
     return redirect(url_for("ui_bp.index"))
 
 

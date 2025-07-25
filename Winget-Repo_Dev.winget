@@ -1,0 +1,149 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+properties:
+  configurationVersion: 0.2.0
+  resources:
+    # Install Powershell Module
+    - resource: PowerShellModule/PSModuleResource
+      id: PSDscResources
+      directives:
+        description: Install PSDscResources Module
+        allowPrerelease: true
+      settings:
+        Module_Name: PSDscResources
+        Ensure: Present
+
+    # Install Python
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: Python.Python.3.13
+      dependsOn:
+        - PSDscResources
+      directives:
+        description: Install Python 3.13
+      settings:
+        id: Python.Python.3.13
+        source: winget
+ 
+    - resource: Script
+      id: CreateVirtualEnvironment
+      dependsOn:
+        - Python.Python.3.13
+      directives:
+        description: Create Python virtual environment
+      settings:
+        GetScript: |
+          $currentDir = Get-Location
+          $venvPath = Join-Path $currentDir "venv"
+          return (Test-Path $venvPath -PathType Container)
+        SetScript: |
+          $currentDir = Get-Location
+          $targetVenvPath = Join-Path $currentDir "venv"
+
+          $pythonExe = $null
+          $pythonVersion = "Python313"
+
+          $programFilesPythonPath = Join-Path "C:\Program Files" "$pythonVersion\python.exe"
+          $localAppdataPythonPath = Join-Path $env:LOCALAPPDATA "Programs\Python\$pythonVersion\python.exe"
+
+          if (Test-Path $programFilesPythonPath) {
+              $pythonExe = $programFilesPythonPath
+          } elseif (Test-Path $localAppdataPythonPath) {
+              $pythonExe = $localAppdataPythonPath
+          } else {
+              $pythonExe = (Get-Command python -ErrorAction SilentlyContinue).Path
+          }
+
+          if (-not $pythonExe) {
+              throw "Error: Python $pythonVersion executable was not found at expected locations after installation. Please verify Python 3.13 installation."
+          }
+
+          & $pythonExe -m venv $targetVenvPath
+        TestScript: |
+          $currentDir = Get-Location
+          $venvPath = Join-Path $currentDir "venv"
+          return (Test-Path $venvPath -PathType Container)
+
+    # Install specified Python packages within the virtual environment from requirements.txt
+    - resource: Script
+      id: InstallPythonPackages
+      dependsOn:
+        - CreateVirtualEnvironment
+      directives:
+        description: Install Python packages from requirements.txt
+      settings:
+        GetScript: |
+          # Use Get-Location to ensure the current directory is correctly identified
+          $currentDir = Get-Location
+          $venvPython = Join-Path $currentDir "venv\Scripts" "python.exe"
+          $requirementsFile = Join-Path $currentDir "requirements.txt"
+
+          if (!(Test-Path $venvPython) -or !(Test-Path $requirementsFile)) {
+              return @{ "Result" = "False" }
+          }
+
+          $installedPackages = & $venvPython -m pip freeze
+          $requiredPackages = Get-Content $requirementsFile | ForEach-Object { $_.Split("==")[0].Trim() }
+
+          $allInstalled = $true
+          foreach ($pkg in $requiredPackages) {
+              if (!($installedPackages -like "*$($pkg)*")) {
+                  $allInstalled = $false
+                  break
+              }
+          }
+          return @{ "Result" = $allInstalled.ToString() }
+        SetScript: |
+          # Use Get-Location to ensure the current directory is correctly identified
+          $currentDir = Get-Location
+          Set-Location $currentDir # Navigate to the directory of the config file
+          . (Join-Path $currentDir "venv\Scripts" "activate.ps1") # Activate the virtual environment
+          pip install -r (Join-Path $currentDir "requirements.txt")
+        TestScript: |
+          # Use Get-Location to ensure the current directory is correctly identified
+          $currentDir = Get-Location
+          $venvPython = Join-Path $currentDir "venv\Scripts" "python.exe"
+          $requirementsFile = Join-Path $currentDir "requirements.txt"
+
+          if (!(Test-Path $venvPython) -or !(Test-Path $requirementsFile)) {
+              return $false
+          }
+
+          $installedPackages = & $venvPython -m pip freeze
+          $requiredPackages = Get-Content $requirementsFile | ForEach-Object { $_.Split("==")[0].Trim() }
+
+          $allInstalled = $true
+          foreach ($pkg in $requiredPackages) {
+              if (!($installedPackages -like "*$($pkg)*")) {
+                  $allInstalled = $false
+                  break
+              }
+          }
+          return $allInstalled
+
+    # Create batch file to start Flask application
+    - resource: Script
+      id: CreateFlaskStartScript
+      dependsOn:
+        - InstallPythonPackages
+      directives:
+        description: Create batch file to start Flask main.py
+      settings:
+        GetScript: |
+          $currentDir = Get-Location
+          $batchFilePath = Join-Path $currentDir "start_flask.bat"
+          return @{ "Result" = (Test-Path $batchFilePath -PathType Leaf).ToString() }
+        SetScript: |
+          $currentDir = Get-Location
+          $batchFilePath = Join-Path $currentDir "start_flask.bat"
+          $batchContent = @"
+          @echo off
+          set CURRENT_DIR=%~dp0
+          cd /d "%CURRENT_DIR%"
+          call "venv\Scripts\activate.bat"
+          python main.py /dev
+          pause
+          "@
+          Set-Content -Path $batchFilePath -Value $batchContent -Force
+        TestScript: |
+          $currentDir = Get-Location
+          $batchFilePath = Join-Path $currentDir "start_flask.bat"
+          return (Test-Path $batchFilePath -PathType Leaf)
