@@ -56,7 +56,7 @@
                                                         <i class="bi bi-download"></i>
                                                     </a>
                                                 </td>
-                                                <td class="text-center"><input type="checkbox" name="version_select" value="{{ v['UID'] }}"></td>
+                                                <td class="text-center checkbox-cell"><input type="checkbox" name="version_select" value="{{ v['UID'] }}"></td>
                                             </tr>
                                             {% if v['SWITCHES'] | length > 0 %}
                                                 <div class="modal fade" id="modal_{{ v['UID'] }}" tabindex="-1" aria-labelledby="modalLabel_{{ v['UID'] }}" aria-hidden="true">

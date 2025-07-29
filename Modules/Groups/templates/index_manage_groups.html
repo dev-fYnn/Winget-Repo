@@ -70,7 +70,7 @@
                             <tr>
                                 <th>{% if right in texts %} {{ texts[right] }} {% else %} {{ right }} {% endif %}</th>
                                 {% for group in groups %}
-                                    <td>
+                                    <td class="checkbox-cell">
                                         <input type="checkbox"
                                            name="right={{ group.ID }}§{{ right }}"
                                            {% if group.get(right) %}checked{% endif %}>

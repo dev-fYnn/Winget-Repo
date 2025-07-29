@@ -103,4 +103,8 @@ def download(package_name):
     if URL_PACKAGE_DOWNLOAD.upper() == "DEFAULT" or not URL_PACKAGE_DOWNLOAD.upper().startswith("HTTPS://"):
         return send_from_directory(PATH_FILES, package_name, as_attachment=True)
     else:
-        return redirect(URL_PACKAGE_DOWNLOAD, code=302)
+        dummy_url = URL_PACKAGE_DOWNLOAD
+        if not dummy_url.endswith("/"):
+            dummy_url += "/"
+        dummy_url += package_name
+        return redirect(dummy_url, code=302)

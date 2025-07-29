@@ -28,7 +28,7 @@
                     {% for setting in settings %}
                         <tr>
                             <td>{% if setting in texts %} {{ texts[setting] }} {% else %} {{ setting }} {% endif %}</td>
-                            <td>
+                            <td {% if settings[setting]['TYPE'] == "CHECKBOX" %}class="checkbox-cell"{% endif %}>
                                 {% if settings[setting]['TYPE'] == "CHECKBOX" %}
                                     <div class="form-check d-flex align-items-center gap-3">
                                         <input class="form-check-input" type="checkbox" name="setting_{{ setting }}" value="1"

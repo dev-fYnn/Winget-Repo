@@ -71,7 +71,7 @@
                                             <td>{{ p_infos.Scope }}</td>
                                             <td>{{ inst.InstallerType }}</td>
                                             <td>{{ inst.NestedInstallerType }}</td>
-                                            <td>
+                                            <td class="checkbox-cell">
                                                 {% if not inst.EXISTS %}
                                                     <input type="checkbox" name="installer_ids" value="{{ loop.index - 1 }}">
                                                 {% else %}
