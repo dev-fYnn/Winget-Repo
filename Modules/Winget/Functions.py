@@ -100,6 +100,9 @@ def write_log(client_ip: str, package_name: str, log_type: str):
     client = db.get_Client_by_IP(client_ip)
     package = db.get_specfic_Versions_from_Package(package_name.split(".")[0])
 
+    if len(package) == 0:
+        package = {"PACKAGE_ID": package_name, "VERSION": "Unknown"}
+
     if len(client) == 0:
         client = {"UID": "EXTERN", "NAME": client_ip}
 

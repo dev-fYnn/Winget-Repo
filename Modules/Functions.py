@@ -118,7 +118,7 @@ def parse_version(version_str: str) -> tuple:
 def generate_Client_INI(token: str, host: str) -> BytesIO:
     config = configparser.ConfigParser()
     config['Settings'] = {
-        'URL': f'https://{host}/client/api',
+        'URL': f'https://{host}',
         'Token': token,
         'Repo': 'Winget-Repo'
     }

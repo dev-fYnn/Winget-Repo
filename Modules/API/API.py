@@ -26,6 +26,12 @@ def check_authentication(f):
     return decorated_function
 
 
+@api_bp.route('/client_version', methods=["POST"])
+@check_authentication
+def client_version():
+    return jsonify({"Version": "2.0.0.0"}), 200
+
+
 @api_bp.route('/get_packages', methods=["POST"])
 @check_authentication
 def get_packages():
