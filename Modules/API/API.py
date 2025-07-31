@@ -2,6 +2,7 @@ from functools import wraps
 from flask import Blueprint, jsonify, request, send_file
 
 from Modules.Database.Database import SQLiteDatabase
+from Modules.Functions import parse_version
 from Modules.Winget.Functions import get_winget_Settings, authenticate_Client
 from settings import PATH_LOGOS
 
@@ -41,7 +42,8 @@ def get_packages():
     data = db.get_All_Packages(False)
 
     for d in data:
-        d['VERSIONS'] = [v['VERSION'] for v in db.get_All_Versions_from_Package(d['PACKAGE_ID'])]
+        dummy_versions = [v['VERSION'] for v in db.get_All_Versions_from_Package(d['PACKAGE_ID'])]
+        d['VERSIONS'] = sorted(dummy_versions, key=lambda x: parse_version(x), reverse=True)
 
     if len(auth_key) > 0:
         blacklist = db.get_Blacklist_for_client(auth_key)

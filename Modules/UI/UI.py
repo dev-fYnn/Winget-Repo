@@ -216,8 +216,8 @@ def add_package_version():
 def delete_package_version(package_id):
     db = SQLiteDatabase()
 
-    if request.method == "POST":
-        if db.check_Package_exists(package_id):
+    if db.check_Package_exists(package_id):
+        if request.method == "POST":
             ids = request.form.getlist("version_select")
             if len(ids) > 0:
                 for i in ids:
@@ -229,9 +229,6 @@ def delete_package_version(package_id):
             else:
                 flash("No versions selected!", "error")
         else:
-            flash("No package found!", "error")
-    else:
-        if db.check_Package_exists(package_id):
             versions = db.get_All_Versions_from_Package(package_id)
             versions = sorted(versions, key=lambda x: parse_version(x["VERSION"]), reverse=True)
             for v in versions:
@@ -239,7 +236,7 @@ def delete_package_version(package_id):
             package = db.get_Package_by_ID(package_id)
             del db
             return render_template("index_delete_package_version.html", package_id=package_id, versions=versions, Package_Name=package['PACKAGE_NAME'])
-        else:
-            flash("No package found!", "error")
+    else:
+        flash("No package found!", "error")
     del db
     return redirect(url_for("ui_bp.index"))
