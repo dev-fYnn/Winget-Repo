@@ -8,6 +8,8 @@ import string
 import dns.resolver
 import dns.reversename
 
+from datetime import datetime
+from pathlib import Path
 from werkzeug.datastructures import headers
 from io import StringIO, BytesIO
 from settings import PATH_FILES
@@ -131,6 +133,12 @@ def generate_Client_INI(token: str, host: str) -> BytesIO:
     ini_stream.write(data)
     ini_stream.seek(0)
     return ini_stream
+
+
+def get_file_edit_date(path: str) -> datetime:
+    file = Path(path)
+    mtime = file.stat().st_mtime
+    return datetime.fromtimestamp(mtime)
 
 
 def start_up_check():

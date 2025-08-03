@@ -41,7 +41,7 @@
                     <th>Blacklist Groups</th>
                     <th>Last seen</th>
                     <th>Client</th>
-                    <th style="width: 20%;">Actions</th>
+                    <th style="width: 25%;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -49,10 +49,16 @@
                     <tr class="{% if client.ENABLED == 0 %}table-secondary opacity-50{% endif %}">
                         <td>{{ client.NAME }}</td>
                         <td>{{ client.IP }}</td>
-                        <td>{% if client.B_GROUPS is not none %}{{ client.B_GROUPS }}{% endif %}</td>
+                        <td style="max-width: 35px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ client.B_GROUPS }}">{% if client.B_GROUPS is not none %}{{ client.B_GROUPS }}{% endif %}</td>
                         <td>{{ client.LASTSEEN }}</td>
                         <td>{% if client.CLIENT %}True{% else %}False{% endif %}</td>
                         <td class="text-center">
+                            <form action="{{ url_for('client_bp.setup_client', client_id=client.UID) }}" method="GET" style="display:inline;" class="me-2">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Client Setup">
+                                    <i class="bi bi-tools"></i>
+                                </button>
+                            </form>
+
                             <button class="btn btn-sm btn-outline-primary me-2 copy-btn"
                                     data-token="{{ client.TOKEN }}"
                                     type="button"

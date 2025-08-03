@@ -1,12 +1,13 @@
-import os.path
+import os
 import time
 import zipfile
 import yaml
 import requests
+import datetime
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Database.Store_DB import StoreDB
-from Modules.Functions import parse_version
+from Modules.Functions import parse_version, get_file_edit_date
 from settings import PATH_WINGET_REPOSITORY, PATH_WINGET_REPOSITORY_DB, URL_WINGET_REPOSITORY, PATH_FILES
 
 
@@ -67,9 +68,11 @@ def download_source_msix(update: bool = False) -> bool:
                 with open(fr"{PATH_WINGET_REPOSITORY}\source.msix", "wb") as f:
                     f.write(response.content)
 
+                time.sleep(1)
+
                 with zipfile.ZipFile(fr"{PATH_WINGET_REPOSITORY}\source.msix", "r") as zip_ref:
                     zip_ref.extractall(PATH_WINGET_REPOSITORY)
-                time.sleep(2)
+                time.sleep(1.5)
                 return True
             return False
         except:
@@ -117,3 +120,15 @@ def download_file(url: str, filename: str) -> bool:
         return True
     else:
         return False
+
+
+#Update
+def update_store_db(days: int = 2):
+    if not os.path.exists(PATH_WINGET_REPOSITORY_DB):
+        return
+
+    edit_date = get_file_edit_date(PATH_WINGET_REPOSITORY_DB)
+    diff = datetime.datetime.now() - edit_date
+
+    if diff.days >= days:
+        download_source_msix(True)

@@ -7,7 +7,7 @@ from Modules.Files.Functions import delete_File
 from Modules.Functions import parse_version
 from Modules.Login.Functions import check_Rights
 from Modules.Login.Login import logged_in, authenticate
-from Modules.Store.Functions import check_for_new_Version
+from Modules.Store.Functions import check_for_new_Version, update_store_db
 from settings import PATH_LOGOS, PATH_FILES
 
 ui_bp = Blueprint('ui_bp', __name__, template_folder='templates', static_folder='static')
@@ -36,6 +36,7 @@ def index():
 
         update_status=False
         if settings['PACKAGE_STORE'] == "1":
+            update_store_db()
             packages, update_status = check_for_new_Version(packages)
 
         user_mng_btn = False
