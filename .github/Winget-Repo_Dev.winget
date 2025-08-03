@@ -32,10 +32,12 @@ properties:
       settings:
         GetScript: |
           $currentDir = Get-Location
+          $currentDir = Split-Path $currentDir -Parent
           $venvPath = Join-Path $currentDir "venv"
           return (Test-Path $venvPath -PathType Container)
         SetScript: |
           $currentDir = Get-Location
+          $currentDir = Split-Path $currentDir -Parent
           $targetVenvPath = Join-Path $currentDir "venv"
 
           $pythonExe = $null
@@ -59,6 +61,7 @@ properties:
           & $pythonExe -m venv $targetVenvPath
         TestScript: |
           $currentDir = Get-Location
+          $currentDir = Split-Path $currentDir -Parent
           $venvPath = Join-Path $currentDir "venv"
           return (Test-Path $venvPath -PathType Container)
 
@@ -73,6 +76,7 @@ properties:
         GetScript: |
           # Use Get-Location to ensure the current directory is correctly identified
           $currentDir = Get-Location
+          $currentDir = Split-Path $currentDir -Parent
           $venvPython = Join-Path $currentDir "venv\Scripts" "python.exe"
           $requirementsFile = Join-Path $currentDir "requirements.txt"
 
@@ -94,12 +98,15 @@ properties:
         SetScript: |
           # Use Get-Location to ensure the current directory is correctly identified
           $currentDir = Get-Location
+          $currentDir = Split-Path $currentDir -Parent
           Set-Location $currentDir # Navigate to the directory of the config file
           . (Join-Path $currentDir "venv\Scripts" "activate.ps1") # Activate the virtual environment
+          python -m pip install --upgrade pip
           pip install -r (Join-Path $currentDir "requirements.txt")
         TestScript: |
           # Use Get-Location to ensure the current directory is correctly identified
           $currentDir = Get-Location
+          $currentDir = Split-Path $currentDir -Parent
           $venvPython = Join-Path $currentDir "venv\Scripts" "python.exe"
           $requirementsFile = Join-Path $currentDir "requirements.txt"
 
