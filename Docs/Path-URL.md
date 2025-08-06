@@ -1,6 +1,7 @@
 # ⚙️ Winget-Repo URL and Path Configuration via `settings.py`
 
 This document outlines configuration options available exclusively through the `settings.py` file located in the root directory of the Winget-Repo project.
+> ⚠️ Note that sensitive settings might be set in the .env file. Please review the .env.example file to get an overview.
 
 > ⚠️ Changes made to these settings require a **restart** of the repository/server to take effect.
 

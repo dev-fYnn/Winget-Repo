@@ -30,15 +30,7 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
    Ensure that Python 3.10 or higher is installed on your machine. You can download it from the [official Python website](https://www.python.org/downloads/).
 
 3. **Install Packages** 🔌  
-   Open a Command Prompt (CMD) and run the following commands to install the following packages:
-   ```bash
-   python -m pip install Flask
-   python -m pip install dnspython
-   python -m pip install pyyaml
-   python -m pip install requests
-   python -m pip install cryptography
-   ```
-   Or just run ```pip install -r requirements.txt``` to install all dependencies.
+   Open a Command Prompt (CMD) and run the following command to install all required dependencies: ```pip install -r requirements.txt```
 
 4. **Set Up Reverse Proxy (Recommended)** 🔒  
    Since the connection between Winget and the repository only works over HTTPS, it is recommended to set up a reverse proxy (e.g., Apache) in front of the repository for secure communication.
