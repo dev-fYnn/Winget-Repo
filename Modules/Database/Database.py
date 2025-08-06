@@ -409,9 +409,9 @@ class SQLiteDatabase:
     #-------------------User----------------------
     def check_Username_exists(self, username: str, user_id="") -> tuple[bool, dict]:
         if len(user_id) > 0:
-            self.__cursor.execute("""SELECT DELETABLE, USERNAME, "GROUP" FROM tbl_USER WHERE ID = ?""", (user_id,))
+            self.__cursor.execute("""SELECT ID, DELETABLE, USERNAME, "GROUP" FROM tbl_USER WHERE ID = ?""", (user_id,))
         else:
-            self.__cursor.execute("""SELECT USERNAME, DELETABLE, "GROUP" FROM tbl_USER WHERE USERNAME = ?""", (username,))
+            self.__cursor.execute("""SELECT ID, USERNAME, DELETABLE, "GROUP" FROM tbl_USER WHERE USERNAME = ?""", (username,))
         data = self.__cursor.fetchone()
         data = row_to_dict(data, self.__cursor.description)
 

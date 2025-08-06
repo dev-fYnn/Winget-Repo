@@ -37,6 +37,7 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
    python -m pip install pyyaml
    python -m pip install requests
    python -m pip install cryptography
+   python -m pip install python-dotenv
    ```
    Or just run ```pip install -r requirements.txt``` to install all dependencies.
 
