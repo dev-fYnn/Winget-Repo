@@ -42,12 +42,6 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static/images'),'favicon.png', mimetype='image/png')
 
 
-@app.route('/')
-def root():
-    """Redirect root access to login page"""
-    return redirect(url_for('login_bp.index'))
-
-
 @app.context_processor
 def global_settings():
     return {
