@@ -3,6 +3,8 @@
 Thank you for your interest in contributing to Winget-Repo!  
 This guide will help you set up your development environment and contribute effectively.
 
+### Please note that all contributions must be made under the AGPL 3.0 License.
+
 ---
 
 ## 🧰 Development Environment Setup
@@ -70,6 +72,10 @@ This ensures the Winget client can connect securely.
 ---
 
 ## ✅ How to Contribute
+
+Settings that should not be exposed through the Winget settings menu must be defined as variables in `settings.py`.  
+Sensitive data should be stored in the `.env` file.  
+Please provide example values in the `.env.example` file so that others can configure their environment easily.
 
 1. Create a new branch:
    ```bash

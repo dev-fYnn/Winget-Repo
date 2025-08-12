@@ -4,6 +4,6 @@ PyYAML>=6.0.2
 requests>=2.32.4
 dnspython>=2.7.0
 cryptography>=45.0.5
-python-dotenv>=1.0.0
+python-dotenv>=1.1.1
 python-keycloak>=4.2.2
 PyJWT>=2.8.0
