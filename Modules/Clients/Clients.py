@@ -189,13 +189,16 @@ def blacklist_groups(action):
     if request.method == 'POST':
         g_id = request.form.get('group_id', str(uuid4()))
         group_name = request.form.get('group_name', 'Dummy')
-        selected_packages = request.form.getlist('blacklist')
-        db.insert_update_Blacklist_Group(g_id, group_name[:30], selected_packages)
+        if len(group_name) >= 3:
+            selected_packages = request.form.getlist('blacklist')
+            db.insert_update_Blacklist_Group(g_id, group_name[:30], selected_packages)
 
-        if action == "CREATE":
-            flash("Blacklist group successfully created!", "success")
+            if action == "CREATE":
+                flash("Blacklist group successfully created!", "success")
+            else:
+                flash("Blacklist group successfully updated!", "success")
         else:
-            flash("Blacklist group successfully updated!", "success")
+            flash("Blacklist group name is to short!", "error")
 
         del db
         return redirect(url_for('client_bp.index'))
