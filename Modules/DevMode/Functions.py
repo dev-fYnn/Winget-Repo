@@ -11,8 +11,8 @@ from cryptography.hazmat.backends import default_backend
 
 def generate_dev_certificate(cert_file: str = r"SSL\cert.pem", key_file: str = r"SSL\key.pem") -> bool:
     path = sys.path[0]
-    cert_file = fr"{path}\{cert_file}"
-    key_file = fr"{path}\{key_file}"
+    cert_file = os.path.join(path, cert_file)
+    key_file = os.path.join(path, key_file)
 
     os.makedirs(os.path.dirname(cert_file), exist_ok=True)
     if os.path.exists(cert_file) and os.path.exists(key_file):

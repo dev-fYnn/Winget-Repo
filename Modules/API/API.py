@@ -1,5 +1,6 @@
 from functools import wraps
 from flask import Blueprint, jsonify, request, send_file
+from pathlib import Path
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import parse_version
@@ -55,4 +56,4 @@ def get_packages():
 
 @api_bp.route('/get_logo/<logo_name>', methods=["GET"])
 def get_logo(logo_name):
-    return send_file(fr"{PATH_LOGOS}\{logo_name}")
+    return send_file(Path(PATH_LOGOS) / logo_name)

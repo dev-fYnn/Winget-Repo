@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for
 from uuid import uuid4
 from hashlib import sha256
 from functools import wraps
+from pathlib import Path
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import parse_version, check_Internet_Connection
@@ -125,7 +126,7 @@ def add_package(package_id):
             file = request.files.get('Logo')
             logo_filename = f"{package_id}.png" if file else "dummy.png"
             if file:
-                file.save(fr"{PATH_LOGOS}\{logo_filename}")
+                file.save(Path(PATH_LOGOS) / logo_filename)
 
             db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:150], logo_filename)
             db.db_commit()
@@ -149,7 +150,7 @@ def add_package(package_id):
             filename = f"{version_uid}.{installer['InstallerUrl'].split('.')[-1]}"
             download_file(installer['InstallerUrl'], filename)
 
-            file_path = fr"{PATH_FILES}\{filename}"
+            file_path = Path(PATH_FILES) / filename
             with open(file_path, 'rb') as f:
                 file_hash = sha256(f.read()).hexdigest()
 

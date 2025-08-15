@@ -1,6 +1,7 @@
 from flask import Blueprint, request, flash, redirect, url_for, render_template, session, current_app
 from uuid import uuid4
 from hashlib import sha256
+from pathlib import Path
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Files.Functions import delete_File
@@ -70,7 +71,7 @@ def add_package():
 
             if file:
                 logo_path = package_id + ".png"
-                file.save(fr"{PATH_LOGOS}\{logo_path}")
+                file.save(Path(PATH_LOGOS) / logo_path)
             else:
                 logo_path = "dummy.png"
 
@@ -108,7 +109,7 @@ def edit_package(package_id):
             file = request.files.get('Logo')
             if file:
                 logo_path = package_id + ".png"
-                file.save(fr"{PATH_LOGOS}\{logo_path}")
+                file.save(Path(PATH_LOGOS) / logo_path)
             else:
                 logo_path = package['PACKAGE_LOGO']
 
@@ -170,9 +171,10 @@ def add_package_version():
                 filename = f"{version_uid}.{file.filename.split('.')[-1]}"
                 file_type = data.get('file_type', 'msi').lower()
                 if file and db.check_Package_Version_not_exists(package_id, data.get("package_version", "")[:25], data.get("package_local", 1), data.get("file_architect", ""), file_type, data.get("file_scope", "")):
-                    file.save(fr"{PATH_FILES}\{filename}")
+                    f_path = Path(PATH_FILES) / filename
+                    file.save(f_path)
 
-                    with open(fr"{PATH_FILES}\{filename}", 'rb') as f:
+                    with open(f_path, 'rb') as f:
                         readable_hash = sha256(f.read()).hexdigest()
 
                     status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], data.get("package_local", 1), data.get("file_architect", ""), file_type, filename, readable_hash, data.get("file_scope", ""), version_uid, data.get('file_type_nested', None).lower())

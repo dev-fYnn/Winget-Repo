@@ -5,6 +5,8 @@ import yaml
 import requests
 import datetime
 
+from pathlib import Path
+
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Database.Store_DB import StoreDB
 from Modules.Functions import parse_version, get_file_edit_date
@@ -65,12 +67,13 @@ def download_source_msix(update: bool = False) -> bool:
                 if not os.path.exists(PATH_WINGET_REPOSITORY):
                     os.makedirs(PATH_WINGET_REPOSITORY)
 
-                with open(fr"{PATH_WINGET_REPOSITORY}\source.msix", "wb") as f:
+                f_path = os.path.join(PATH_WINGET_REPOSITORY, "source.msix")
+                with open(f_path, "wb") as f:
                     f.write(response.content)
 
                 time.sleep(1)
 
-                with zipfile.ZipFile(fr"{PATH_WINGET_REPOSITORY}\source.msix", "r") as zip_ref:
+                with zipfile.ZipFile(f_path, "r") as zip_ref:
                     zip_ref.extractall(PATH_WINGET_REPOSITORY)
                 time.sleep(1.5)
                 return True
@@ -115,7 +118,7 @@ def download_file(url: str, filename: str) -> bool:
     response = requests.get(url)
 
     if response.status_code == 200:
-        with open(fr"{PATH_FILES}\{filename}", 'wb') as f:
+        with open(Path(PATH_FILES) / filename, 'wb') as f:
             f.write(response.content)
         return True
     else:
