@@ -1,7 +1,7 @@
 import os
 import sys
 
-from flask import Flask, send_from_directory, url_for
+from flask import Flask, send_from_directory, url_for, redirect
 
 from Modules.DevMode.Functions import generate_dev_certificate
 from Modules.Functions import start_up_check
