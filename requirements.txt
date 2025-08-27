@@ -5,3 +5,4 @@ requests>=2.32.4
 dnspython>=2.7.0
 cryptography>=45.0.5
 python-dotenv>=1.1.1
+flask_seasurf>=2.0.0
