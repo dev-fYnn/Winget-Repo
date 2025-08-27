@@ -47,6 +47,7 @@
                                         </button>
                                     </form>
                                     <form method="POST" action="{{ url_for('user_bp.delete_user', user_id=user['ID']) }}" onsubmit="return confirmDelete();">
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete User">
                                             <i class="bi bi-trash"></i>
                                         </button>

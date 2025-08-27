@@ -17,6 +17,7 @@
 {% block content %}
     <div class="container mt-5">
         <form method="POST" action="{{ url_for('store_bp.add_package', package_id=package_id) }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="row">
                 {% if not p_exists %}
                     <div class="col-md-6">

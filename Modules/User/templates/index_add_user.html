@@ -20,6 +20,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('user_bp.add_user') }}" onsubmit="validatePasswords();">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
                             <input type="text" class="form-control" id="username" name="username" placeholder="Enter Username" maxlength="25" minlength="1" required>

@@ -21,6 +21,7 @@
 
                         {% if versions | length > 0 %}
                             <form method="POST" action="{{ url_for('ui_bp.delete_package_version', package_id=package_id) }}" onsubmit="sure();">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                 <table class="table table-striped table-hover">
                                     <thead>
                                         <tr>

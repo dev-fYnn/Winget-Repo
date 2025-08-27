@@ -6,6 +6,7 @@ from functools import wraps
 
 from Modules.Functions import get_Auth_Token_from_Header
 from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client, write_log
+from main_extensions import csrf
 from settings import PATH_FILES, URL_PACKAGE_DOWNLOAD
 
 winget_routes = Blueprint('winget_routes', __name__)
@@ -65,6 +66,7 @@ def get_package_manifest(package_id):
 
 
 @winget_routes.route('/manifestSearch', methods=['POST'])
+@csrf.exempt
 @check_authentication
 def manifestSearch():
     client_auth_token = get_Auth_Token_from_Header(request.headers)

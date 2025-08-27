@@ -20,6 +20,7 @@
 <div class="container">
     {% if loggedin %}
         <form method="POST" action="{{ url_for('settings_bp.edit_terms') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
                 <textarea class="form-control" name="terms_text" rows="25">{{ terms_text.TEXT }}</textarea>
             </div>

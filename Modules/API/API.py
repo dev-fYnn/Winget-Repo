@@ -5,6 +5,7 @@ from pathlib import Path
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import parse_version
 from Modules.Winget.Functions import get_winget_Settings, authenticate_Client
+from main_extensions import csrf
 from settings import PATH_LOGOS
 
 api_bp = Blueprint('api_bp', __name__)
@@ -29,12 +30,14 @@ def check_authentication(f):
 
 
 @api_bp.route('/client_version', methods=["POST"])
+@csrf.exempt
 @check_authentication
 def client_version():
     return jsonify({"Version": "2.0.0.0"}), 200
 
 
 @api_bp.route('/get_packages', methods=["POST"])
+@csrf.exempt
 @check_authentication
 def get_packages():
     db = SQLiteDatabase()

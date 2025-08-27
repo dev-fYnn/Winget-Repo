@@ -3,6 +3,7 @@
 {% block header %}
     <div>
         <form action="{{ url_for('store_bp.refresh_source') }}" method="POST" style="display:inline;" class="me-2" onsubmit="showLoader(this)">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-info" title="Update Winget Source DB">
                 <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
                 <i class="bi bi-cloud-arrow-down-fill"></i>

@@ -15,10 +15,12 @@ from Modules.User.User import user_bp
 from Modules.Winget.Functions import get_winget_Settings
 from Modules.Winget.winget_Routes import winget_routes
 from Modules.API.API import api_bp
+from main_extensions import csrf
 
 settings = get_winget_Settings(True)
 
 app = Flask(__name__)
+csrf.init_app(app)
 app.config['SERVERNAME'] = settings['SERVERNAME']
 app.secret_key = settings['SECRET_KEY'].encode()
 app.config['SESSION_COOKIE_NAME'] = app.config['SERVERNAME']

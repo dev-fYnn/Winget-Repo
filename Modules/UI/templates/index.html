@@ -56,6 +56,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-4 mb-md-0">
                             <form method="POST" action="{{ url_for('ui_bp.index') }}">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                 <div class="form-group">
                                     <label for="selected_package" class="h5 font-weight-bold">Choose a Package</label>
                                     <select name="selected_package" id="selected_package" class="form-control form-control-lg" required>

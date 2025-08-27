@@ -18,6 +18,7 @@
                     </div>
                     <div class="card-body">
                         <form method="POST" action="{{ url_for('ui_bp.add_package_version') }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                             <div class="mb-3">
                                 <label for="package_id" class="form-label">Choose a Package</label>
                                 <select name="package_id" id="package_id" class="form-control form-control" required>
