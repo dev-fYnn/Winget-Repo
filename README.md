@@ -83,7 +83,7 @@ After completing these steps, your Winget-Repo should be ready to serve software
 
 # 📬 Contact & Feedback
 If you have any questions, suggestions, or issues, feel free to reach out via email or under the "Issues" section! Your feedback is valuable in helping us improve Winget-Repo and ensure it meets your needs. We appreciate your contributions and are here to assist with any challenges you may face!
-[Mail](mailto:support@winget-repo.io)
-[Report Issues and Features](https://github.com/dev-fYnn/Winget-Repo/issues)
+- [Mail](mailto:support@winget-repo.io)
+- [Github](https://github.com/dev-fYnn/Winget-Repo/issues)
 
 And if you enjoy using Winget-Repo, we'd be grateful for a star ⭐ on our repository! Thank you for your support! 🙏
