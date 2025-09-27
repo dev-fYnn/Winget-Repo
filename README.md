@@ -81,10 +81,9 @@ Once the Winget-Repo server is set up and accessible, you can now connect the Wi
 
 After completing these steps, your Winget-Repo should be ready to serve software and updates to clients within your local network!🎉
 
-
-# 💬 Feedback
-
-If you encounter any issues, have suggestions, or want to share improvements, please feel free to report them under the "Issues" section. Your feedback is valuable in helping us improve Winget-Repo and ensure it meets your needs. We appreciate your contributions and are here to assist with any challenges you may face!
+# 📬 Contact & Feedback
+If you have any questions, suggestions, or issues, feel free to reach out via email or under the "Issues" section! Your feedback is valuable in helping us improve Winget-Repo and ensure it meets your needs. We appreciate your contributions and are here to assist with any challenges you may face!
+[Mail](mailto:support@winget-repo.io)
 [Report Issues and Features](https://github.com/dev-fYnn/Winget-Repo/issues)
 
 And if you enjoy using Winget-Repo, we'd be grateful for a star ⭐ on our repository! Thank you for your support! 🙏
