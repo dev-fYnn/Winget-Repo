@@ -3,9 +3,9 @@
 
 Winget-Repo is a private repository for the Windows Package Manager (Winget), designed to provide software and updates within local networks without internet access. It allows centralized management and efficient installation and updating of software on multiple Windows clients. [Website and Docs](https://winget-repo.io/)
 
+**Don’t want to host it yourself?** Try our [Cloud Version](https://cloud.winget-repo.io) for hassle-free deployment.
 
 # 🌟 Current Features
-
 - **Easy-to-use Web Interface** for managing packages and package versions 🌐
 - **Search, List, Show, Install and Upgrade Packages** via Winget 🔍📦
 - **Cross-platform**: The server runs on all environments that support Python 🖥️💻
