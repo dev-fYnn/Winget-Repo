@@ -101,11 +101,15 @@ def setup_client(client_id):
     del db
 
     if data:
+        auth_s = settings.get('CLIENT_AUTHENTICATION', '0')
         if request.method == "POST":
-            ini = generate_Client_INI(data.get('TOKEN', ''), request.host)
+            token = ''
+            if auth_s == "1":
+                token = data.get('TOKEN', '')
+            ini = generate_Client_INI(token, request.host)
             return send_file(ini, as_attachment=True, download_name='config.ini', mimetype='text/plain')
 
-        return render_template("index_clients_setup.html", client=data, authentication=settings.get('CLIENT_AUTHENTICATION', '0'), host_url=request.host)
+        return render_template("index_clients_setup.html", client=data, authentication=auth_s, host_url=request.host)
     flash("No client found!", "error")
     return redirect(url_for("client_bp.index"))
 
