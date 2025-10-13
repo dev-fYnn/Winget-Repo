@@ -1,5 +1,7 @@
+import base64
+
 from functools import wraps
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, jsonify, request
 from pathlib import Path
 
 from Modules.Database.Database import SQLiteDatabase
@@ -33,7 +35,7 @@ def check_authentication(f):
 @csrf.exempt
 @check_authentication
 def client_version():
-    return jsonify({"Version": "2.0.0.0"}), 200
+    return jsonify({"Version": "2.5.0.0"}), 200
 
 
 @api_bp.route('/get_packages', methods=["POST"])
@@ -44,10 +46,18 @@ def get_packages():
     auth_key = request.form.get('Auth-Token', '')
 
     data = db.get_All_Packages(False)
-
     for d in data:
         dummy_versions = [v['VERSION'] for v in db.get_All_Versions_from_Package(d['PACKAGE_ID'])]
         d['VERSIONS'] = sorted(dummy_versions, key=lambda x: parse_version(x), reverse=True)
+
+        logo_name = d.get('PACKAGE_LOGO', 'dummy.png')
+        logo_path = Path(PATH_LOGOS) / logo_name
+        if logo_path.exists():
+            with open(logo_path, "rb") as f:
+                encoded_logo = base64.b64encode(f.read()).decode('utf-8')
+            d['PACKAGE_LOGO'] = f"data:image/png;base64,{encoded_logo}"
+        else:
+            d['PACKAGE_LOGO'] = ''
 
     if len(auth_key) > 0:
         blacklist = db.get_Blacklist_for_client(auth_key)
@@ -55,8 +65,3 @@ def get_packages():
 
     del db
     return jsonify(data), 200
-
-
-@api_bp.route('/get_logo/<logo_name>', methods=["GET"])
-def get_logo(logo_name):
-    return send_file(Path(PATH_LOGOS) / logo_name)

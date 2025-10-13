@@ -14,11 +14,12 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 - **Support for Nested Installers** 🛠️🔄
 - **Permission Management**: Control access and user rights 🔐
 - **Terms of Service**: Request the agreement of your Terms of Service 📑
-- **Dev-Mode**: Install the Winget-Repo Dev Mode via winget configure with no problems. [Setup](https://github.com/dev-fYnn/Winget-Repo/blob/master/Docs/Dev-Mode.md) 🪛
-- **Version Migration (Beta)**: Easily upgrade to the latest version of Winget-Repo [Documentation](https://github.com/dev-fYnn/Winget-Repo/blob/master/Docs/Upgrade_Winget-Repo.md) ⬆️🆕
+- **Dev-Mode**: Install the Winget-Repo Dev Mode via winget configure with no problems: [Setup](https://github.com/dev-fYnn/Winget-Repo/blob/master/Docs/Dev-Mode.md) 🪛
+- **Version Migration (Beta)**: Easily upgrade to the latest version of Winget-Repo: [Documentation](https://github.com/dev-fYnn/Winget-Repo/blob/master/Docs/Upgrade_Winget-Repo.md) ⬆️🆕
+- **Winget-Client**: Use Winget easily on your client: [Github](https://github.com/dev-fYnn/Winget-Repo-Client) 🖥️💿
+
 
 # 🚀 Upcoming Features
-- **Winget-Client**: Use Winget easily on your client 🖥️💿
 - **And much more**: Continuous improvements and new features on the way! 🌱✨
 
 # 🛠️ Setup Guide
