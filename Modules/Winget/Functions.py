@@ -1,4 +1,4 @@
-from flask import request
+from flask import url_for
 from datetime import datetime
 
 from Modules.Database.Database import SQLiteDatabase
@@ -51,7 +51,7 @@ def generate_Installer_Manifest(package_id: str, version: str, auth_token: str =
             dum_data = {
                     "Architecture": p[6],
                     "InstallerType": p[7],
-                    "InstallerUrl": f"https://{request.host}/api/download/{p[8]}",
+                    "InstallerUrl": url_for("winget_routes.download", package_name=p[8], _external=True),
                     "InstallerSha256": p[9],
                     "Scope": p[10],
                     "InstallerSwitches": db.get_Package_Switche(p[11])
