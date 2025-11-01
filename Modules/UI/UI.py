@@ -177,7 +177,7 @@ def add_package_version():
                     with open(f_path, 'rb') as f:
                         readable_hash = sha256(f.read()).hexdigest()
 
-                    status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], data.get("package_local", 1), data.get("file_architect", ""), file_type, filename, readable_hash, data.get("file_scope", ""), version_uid, data.get('file_type_nested', None).lower())
+                    status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], data.get("package_local", 1), data.get("file_architect", ""), file_type, filename, readable_hash, data.get("file_scope", ""), version_uid, data.get('file_type_nested', '').lower(), data.get('productcode', ""), data.get('upgradecode', ""), data.get('package_family_name', ""), data.get('channel', "stable").lower())
 
                     if status:
                         if file_type == "zip" and len(data.get('file_nested_path', '')) > 0:

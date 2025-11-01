@@ -1,5 +1,6 @@
 import sqlite3
 
+from datetime import datetime
 from Modules.Functions import generate_random_string, all_to_dict, row_to_dict
 from settings import PATH_DATABASE
 
@@ -197,7 +198,10 @@ class SQLiteDatabase:
     def get_Logs_for_Client(self, client_id: str) -> list:
         self.__cursor.execute("SELECT * FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ? ORDER BY TIMESTAMP DESC", (client_id,))
         data = self.__cursor.fetchall()
-        return all_to_dict(data, self.__cursor.description)
+        data = all_to_dict(data, self.__cursor.description)
+        if data:
+            data.sort(key=lambda d: datetime.strptime(d["TIMESTAMP"], "%d.%m.%Y %H:%M:%S"), reverse=True)
+        return data
 
     def insert_Log(self, client_id: str, log_type: str, log_message: str, timestamp: str):
         self.__cursor.execute("""INSERT INTO tbl_CLIENTS_LOGS (CLIENT_ID, LOG_TYPE, LOG_MESSAGE, TIMESTAMP) VALUES (?, ?, ?, ?)""", (client_id, log_type, log_message, timestamp))
@@ -253,25 +257,26 @@ class SQLiteDatabase:
         data = self.__cursor.fetchone()
         return row_to_dict(data, self.__cursor.description)
 
-    def get_specific_Package(self, package_id: str, version: str) -> list:
-        if version is None:
-            self.__cursor.execute("""SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION, PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE FROM tbl_PACKAGES AS P
+    def get_specific_Package(self, package_id: str, version: str, channel: str) -> list:
+        sql_attributes = [package_id]
+        sql = """SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION, PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE, PV.PRODUCTCODE, PV.UPGRADECODE, PV.PACKAGE_FAMILY_NAME, PV.CHANNEL FROM tbl_PACKAGES AS P
                                             INNER JOIN tbl_PACKAGES_VERSIONS AS PV ON P.PACKAGE_ID = PV.PACKAGE_ID
                                             INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
                                         WHERE P.PACKAGE_ID = ?
-                                            AND P.PACKAGE_ACTIVE = 1
-                                        ORDER BY PV.VERSION DESC""", (package_id,))
-        else:
-            self.__cursor.execute("""SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION, PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE FROM tbl_PACKAGES AS P
-                                            INNER JOIN tbl_PACKAGES_VERSIONS AS PV ON P.PACKAGE_ID = PV.PACKAGE_ID
-                                            INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
-                                        WHERE P.PACKAGE_ID = ?
-                                            AND P.PACKAGE_ACTIVE = 1
-                                            AND PV.VERSION = ?""", (package_id, version))
+                                            AND P.PACKAGE_ACTIVE = 1"""
+
+        if version is not None:
+            sql += " AND PV.VERSION = ?"
+            sql_attributes.append(version)
+
+        if channel is not None:
+            sql += " AND PV.CHANNEL = ?"
+            sql_attributes.append(channel)
+
+        sql += " ORDER BY PV.VERSION DESC"
+        self.__cursor.execute(sql, tuple(sql_attributes))
         data = self.__cursor.fetchall()
-        if len(data) > 0:
-            return data
-        return []
+        return all_to_dict(data, self.__cursor.description)
 
     def add_Package(self, package_id: str, package_name: str, package_publisher: str, package_description: str, package_logo: str, package_active: int = 1) -> bool:
         self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES (PACKAGE_ID, PACKAGE_NAME, PACKAGE_PUBLISHER, PACKAGE_DESCRIPTION, PACKAGE_LOGO, PACKAGE_ACTIVE) 
@@ -298,7 +303,7 @@ class SQLiteDatabase:
         return False
 
     def get_All_Versions_from_Package(self, package_id: str) -> list:
-        self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE FROM tbl_PACKAGES_VERSIONS AS PV
+        self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE, PV.PRODUCTCODE, PV.UPGRADECODE, PV.PACKAGE_FAMILY_NAME, PV.CHANNEL FROM tbl_PACKAGES_VERSIONS AS PV
                                     INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
                                 WHERE PV.PACKAGE_ID = ?
                                 ORDER BY PV.VERSION DESC""", (package_id,))
@@ -310,15 +315,10 @@ class SQLiteDatabase:
         data = self.__cursor.fetchone()
         return row_to_dict(data, self.__cursor.description)
 
-    def add_Package_Version(self, package_id: str, package_version: str, package_local: int, file_architecture: str, file_type: str, file_download: str, file_sha: str, file_scope: str, uid: str, nested_type: str = None) -> bool:
-        if nested_type is not None:
-            self.__cursor.execute("""INSERT OR IGNORE INTO tbl_PACKAGES_VERSIONS (PACKAGE_ID, VERSION, LOCALE_ID, ARCHITECTURE, INSTALLER_TYPE, INSTALLER_NESTED_TYPE, INSTALLER_URL, INSTALLER_SHA256, INSTALLER_SCOPE, UID) 
-                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                                  (package_id, package_version, package_local, file_architecture, file_type, nested_type, file_download, file_sha, file_scope, uid))
-        else:
-            self.__cursor.execute("""INSERT OR IGNORE INTO tbl_PACKAGES_VERSIONS (PACKAGE_ID, VERSION, LOCALE_ID, ARCHITECTURE, INSTALLER_TYPE, INSTALLER_URL, INSTALLER_SHA256, INSTALLER_SCOPE, UID) 
-                                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                                  (package_id, package_version, package_local, file_architecture, file_type, file_download, file_sha, file_scope, uid))
+    def add_Package_Version(self, package_id: str, package_version: str, package_local: int, file_architecture: str, file_type: str, file_download: str, file_sha: str, file_scope: str, uid: str, nested_type: str = "", productcode: str = "", upgradecode: str = "", package_family_name: str = "", channel: str = "stable") -> bool:
+        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_PACKAGES_VERSIONS (PACKAGE_ID, VERSION, LOCALE_ID, ARCHITECTURE, INSTALLER_TYPE, INSTALLER_NESTED_TYPE, INSTALLER_URL, INSTALLER_SHA256, INSTALLER_SCOPE, UID, PRODUCTCODE, UPGRADECODE, PACKAGE_FAMILY_NAME, CHANNEL)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                              (package_id, package_version, package_local, file_architecture, file_type, nested_type, file_download, file_sha, file_scope, uid, productcode, upgradecode, package_family_name, channel))
 
         if self.__cursor.lastrowid > 0:
             return True

@@ -154,7 +154,12 @@ def add_package(package_id):
             with open(file_path, 'rb') as f:
                 file_hash = sha256(f.read()).hexdigest()
 
-            db.add_Package_Version(package_id, version, locale_id, installer.get('Architecture', 'x64'), installer.get('InstallerType', 'msi'), filename, file_hash, installer.get('Scope', 'machine'), version_uid, installer.get('NestedInstallerType', None))
+            productCode, upgradeCode = "", ""
+            if 'AppsAndFeaturesEntries' in installer and len(installer['AppsAndFeaturesEntries']) > 0:
+                productCode = installer['AppsAndFeaturesEntries'][0].get('ProductCode', installer.get('ProductCode', ''))
+                upgradeCode = installer['AppsAndFeaturesEntries'][0].get('UpgradeCode', '')
+
+            db.add_Package_Version(package_id, version, locale_id, installer.get('Architecture', 'x64'), installer.get('InstallerType', 'msi'), filename, file_hash, installer.get('Scope', 'machine'), version_uid, installer.get('NestedInstallerType', ''), productCode, upgradeCode, installer.get('PackageFamilyName', ""), installer.get('Channel', "stable"))
 
             if installer.get('InstallerType', '') == "zip":
                 for i_n in installer.get('NestedInstallerFiles', []):

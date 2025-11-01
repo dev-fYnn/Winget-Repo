@@ -43,6 +43,11 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="file_nested_path" class="form-label">Channel</label>
+                                <input type="text" class="form-control" id="channel" name="channel" placeholder="Installer Channel: stable, beta, ..." value="stable" required>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="file_architect" class="form-label">Architecture</label>
                                 <select name="file_architect" id="file_architect" class="form-control" required>
                                     <option value="x64">x64</option>
@@ -85,6 +90,21 @@
                             <div class="mb-3" id="nestedPathGroup">
                                 <label for="file_nested_path" class="form-label">Nested File Path (in ZIP)</label>
                                 <input type="text" class="form-control" id="file_nested_path" name="file_nested_path" placeholder="Nested File Path">
+                            </div>
+
+                            <div class="mb-3" id="productCodeGroup">
+                                <label for="file_nested_path" class="form-label">ProductCode (Optional)</label>
+                                <input type="text" class="form-control" id="productcode" name="productcode" placeholder="Installer ProductCode">
+                            </div>
+
+                            <div class="mb-3" id="upgradeCodeGroup">
+                                <label for="file_nested_path" class="form-label">UpgradeCode (Optional)</label>
+                                <input type="text" class="form-control" id="upgradecode" name="upgradecode" placeholder="Installer UpgradeCode">
+                            </div>
+
+                            <div class="mb-3" id="packageFamilyNameGroup">
+                                <label for="file_nested_path" class="form-label">Package Family Name (Optional)</label>
+                                <input type="text" class="form-control" id="package_family_name" name="package_family_name" placeholder="Package Family Name">
                             </div>
 
                             <div class="mb-3">
@@ -138,25 +158,76 @@
 
         function toggleNestedFields() {
             const fileType = document.getElementById("file_type").value;
+            const nestedTypeSelect = document.getElementById("file_type_nested");
+            const nestedType = nestedTypeSelect ? nestedTypeSelect.value : "";
+
             const nestedTypeGroup = document.getElementById("nestedTypeGroup");
             const nestedPathGroup = document.getElementById("nestedPathGroup");
-            const nestedType = document.getElementById("file_type_nested");
-            const nestedPath = document.getElementById("file_nested_path");
             const fileTypeCol = document.getElementById("fileTypeCol");
 
-            const showNested = fileType === "ZIP";
+            const productCodeGroup = document.getElementById("productCodeGroup");
+            const upgradeCodeGroup = document.getElementById("upgradeCodeGroup");
+            const packageFamilyNameGroup = document.getElementById("packageFamilyNameGroup");
+
+            const isZip = fileType === "ZIP";
+            const showNested = isZip;
 
             nestedTypeGroup.style.display = showNested ? "block" : "none";
             nestedPathGroup.style.display = showNested ? "block" : "none";
 
-            nestedType.required = showNested;
-            nestedPath.required = showNested;
+            if (nestedTypeSelect) nestedTypeSelect.required = showNested;
+            document.getElementById("file_nested_path").required = showNested;
 
             fileTypeCol.className = showNested ? "col-md-6" : "col-md-12";
+            let effectiveType = fileType;
+
+            if (isZip && nestedType) {
+                effectiveType = nestedType;
+            }
+
+            let showProductCode = false;
+            let showUpgradeCode = false;
+            let showPackageFamilyName = false;
+
+            switch (effectiveType) {
+                case "MSI":
+                    showProductCode = true;
+                    showUpgradeCode = true;
+                    break;
+
+                case "MSIX":
+                case "APPX":
+                    showPackageFamilyName = true;
+                    break;
+
+                case "EXE":
+                case "INNO":
+                case "NULLSOFT":
+                case "BURN":
+                    showProductCode = true;
+                    showUpgradeCode = true;
+                    break;
+
+                case "WIX":
+                    showProductCode = true;
+                    showUpgradeCode = true;
+                    break;
+
+                case "ZIP":
+                    break;
+
+                default:
+                    break;
+            }
+
+            productCodeGroup.style.display = showProductCode ? "block" : "none";
+            upgradeCodeGroup.style.display = showUpgradeCode ? "block" : "none";
+            packageFamilyNameGroup.style.display = showPackageFamilyName ? "block" : "none";
         }
 
         document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("file_type").addEventListener("change", toggleNestedFields);
+            document.getElementById("file_type_nested").addEventListener("change", toggleNestedFields);
             toggleNestedFields();
         });
     </script>

@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block custom_links %}
+    <script src="{{ url_for('static', filename='js/url.js') }}"></script>
+{% endblock %}
+
 {% block header %}
     <div>
         <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
@@ -32,7 +36,8 @@
                             </div>
                             <div class="mb-3">
                                 <label for="package_description" class="form-label">Description</label>
-                                <input type="text" class="form-control" id="package_description" name="package_description" placeholder="Description" value="{{ description }}" maxlength="150" required>
+                                <textarea class="form-control" id="package_description" name="package_description" placeholder="Description" maxlength="150" required>{{ description }}</textarea>
+                                <small id="description_preview" class="form-text text-muted"></small>
                             </div>
                             <div class="mb-3">
                                 <label for="file" class="form-label">Package Logo</label>
@@ -102,6 +107,12 @@
                 hiddenInput.value = "1";
             }
         }
+
+        document.getElementById('package_description').addEventListener('input', function () {
+            retrieve_url(this.id, 'description_preview');
+        });
+
+        retrieve_url('package_description', 'description_preview');
     </script>
 {% endblock %}
 

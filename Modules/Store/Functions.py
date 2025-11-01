@@ -106,6 +106,14 @@ def get_All_InstallerInfos_from_Manifest(p_path: str, manifest_name: str) -> dic
                 i["InstallerType"] = manifest.get("InstallerType", '')
             if i.get("InstallerSwitches", '') == '':
                 i["InstallerSwitches"] = manifest.get("InstallerSwitches", {})
+            if i.get("Channel", '') == '':
+                i["Channel"] = manifest.get("Channel", 'stable')
+
+            if i["InstallerType"].upper() == "ZIP":
+                if len(i.get("NestedInstallerFiles", [])) == 0:
+                    i["NestedInstallerFiles"] = manifest.get('NestedInstallerFiles', [])
+                if i.get("NestedInstallerType", '') == '':
+                    i["NestedInstallerType"] = manifest.get('NestedInstallerType', '')
 
         p_infos = {"Packagename": manifest.get("PackageName", ""), "Author": manifest.get("Author", ""),
                    "Description": manifest.get("ShortDescription", ""), "Locale": manifest.get("PackageLocale", "en-US"),

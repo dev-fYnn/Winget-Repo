@@ -15,11 +15,46 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str,
 
     data = []
     for p in packages:
+        versions = []
+
+        for d in db.get_All_Versions_from_Package(p['PACKAGE_ID']):
+            version_info = {
+                "PackageVersion": d['VERSION'],
+                #"Channel": d['CHANNEL'],
+                "PackageFamilyNames": [],
+                "ProductCodes": [],
+                "UpgradeCodes": [],
+                "AppsAndFeaturesEntryVersions": []
+            }
+
+            if len(d['PRODUCTCODE']) > 0:
+                version_info["ProductCodes"] = [d['PRODUCTCODE']]
+
+            if len(d['UPGRADECODE']) > 0:
+                version_info["UpgradeCodes"] = [d['UPGRADECODE']]
+
+            if len(d['PACKAGE_FAMILY_NAME']) > 0:
+                version_info["PackageFamilyNames"] = [d['PACKAGE_FAMILY_NAME']]
+
+            version_variants = [d['VERSION']]
+            if "." in d['VERSION']:
+                parts = d['VERSION'].split('.')
+                if len(parts) == 3:
+                    version_variants.append(f"{d['VERSION']}.0")
+                    version_variants.append(f"{parts[0]}.{parts[1]}")
+                elif len(parts) == 2:
+                    version_variants.append(f"{d['VERSION']}.0.0")
+                elif len(parts) == 4:
+                    version_variants.append(f"{parts[0]}.{parts[1]}.{parts[2]}")
+
+            version_info['AppsAndFeaturesEntryVersions'] = version_variants
+            versions.append(version_info)
+
         temp = {
             "PackageIdentifier": p['PACKAGE_ID'],
             "PackageName": p['PACKAGE_NAME'],
             "Publisher": p['PACKAGE_PUBLISHER'],
-            "Versions": [{"PackageVersion": d['VERSION']} for d in db.get_All_Versions_from_Package(p['PACKAGE_ID'])]
+            "Versions": versions
         }
 
         if len(temp["Versions"]) > 0:
@@ -28,38 +63,57 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str,
     return data
 
 
-def generate_Installer_Manifest(package_id: str, version: str, auth_token: str = "") -> dict | list:
+def generate_Installer_Manifest(package_id: str, version: str, channel: str, auth_token: str = "") -> dict | list:
     db = SQLiteDatabase()
-    package = db.get_specific_Package(package_id, version)
+    package = db.get_specific_Package(package_id, version, channel)
     blacklist = db.get_Blacklist_for_client(auth_token)
 
-    if len(package) > 0 and package[0][0] not in blacklist:
+    if len(package) > 0 and package[0]['PACKAGE_ID'] not in blacklist:
         data = {
-                    "PackageIdentifier": package[0][0],
+                    "PackageIdentifier": package[0]['PACKAGE_ID'],
                     "Versions": [{
-                        "PackageVersion": package[0][5],
+                        "PackageVersion": package[0]['VERSION'],
+                        #"Channel": package[0]['CHANNEL'],
                         "DefaultLocale": {
-                            "PackageLocale": package[0][4],
-                            "Publisher": package[0][2],
-                            "PackageName": package[0][1],
-                            "ShortDescription": package[0][3],
+                            "PackageLocale": package[0]['LOCALE'],
+                            "Publisher": package[0]['PACKAGE_PUBLISHER'],
+                            "PackageName": package[0]['PACKAGE_NAME'],
+                            "ShortDescription": package[0]['PACKAGE_DESCRIPTION'],
                         },
                         "Installers": []
                     }]
                 }
         for p in package:
+            key = (p['INSTALLER_TYPE'], p['ARCHITECTURE'], p['INSTALLER_SCOPE'])
+            if key in data['Versions'][0]['Installers']:
+                continue
+
             dum_data = {
-                    "Architecture": p[6],
-                    "InstallerType": p[7],
-                    "InstallerUrl": url_for("winget_routes.download", package_name=p[8], _external=True),
-                    "InstallerSha256": p[9],
-                    "Scope": p[10],
-                    "InstallerSwitches": db.get_Package_Switche(p[11])
+                    "Architecture": p['ARCHITECTURE'],
+                    "InstallerType": p['INSTALLER_TYPE'],
+                    "InstallerUrl": url_for("winget_routes.download", package_name=p['INSTALLER_URL'], _external=True),
+                    "InstallerSha256": p['INSTALLER_SHA256'],
+                    "Scope": p['INSTALLER_SCOPE'],
+                    "InstallerSwitches": db.get_Package_Switche(p['UID'])
                 }
 
-            if p[7] == "zip":
-                dum_data["NestedInstallerType"] = p[12]
-                dum_data["NestedInstallerFiles"] = db.get_Nested_Installer(p[11])
+            if len(p['PACKAGE_FAMILY_NAME']) > 0:
+                dum_data["PackageFamilyName"] = p['PACKAGE_FAMILY_NAME']
+
+            if len(p['PRODUCTCODE']) > 0:
+                dum_data["ProductCode"] = p['PRODUCTCODE']
+
+                if len(p['UPGRADECODE']) > 0:
+                    dum_data["AppsAndFeaturesEntries"] = [
+                        {
+                            "ProductCode": p['PRODUCTCODE'],
+                            "UpgradeCode": p['UPGRADECODE'],
+                        }
+                    ]
+
+            if p['INSTALLER_TYPE'] == "zip":
+                dum_data["NestedInstallerType"] = p['INSTALLER_NESTED_TYPE']
+                dum_data["NestedInstallerFiles"] = db.get_Nested_Installer(p['UID'])
 
             data['Versions'][0]['Installers'].append(dum_data)
         output = {"Data": data}

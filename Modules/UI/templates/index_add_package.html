@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block custom_links %}
+    <script src="{{ url_for('static', filename='js/url.js') }}"></script>
+{% endblock %}
+
 {% block header %}
     <div>
         <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
@@ -9,44 +13,50 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header text-center">
-                    <h4>Add Package</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('ui_bp.add_package') }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                        <div class="mb-3">
-                            <label for="package_name" class="form-label">Package ID</label>
-                            <input type="text" class="form-control" id="package_id" name="package_id" placeholder="Package id" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="package_name" class="form-label">Package Name</label>
-                            <input type="text" class="form-control" id="package_name" name="package_name" placeholder="Package name" maxlength="25" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="package_publisher" class="form-label">Publisher</label>
-                            <input type="text" class="form-control" id="package_publisher" name="package_publisher" placeholder="Publisher" maxlength="25" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="package_description" class="form-label">Description</label>
-                            <input type="text" class="form-control" id="package_description" name="package_description" placeholder="Description" maxlength="150" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="file" class="form-label">Package Logo</label>
-                            <input type="file" class="form-control" id="file" name="Logo" accept="image/png" required>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary" id="submit_form">Add Package</button>
-                        </div>
-                    </form>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header text-center">
+                        <h4>Add Package</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('ui_bp.add_package') }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <div class="mb-3">
+                                <label for="package_name" class="form-label">Package ID</label>
+                                <input type="text" class="form-control" id="package_id" name="package_id" placeholder="Package id" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="package_name" class="form-label">Package Name</label>
+                                <input type="text" class="form-control" id="package_name" name="package_name" placeholder="Package name" maxlength="25" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="package_publisher" class="form-label">Publisher</label>
+                                <input type="text" class="form-control" id="package_publisher" name="package_publisher" placeholder="Publisher" maxlength="25" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="package_description" class="form-label">Description</label>
+                                <textarea class="form-control" id="package_description" name="package_description" placeholder="Description oder Link" maxlength="150" required>{{ description }}</textarea>
+                                <small id="description_preview" class="form-text text-muted"></small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Package Logo</label>
+                                <input type="file" class="form-control" id="file" name="Logo" accept="image/png" required>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary" id="submit_form">Add Package</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+    <script>
+        document.getElementById('package_description').addEventListener('input', function () {
+            retrieve_url(this.id, 'description_preview');
+        });
+    </script>
 {% endblock %}
 
