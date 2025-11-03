@@ -36,18 +36,6 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str,
             if len(d['PACKAGE_FAMILY_NAME']) > 0:
                 version_info["PackageFamilyNames"] = [d['PACKAGE_FAMILY_NAME']]
 
-            version_variants = [d['VERSION']]
-            if "." in d['VERSION']:
-                parts = d['VERSION'].split('.')
-                if len(parts) == 3:
-                    version_variants.append(f"{d['VERSION']}.0")
-                    version_variants.append(f"{parts[0]}.{parts[1]}")
-                elif len(parts) == 2:
-                    version_variants.append(f"{d['VERSION']}.0.0")
-                elif len(parts) == 4:
-                    version_variants.append(f"{parts[0]}.{parts[1]}.{parts[2]}")
-
-            version_info['AppsAndFeaturesEntryVersions'] = version_variants
             versions.append(version_info)
 
         temp = {
