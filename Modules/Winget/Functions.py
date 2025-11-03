@@ -51,65 +51,82 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str,
     return data
 
 
-def generate_Installer_Manifest(package_id: str, version: str, channel: str, auth_token: str = "") -> dict | list:
+def generate_Installer_Manifest(package_id: str, version: str = None, channel: str = None, auth_token: str = "") -> dict:
     db = SQLiteDatabase()
     package = db.get_specific_Package(package_id, version, channel)
     blacklist = db.get_Blacklist_for_client(auth_token)
 
-    if len(package) > 0 and package[0]['PACKAGE_ID'] not in blacklist:
-        data = {
-                    "PackageIdentifier": package[0]['PACKAGE_ID'],
-                    "Versions": [{
-                        "PackageVersion": package[0]['VERSION'],
-                        #"Channel": package[0]['CHANNEL'],
-                        "DefaultLocale": {
-                            "PackageLocale": package[0]['LOCALE'],
-                            "Publisher": package[0]['PACKAGE_PUBLISHER'],
-                            "PackageName": package[0]['PACKAGE_NAME'],
-                            "ShortDescription": package[0]['PACKAGE_DESCRIPTION'],
-                        },
-                        "Installers": []
-                    }]
-                }
-        for p in package:
-            key = (p['INSTALLER_TYPE'], p['ARCHITECTURE'], p['INSTALLER_SCOPE'])
-            if key in data['Versions'][0]['Installers']:
-                continue
-
-            dum_data = {
-                    "Architecture": p['ARCHITECTURE'],
-                    "InstallerType": p['INSTALLER_TYPE'],
-                    "InstallerUrl": url_for("winget_routes.download", package_name=p['INSTALLER_URL'], _external=True),
-                    "InstallerSha256": p['INSTALLER_SHA256'],
-                    "Scope": p['INSTALLER_SCOPE'],
-                    "InstallerSwitches": db.get_Package_Switche(p['UID'])
-                }
-
-            if len(p['PACKAGE_FAMILY_NAME']) > 0:
-                dum_data["PackageFamilyName"] = p['PACKAGE_FAMILY_NAME']
-
-            if len(p['PRODUCTCODE']) > 0:
-                dum_data["ProductCode"] = p['PRODUCTCODE']
-
-                if len(p['UPGRADECODE']) > 0:
-                    dum_data["AppsAndFeaturesEntries"] = [
-                        {
-                            "ProductCode": p['PRODUCTCODE'],
-                            "UpgradeCode": p['UPGRADECODE'],
-                        }
-                    ]
-
-            if p['INSTALLER_TYPE'] == "zip":
-                dum_data["NestedInstallerType"] = p['INSTALLER_NESTED_TYPE']
-                dum_data["NestedInstallerFiles"] = db.get_Nested_Installer(p['UID'])
-
-            data['Versions'][0]['Installers'].append(dum_data)
-        output = {"Data": data}
-    else:
-        output = {}
-
+    versions = []
+    if package and package['PACKAGE_ID'] not in blacklist:
+        for version_group in package['VERSIONS']:
+            version_info = _build_version_info(version_group, package, db)
+            if version_info:
+                versions.append(version_info)
     del db
-    return output
+
+    if package:
+        r_data = {
+            "Data": {
+                "PackageIdentifier": package['PACKAGE_ID'],
+                "Versions": versions
+            }
+        }
+    else:
+        r_data = {}
+    return r_data
+
+
+def _build_version_info(version_group: list, package: dict, db: SQLiteDatabase) -> dict:
+    first_installer = version_group[0]
+
+    installers = []
+    for installer_data in version_group:
+        installer = _build_installer_entry(installer_data, db)
+        if installer:
+            installers.append(installer)
+
+    return {
+        "PackageVersion": first_installer.get('VERSION', '0.0.0.0'),
+        # "Channel": first_installer.get('CHANNEL', 'stable')
+        "DefaultLocale": {
+            "PackageLocale": first_installer.get('LOCALE', 'en-US'),
+            "Publisher": package.get('PACKAGE_PUBLISHER', ''),
+            "PackageName": package.get('PACKAGE_NAME', ''),
+            "ShortDescription": package.get('PACKAGE_DESCRIPTION', ''),
+        },
+        "Installers": installers
+    }
+
+
+def _build_installer_entry(installer_data: dict, db: SQLiteDatabase) -> dict:
+    installer = {
+        "Architecture": installer_data.get('ARCHITECTURE', 'x64'),
+        "InstallerType": installer_data.get('INSTALLER_TYPE', ''),
+        "InstallerUrl": url_for("winget_routes.download", package_name=installer_data.get('INSTALLER_URL', ''), _external=True),
+        "InstallerSha256": installer_data.get('INSTALLER_SHA256', ''),
+        "Scope": installer_data.get('INSTALLER_SCOPE', 'machine'),
+        "InstallerSwitches": db.get_Package_Switche(installer_data.get('UID'))
+    }
+
+    package_family_name = installer_data.get('PACKAGE_FAMILY_NAME', '')
+    if package_family_name:
+        installer["PackageFamilyName"] = package_family_name
+
+    product_code = installer_data.get('PRODUCTCODE', '')
+    if product_code:
+        installer["ProductCode"] = product_code
+
+        upgrade_code = installer_data.get('UPGRADECODE', '')
+        if upgrade_code:
+            installer["AppsAndFeaturesEntries"] = [{
+                "ProductCode": product_code,
+                "UpgradeCode": upgrade_code,
+            }]
+
+    if installer_data['INSTALLER_TYPE'] == "zip":
+        installer["NestedInstallerType"] = installer_data['INSTALLER_NESTED_TYPE']
+        installer["NestedInstallerFiles"] = db.get_Nested_Installer(installer_data['UID'])
+    return installer
 
 
 def filter_entries_by_package_match_field(data: list[dict]):

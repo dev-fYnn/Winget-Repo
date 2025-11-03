@@ -1,7 +1,8 @@
 import sqlite3
 
 from datetime import datetime
-from Modules.Functions import generate_random_string, all_to_dict, row_to_dict
+from itertools import groupby
+from Modules.Functions import generate_random_string, all_to_dict, row_to_dict, parse_version
 from settings import PATH_DATABASE
 
 
@@ -257,26 +258,48 @@ class SQLiteDatabase:
         data = self.__cursor.fetchone()
         return row_to_dict(data, self.__cursor.description)
 
-    def get_specific_Package(self, package_id: str, version: str, channel: str) -> list:
-        sql_attributes = [package_id]
-        sql = """SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION, PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE, PV.PRODUCTCODE, PV.UPGRADECODE, PV.PACKAGE_FAMILY_NAME, PV.CHANNEL FROM tbl_PACKAGES AS P
-                                            INNER JOIN tbl_PACKAGES_VERSIONS AS PV ON P.PACKAGE_ID = PV.PACKAGE_ID
-                                            INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
-                                        WHERE P.PACKAGE_ID = ?
-                                            AND P.PACKAGE_ACTIVE = 1"""
+    def get_specific_Package(self, package_id: str, version: str, channel: str) -> dict:
+        self.__cursor.execute("""SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION
+                                        FROM tbl_PACKAGES AS P
+                                    WHERE P.PACKAGE_ID = ? 
+                                        AND P.PACKAGE_ACTIVE = 1""", (package_id,))
+        data = self.__cursor.fetchone()
+        package = row_to_dict(data, self.__cursor.description)
 
-        if version is not None:
-            sql += " AND PV.VERSION = ?"
-            sql_attributes.append(version)
+        if package:
+            sql_versions = """SELECT PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE, PV.PRODUCTCODE, PV.UPGRADECODE, PV.PACKAGE_FAMILY_NAME, PV.CHANNEL 
+                                    FROM tbl_PACKAGES_VERSIONS AS PV
+                                    INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
+                                WHERE PV.PACKAGE_ID = ?"""
 
-        if channel is not None:
-            sql += " AND PV.CHANNEL = ?"
-            sql_attributes.append(channel)
+            params = [package_id]
+            if version is not None:
+                sql_versions += " AND PV.VERSION = ?"
+                params.append(version)
 
-        sql += " ORDER BY PV.VERSION DESC"
-        self.__cursor.execute(sql, tuple(sql_attributes))
-        data = self.__cursor.fetchall()
-        return all_to_dict(data, self.__cursor.description)
+            if channel is not None:
+                sql_versions += " AND PV.CHANNEL = ?"
+                params.append(channel)
+
+            sql_versions += " ORDER BY PV.VERSION DESC"
+
+            self.__cursor.execute(sql_versions, tuple(params))
+            data_versions = self.__cursor.fetchall()
+            versions = all_to_dict(data_versions, self.__cursor.description)
+
+            if versions:
+                if version is None:
+                    sorted_versions = sorted(versions, key=lambda x: parse_version(x.get('VERSION', '0.0.0')), reverse=True)
+
+                    grouped_versions = []
+                    for version_number, installers in groupby(sorted_versions, key=lambda x: x.get('VERSION')):
+                        grouped_versions.append(list(installers))
+                    package['VERSIONS'] = grouped_versions
+                else:
+                    package['VERSIONS'] = [versions]
+            else:
+                package['VERSIONS'] = []
+        return package
 
     def add_Package(self, package_id: str, package_name: str, package_publisher: str, package_description: str, package_logo: str, package_active: int = 1) -> bool:
         self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES (PACKAGE_ID, PACKAGE_NAME, PACKAGE_PUBLISHER, PACKAGE_DESCRIPTION, PACKAGE_LOGO, PACKAGE_ACTIVE) 
