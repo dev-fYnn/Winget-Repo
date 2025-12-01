@@ -6,8 +6,8 @@ This document describes the configuration options available in the **Winget-Repo
 
 ## 🔧 Server Settings Table
 
-| **Name**                                      | **Description**                                                                 |
-|----------------------------------------------|---------------------------------------------------------------------------------|
+| **Name**                                     | **Description**                                                                |
+|----------------------------------------------|--------------------------------------------------------------------------------|
 | **Server Name (Max. 12)**                    | Sets the name of your Winget server (max 12 characters). Appears in the UI.    |
 | **Winget-Client Versions**                   | Lists the compatible Winget client versions separated by commas.               |
 | **Client Authentication**                    | Enables client-side authentication for secure access.                          |
@@ -15,6 +15,17 @@ This document describes the configuration options available in the **Winget-Repo
 | **Domain Suffix**                            | The DNS suffix applied to clients during authentication. (e.g. fritz.box)      |
 | **Enable Terms of Service**                  | Option to enable/require acceptance of Terms of Service for the winget client. |
 | **Enable Package Store (Internet required)** | Enables online package store integration (requires internet access).           |
+| **IP Restriction**                           | Enables ip restriction to single ips or ip ranges.                             |
+
+---
+
+## IP Restriction 
+
+You can allow the following:
+- Disabled: DEFAULT
+- IPs: 192.168.1.1
+- IP-Ranges: 192.168.1.1-192.168.1.100
+- Both: Separated by , or ; 
 
 ---
 

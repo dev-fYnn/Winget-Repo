@@ -7,12 +7,14 @@ import socket
 import string
 import dns.resolver
 import dns.reversename
+import zlib
 
 from datetime import datetime
 from pathlib import Path
 from werkzeug.datastructures import headers
 from io import StringIO, BytesIO
 from settings import PATH_FILES
+from itsdangerous import base64_decode
 
 
 def generate_random_string(length: int) -> string:
@@ -144,3 +146,23 @@ def get_file_edit_date(path: str) -> datetime:
 def start_up_check():
     if not os.path.exists(PATH_FILES):
         os.makedirs(PATH_FILES)
+
+
+def decode_flask_cookie(cookie) -> dict:
+    try:
+        compressed = False
+        payload = cookie
+
+        if payload.startswith('.'):
+            compressed = True
+            payload = payload[1:]
+
+        data = payload.split(".")[0]
+
+        data = base64_decode(data)
+        if compressed:
+            data = zlib.decompress(data)
+
+        return json.loads(data.decode("utf-8"))
+    except Exception as e:
+        return {}

@@ -1,6 +1,6 @@
 import sqlite3
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from itertools import groupby
 from Modules.Functions import generate_random_string, all_to_dict, row_to_dict, parse_version
 from settings import PATH_DATABASE
@@ -483,3 +483,56 @@ class SQLiteDatabase:
     def update_User_Password(self, user_id: str, password: str):
         self.__cursor.execute(f"""UPDATE tbl_USER SET PW = ? WHERE ID = ?""", (password, user_id))
         self.db_commit()
+
+    #-------------------API----------------------
+    def get_Session_Token(self, token: str) -> str:
+        self.__cursor.execute("""SELECT TOKEN, TIMESTAMP
+                                      FROM tbl_USER_API
+                                     WHERE TOKEN = ?""", (token,))
+        data = self.__cursor.fetchone()
+        if not data:
+            return ""
+        token, timestamp_str = data
+
+        try:
+            token_time = datetime.fromisoformat(timestamp_str)
+        except:
+            return ""
+
+        if datetime.now() - token_time > timedelta(hours=1):
+            self.delete_Session_Token(token=token)
+            return ""
+        return token
+
+    def create_Session_Token(self, user_id: str, token: str) -> str:
+        self.__cursor.execute("""SELECT TOKEN, TIMESTAMP
+                                      FROM tbl_USER_API
+                                     WHERE UID = ?""", (user_id,))
+        data = self.__cursor.fetchone()
+        if data:
+            old_token, ts = data
+            try:
+                ts_dt = datetime.fromisoformat(ts)
+            except:
+                ts_dt = datetime.min
+
+            if datetime.now() - ts_dt < timedelta(hours=1):
+                return old_token
+            self.delete_Session_Token(user_id)
+        self.__cursor.execute("""INSERT INTO tbl_USER_API (UID, TOKEN, TIMESTAMP) VALUES (?, ?, ?)""", (user_id, token, datetime.now()))
+        self.db_commit()
+        return token
+
+    def update_Session_Timestamp(self, token: str) -> bool:
+        self.__cursor.execute("""UPDATE tbl_USER_API
+                                       SET TIMESTAMP = ?
+                                     WHERE TOKEN = ?""", (datetime.now(), token))
+        self.db_commit()
+        return True
+
+    def delete_Session_Token(self, user_id: str = "", token: str = "") -> bool:
+        self.__cursor.execute("""DELETE FROM tbl_USER_API 
+                                     WHERE UID = ? OR TOKEN = ?""", (user_id, token))
+        self.db_commit()
+        return True
+

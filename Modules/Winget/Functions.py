@@ -154,6 +154,51 @@ def authenticate_Client(token: str, ip: str, settings: dict, client: int = 0) ->
     del db
     return False
 
+
+def ip_to_int(ip):
+    parts = ip.strip().split('.')
+    if len(parts) != 4:
+        raise ValueError("Invalid IPv4")
+    return (int(parts[0]) << 24) | (int(parts[1]) << 16) | \
+           (int(parts[2]) << 8) | int(parts[3])
+
+
+def authorize_IP_Range(ip: str) -> bool:
+    if ":" in ip:
+        return False
+
+    db = SQLiteDatabase()
+    settings = db.get_winget_Settings()
+    del db
+
+    ip_ranges = settings.get('IP_RESTRICTION', 'DEFAULT').upper()
+    if ip_ranges.upper() == "DEFAULT":
+        return True
+
+    if ";" in ip_ranges:
+        ip_ranges = ip_ranges.split(";")
+    elif "," in ip_ranges:
+        ip_ranges = ip_ranges.split(",")
+    else:
+        ip_ranges = [ip_ranges]
+
+    try:
+        ip_int = ip_to_int(ip)
+    except ValueError:
+        return False
+
+    for ip_range in ip_ranges:
+        ip_range = ip_range.strip()
+        if '-' in ip_range:
+            start, end = [x.strip() for x in ip_range.split('-')]
+            if ip_to_int(start) <= ip_int <= ip_to_int(end):
+                return True
+        else:
+            if ip_int == ip_to_int(ip_range):
+                return True
+    return False
+
+
 def write_log(client_ip: str, package_name: str, log_type: str):
     db = SQLiteDatabase()
     client = db.get_Client_by_IP(client_ip)

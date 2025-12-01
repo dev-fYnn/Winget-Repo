@@ -5,11 +5,18 @@ from datetime import timedelta, datetime
 from functools import wraps
 
 from Modules.Functions import get_Auth_Token_from_Header
-from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client, write_log
+from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client, write_log, authorize_IP_Range
 from main_extensions import csrf
 from settings import PATH_FILES, URL_PACKAGE_DOWNLOAD
 
 winget_routes = Blueprint('winget_routes', __name__)
+
+
+@winget_routes.before_request
+def before_request():
+    if not authorize_IP_Range(request.remote_addr):
+        return "Unauthorized", 403
+    return None
 
 
 def check_authentication(f):

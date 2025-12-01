@@ -1,8 +1,12 @@
 import os
 import sys
 
+from a2wsgi import ASGIMiddleware
+from fastapi import FastAPI
 from flask import Flask, send_from_directory, url_for
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
+from Modules.API.API import client_api_bp, SetupCheckMiddleware
 from Modules.DevMode.Functions import generate_dev_certificate
 from Modules.Functions import start_up_check
 from Modules.Clients.Clients import client_bp
@@ -14,7 +18,6 @@ from Modules.UI.UI import ui_bp
 from Modules.User.User import user_bp
 from Modules.Winget.Functions import get_winget_Settings
 from Modules.Winget.winget_Routes import winget_routes
-from Modules.API.API import api_bp
 from main_extensions import csrf
 
 settings = get_winget_Settings(True)
@@ -35,8 +38,16 @@ app.register_blueprint(groups_bp, url_prefix='/ui/groups')
 app.register_blueprint(client_bp, url_prefix='/ui/clients')
 app.register_blueprint(settings_bp, url_prefix='/ui/settings')
 app.register_blueprint(store_bp, url_prefix='/ui/store')
-app.register_blueprint(api_bp, url_prefix='/client/api')
 app.register_blueprint(winget_routes, url_prefix='/api')
+
+
+client_api = FastAPI(title="Winget-Repo REST-API")
+client_api.add_middleware(SetupCheckMiddleware)
+client_api.include_router(client_api_bp)
+
+app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+    '/client/api': ASGIMiddleware(client_api)
+})
 
 
 @app.route('/favicon.ico')

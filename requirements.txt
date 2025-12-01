@@ -6,3 +6,6 @@ dnspython>=2.7.0
 cryptography>=45.0.5
 python-dotenv>=1.1.1
 flask_seasurf>=2.0.0
+fastapi>=0.122.0
+a2wsgi>=1.10.10
+python-multipart>=0.0.20
