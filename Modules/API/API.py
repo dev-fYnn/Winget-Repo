@@ -27,10 +27,12 @@ class SetupCheckMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if not user_setup_finished():
             return JSONResponse(status_code=503, content={"error": "Setup incomplete"})
-        flask_cookies = decode_flask_cookie(request.cookies.get('Winget-Repo'))
-        status, _ = check_User_Exists('', user_id=flask_cookies.get('logged_in', ''))
-        if not status:
-            return RedirectResponse(url=f"{request.base_url.scheme}://{request.base_url.components.netloc}/", status_code=307)
+
+        if request.url.path.lower() in ["/client/api/docs", "/client/api/redoc", "/client/api/openapi.json"]:
+            flask_cookies = decode_flask_cookie(request.cookies.get('Winget-Repo'))
+            status, _ = check_User_Exists('', user_id=flask_cookies.get('logged_in', ''))
+            if not status:
+                return RedirectResponse(url=f"{request.base_url.scheme}://{request.base_url.components.netloc}/", status_code=307)
         return await call_next(request)
 
 
