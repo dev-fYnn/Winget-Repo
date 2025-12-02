@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from flask import Flask, send_from_directory, url_for
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
-from Modules.API.API import client_api_bp, SetupCheckMiddleware
+from Modules.API.API import client_api_bp, APICheckerMiddleware
 from Modules.DevMode.Functions import generate_dev_certificate
 from Modules.Functions import start_up_check
 from Modules.Clients.Clients import client_bp
@@ -42,7 +42,7 @@ app.register_blueprint(winget_routes, url_prefix='/api')
 
 
 client_api = FastAPI(title="Winget-Repo REST-API")
-client_api.add_middleware(SetupCheckMiddleware)
+client_api.add_middleware(APICheckerMiddleware)
 client_api.include_router(client_api_bp)
 
 app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {

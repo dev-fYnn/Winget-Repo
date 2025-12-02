@@ -1,8 +1,8 @@
 import base64
 import secrets
 
-from fastapi import APIRouter, Form, HTTPException, Depends, Request, Header, UploadFile, File
-from fastapi.security import HTTPBearer
+from fastapi import APIRouter, Form, HTTPException, Depends, Request, UploadFile, File
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 from pathlib import Path
 from typing import Optional
@@ -20,13 +20,17 @@ from settings import PATH_LOGOS
 
 
 client_api_bp = APIRouter()
-oauth2_scheme = HTTPBearer()
+oauth2_scheme = HTTPBearer(auto_error=False)
 
 
-class SetupCheckMiddleware(BaseHTTPMiddleware):
+class APICheckerMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if not user_setup_finished():
             return JSONResponse(status_code=503, content={"error": "Setup incomplete"})
+
+        client_ip = request.client.host
+        if not authorize_IP_Range(client_ip):
+            raise HTTPException(status_code=403, detail="IP address not authorized")
 
         if request.url.path.lower() in ["/client/api/docs", "/client/api/redoc", "/client/api/openapi.json"]:
             flask_cookies = decode_flask_cookie(request.cookies.get('Winget-Repo'))
@@ -36,33 +40,19 @@ class SetupCheckMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-async def combined_auth(request: Request, authorization: Optional[str] = Header(None), auth_token: Optional[str] = Form(None, alias="Auth-Token"), client: Optional[str] = Form(None, alias="Client")):
-    client_ip = request.client.host
-    if not authorize_IP_Range(client_ip):
-        raise HTTPException(status_code=403, detail="Unauthorized")
-
-    if authorization:
-        scheme, _, token = authorization.partition(" ")
-        if scheme.lower() == "bearer" and token:
-            db = SQLiteDatabase()
-            session = db.get_Session_Token(token)
-            del db
-            if not session:
-                raise HTTPException(status_code=401, detail="Invalid bearer token")
-            return token
-
-    settings = get_winget_Settings()
-    if bool(int(settings.get("CLIENT_AUTHENTICATION", "0"))):
-        if not auth_token:
-            raise HTTPException(status_code=401, detail="Auth-Token missing")
+async def verify_bearer_token(credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme)) -> str:
+    if credentials:
+        token = credentials.credentials
+        db = SQLiteDatabase()
         try:
-            client_value = client if client else 0
-            if not authenticate_Client(auth_token, client_ip, settings, client_value):
-                raise HTTPException(status_code=401, detail="Invalid Auth-Token")
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid token format")
-        return auth_token
-    return None
+            session = db.get_Session_Token(token)
+            if not session:
+                raise HTTPException(status_code=401, detail="Invalid or expired token")
+            db.update_Session_Timestamp(token)
+            return token
+        finally:
+            del db
+    raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
 # LOGIN
@@ -116,7 +106,7 @@ async def logout(token: str = Form(...)):
 
 # NUR Bearer Token
 @client_api_bp.get("/test", tags=["Authentication"], summary="Check API availability and authentication functionality")
-async def test(token: str = Depends(oauth2_scheme)):
+async def test(token: str = Depends(verify_bearer_token)):
     """
     Performs a simple API functionality test.
 
@@ -134,25 +124,38 @@ async def test(token: str = Depends(oauth2_scheme)):
 
 # Bearer oder Auth-Token
 @client_api_bp.post("/client_version", tags=["Winget-Repo Client"], summary="Winget-Repo Client Version", response_model=ClientVersionResponse)
-async def client_version(auth=Depends(combined_auth)):
+async def client_version(request: Request, auth_token: Optional[str] = Form(None), client: Optional[str] = Form(None), token_auth: Optional[HTTPAuthorizationCredentials] = Depends(oauth2_scheme)):
     """
     Returns the latest available version of the Winget-Repo Client.
-
-    If client authentication is disabled, the version information is always returned.
-    If authentication is enabled, a valid Bearer token or Auth-Token must be provided.
-
-    **Parameters:**
-    - **auth**: Authentication token (Bearer or Client Auth-Token)
-
-    **Returns:**
-    - JSON object containing the current client version
+    Checks Bearer Token first, then 'Auth-Token' in body.
     """
+    db = SQLiteDatabase()
+    settings = get_winget_Settings()
+    if bool(int(settings.get("CLIENT_AUTHENTICATION", "0"))):
+        if token_auth:
+            try:
+                session = db.get_Session_Token(token_auth.credentials)
+                if not session:
+                    raise HTTPException(status_code=401, detail="Invalid or expired token")
+                db.update_Session_Timestamp(token_auth.credentials)
+            finally:
+                del db
+        else:
+            try:
+                client_value = client if client else 0
+                client_ip = request.client.host
+                if not authenticate_Client(auth_token, client_ip, settings, client_value):
+                    raise HTTPException(status_code=401, detail="Invalid Auth-Token")
+            finally:
+                del db
+    else:
+        del db
     return JSONResponse(content={"Version": "2.5.0.0"}, status_code=200)
 
 
 # Bearer oder Auth-Token – Packages
 @client_api_bp.post("/get_packages", tags=["Packages"], summary="Retrieve all available packages including versions and logos", response_model=list[Package])
-async def get_packages(auth=Depends(combined_auth), include_disabled: bool=False):
+async def get_packages(request: Request, include_disabled: bool=False, auth_token: Optional[str] = Form(None), client: Optional[str] = Form(None), token_auth: Optional[HTTPAuthorizationCredentials] = Depends(oauth2_scheme)):
     """
     Returns a complete list of all available packages including metadata,
     available versions, and Base64-encoded package logos.
@@ -168,6 +171,27 @@ async def get_packages(auth=Depends(combined_auth), include_disabled: bool=False
     - JSON list of package objects containing full metadata
     """
     db = SQLiteDatabase()
+    settings = get_winget_Settings()
+    if bool(int(settings.get("CLIENT_AUTHENTICATION", "0"))):
+        if token_auth:
+            try:
+                session = db.get_Session_Token(token_auth.credentials)
+                if not session:
+                    del db
+                    raise HTTPException(status_code=401, detail="Invalid or expired token")
+                db.update_Session_Timestamp(token_auth.credentials)
+            finally:
+                pass
+        else:
+            try:
+                client_value = client if client else 0
+                client_ip = request.client.host
+                if not authenticate_Client(auth_token, client_ip, settings, client_value):
+                    del db
+                    raise HTTPException(status_code=401, detail="Invalid Auth-Token")
+            finally:
+                pass
+
     try:
         data = db.get_All_Packages(include_disabled)
         for d in data:
@@ -184,8 +208,8 @@ async def get_packages(auth=Depends(combined_auth), include_disabled: bool=False
                 d["PACKAGE_LOGO"] = f"data:image/png;base64,{encoded_logo}"
             else:
                 d["PACKAGE_LOGO"] = ""
-        if auth:
-            blacklist = db.get_Blacklist_for_client(auth)
+        if auth_token:
+            blacklist = db.get_Blacklist_for_client(auth_token)
             data = [d for d in data if d["PACKAGE_ID"] not in blacklist]
         return JSONResponse(content=data, status_code=200)
     finally:
@@ -194,7 +218,7 @@ async def get_packages(auth=Depends(combined_auth), include_disabled: bool=False
 
 # Bearer
 @client_api_bp.post("/add_package", tags=["Packages"], summary="Add a new package", response_model=list[Package])
-async def add_package(package_id: str = Form(...), package_name: str = Form(...), package_publisher: str = Form(...), package_description: str = Form(...), Logo: Optional[UploadFile] = File(None), token: str = Depends(oauth2_scheme)):
+async def add_package(package_id: str = Form(...), package_name: str = Form(...), package_publisher: str = Form(...), package_description: str = Form(...), Logo: Optional[UploadFile] = File(None), token: str = Depends(verify_bearer_token)):
     """
     Returns a complete list of all available packages including metadata,
     available versions, and Base64-encoded package logos.
@@ -226,7 +250,7 @@ async def add_package(package_id: str = Form(...), package_name: str = Form(...)
 
 # Bearer
 @client_api_bp.patch("/edit_package/{package_id}", tags=["Packages"], summary="Edit an existing package", response_model=dict)
-async def edit_package(package_id: str, package_name: str = Form(...), package_publisher: str = Form(...), package_description: str = Form(...), Logo: Optional[UploadFile] = File(None), token: str = Depends(oauth2_scheme)):
+async def edit_package(package_id: str, package_name: str = Form(...), package_publisher: str = Form(...), package_description: str = Form(...), Logo: Optional[UploadFile] = File(None), token: str = Depends(verify_bearer_token)):
     """
     Edits the details of an existing package including name, publisher, description, and logo.
 
@@ -259,7 +283,7 @@ async def edit_package(package_id: str, package_name: str = Form(...), package_p
 
 # Bearer
 @client_api_bp.delete("/delete_package/{package_id}", tags=["Packages"], summary="Delete an existing package", response_model=dict)
-async def delete_package(package_id: str, token: str = Depends(oauth2_scheme)):
+async def delete_package(package_id: str, token: str = Depends(verify_bearer_token)):
     """
     Deletes an existing package by its ID.
 
@@ -278,7 +302,7 @@ async def delete_package(package_id: str, token: str = Depends(oauth2_scheme)):
 
 # Bearer
 @client_api_bp.get("/get_package_versions/{package_id}", tags=["Package Versions"], summary="Retrieve all available versions from a package", response_model=list[Package_Version])
-async def get_package_versions(package_id: str, token: str = Depends(oauth2_scheme)):
+async def get_package_versions(package_id: str, token: str = Depends(verify_bearer_token)):
     """
     Returns a complete list of all available versions from a package.
 
@@ -300,7 +324,7 @@ async def get_package_versions(package_id: str, token: str = Depends(oauth2_sche
 
 
 @client_api_bp.get("/get_specific_package_version/{version_uid}", tags=["Package Versions"], summary="Retrieve a specific version from a package", response_model=Package_Version)
-async def get_specific_package_version(version_uid: str, token: str = Depends(oauth2_scheme)):
+async def get_specific_package_version(version_uid: str, token: str = Depends(verify_bearer_token)):
     """
     Returns a specific version from a package.
 
@@ -322,7 +346,7 @@ async def get_specific_package_version(version_uid: str, token: str = Depends(oa
 
 # Bearer
 @client_api_bp.post("/add_package_version/{package_id}", tags=["Package Versions"], summary="Add a new package version", response_model=dict)
-async def add_package_version(package_id: str, file: UploadFile = File(...), token: str = Depends(oauth2_scheme), data: dict = Depends(package_version_form_data)):
+async def add_package_version(package_id: str, file: UploadFile = File(...), token: str = Depends(verify_bearer_token), data: dict = Depends(package_version_form_data)):
     """
     Adds a new version to an existing package, including file upload and optional switches.
 
@@ -355,7 +379,7 @@ async def add_package_version(package_id: str, file: UploadFile = File(...), tok
 
 # Bearer
 @client_api_bp.delete("/delete_package_version/{package_id}", tags=["Package Versions"], summary="Delete package versions", response_model=dict)
-async def delete_package_version(package_id: str, versions_uids: list[str] = Form(...), token: str = Depends(oauth2_scheme)):
+async def delete_package_version(package_id: str, versions_uids: list[str] = Form(...), token: str = Depends(verify_bearer_token)):
     """
     Deletes one or more versions of a package by their UIDs.
 

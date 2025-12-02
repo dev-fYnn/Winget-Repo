@@ -29,16 +29,20 @@ Check API availability and validate Bearer authentication.
 ### **POST /client_version**
 
 Retrieve the latest Winget-Repo Client version. 
-- **Requires Bearer Token**
-- Also requires **Client Authentication Token** when client authentication is enabled
+
+If Client-Authentication is enabled: 
+- **Requires Bearer Token** or
+- **Client Authentication Token**
 
 ## 📦 Packages
 
 ### **POST /get_packages**
 
 Retrieve all packages including versions and Base64-encoded logos.
-- **Requires Bearer Token** 
-- Also requires **Client Authentication Token** when enabled
+
+If Client-Authentication is enabled: 
+- **Requires Bearer Token** or
+- **Client Authentication Token**
 
 ### **POST /add_package**
 

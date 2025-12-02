@@ -524,9 +524,10 @@ class SQLiteDatabase:
         return token
 
     def update_Session_Timestamp(self, token: str) -> bool:
+        new_timestamp = datetime.now() + timedelta(hours=1)
         self.__cursor.execute("""UPDATE tbl_USER_API
                                        SET TIMESTAMP = ?
-                                     WHERE TOKEN = ?""", (datetime.now(), token))
+                                     WHERE TOKEN = ?""", (new_timestamp, token))
         self.db_commit()
         return True
 
