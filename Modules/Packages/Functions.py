@@ -88,7 +88,7 @@ def delete_package_service(package_id: str):
 
     delete_File(f"{package_id}.png", PATH_LOGOS)
     db.delete_Package(package_id)
-    db.db_commit()
+    db.db_commit(True)
     del db
     return True
 
