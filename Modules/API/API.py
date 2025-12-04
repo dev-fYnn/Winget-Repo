@@ -124,7 +124,7 @@ async def test(token: str = Depends(verify_bearer_token)):
 
 # Bearer oder Auth-Token
 @client_api_bp.post("/client_version", tags=["Winget-Repo Client"], summary="Winget-Repo Client Version", response_model=ClientVersionResponse)
-async def client_version(request: Request, auth_token: Optional[str] = Form(None), client: Optional[str] = Form(None), token_auth: Optional[HTTPAuthorizationCredentials] = Depends(oauth2_scheme)):
+async def client_version(request: Request, auth_token: Optional[str] = Form(None), client: Optional[int] = Form(None), token_auth: Optional[HTTPAuthorizationCredentials] = Depends(oauth2_scheme)):
     """
     Returns the latest available version of the Winget-Repo Client.
     Checks Bearer Token first, then 'Auth-Token' in body.
@@ -155,7 +155,7 @@ async def client_version(request: Request, auth_token: Optional[str] = Form(None
 
 # Bearer oder Auth-Token – Packages
 @client_api_bp.post("/get_packages", tags=["Packages"], summary="Retrieve all available packages including versions and logos", response_model=list[Package])
-async def get_packages(request: Request, include_disabled: bool=False, auth_token: Optional[str] = Form(None), client: Optional[str] = Form(None), token_auth: Optional[HTTPAuthorizationCredentials] = Depends(oauth2_scheme)):
+async def get_packages(request: Request, include_disabled: bool=False, auth_token: Optional[str] = Form(None), client: Optional[int] = Form(None), token_auth: Optional[HTTPAuthorizationCredentials] = Depends(oauth2_scheme)):
     """
     Returns a complete list of all available packages including metadata,
     available versions, and Base64-encoded package logos.
