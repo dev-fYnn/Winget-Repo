@@ -19,7 +19,7 @@ from Modules.User.User import user_bp
 from Modules.Winget.Functions import get_winget_Settings
 from Modules.Winget.winget_Routes import winget_routes
 from main_extensions import csrf
-from settings import PATH_SSL_CERT, PATH_SSL_KEY
+from settings import PATH_SSL_CERT, PATH_SSL_KEY, BIND_ADDRESS
 
 settings = get_winget_Settings(True)
 
@@ -71,8 +71,8 @@ if __name__ == '__main__':
         status = generate_dev_certificate()
         if status:
             app.config['dev_mode'] = True
-            app.run(ssl_context=(PATH_SSL_CERT, PATH_SSL_KEY), threaded=True)
+            app.run(ssl_context=(PATH_SSL_CERT, PATH_SSL_KEY), threaded=True, host=BIND_ADDRESS)
         else:
             print("Error while starting the development server! Please check the certificates!")
     else:
-        app.run()
+        app.run(host=BIND_ADDRESS)
