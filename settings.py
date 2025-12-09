@@ -29,3 +29,5 @@ PATH_SSL_KEY = os.getenv("PATH_SSL_KEY", os.path.join(BASE_DIR, "SSL", "key.pem"
 #--------------------------------Not Configurable Variables--------------------------------
 # Fallback Logo if no logo is found in the PATH_LOGOS
 PATH_STATIC_DUMMY_LOGO = os.path.join(BASE_DIR, "static", "images", "Logos", "dummy.png")
+
+BIND_ADDRESS = os.getenv("BIND_ADDRESS", "127.0.0.1")
