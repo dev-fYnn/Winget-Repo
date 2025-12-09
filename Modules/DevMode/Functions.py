@@ -1,5 +1,4 @@
 import os
-import sys
 
 from datetime import datetime, timezone, timedelta
 from cryptography import x509
@@ -7,12 +6,14 @@ from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
+from settings import PATH_SSL_CERT, PATH_SSL_KEY
 
 
-def generate_dev_certificate(cert_file: str = r"SSL\cert.pem", key_file: str = r"SSL\key.pem") -> bool:
-    path = sys.path[0]
-    cert_file = os.path.join(path, cert_file)
-    key_file = os.path.join(path, key_file)
+def generate_dev_certificate(cert_file: str = None, key_file: str = None) -> bool:
+    if cert_file is None:
+        cert_file = PATH_SSL_CERT
+    if key_file is None:
+        key_file = PATH_SSL_KEY
 
     os.makedirs(os.path.dirname(cert_file), exist_ok=True)
     if os.path.exists(cert_file) and os.path.exists(key_file):

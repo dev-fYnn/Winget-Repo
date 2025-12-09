@@ -20,3 +20,12 @@ PATH_DATABASE = os.getenv("PATH_DATABASE", os.path.join(BASE_DIR, "Modules", "Da
 PATH_WINGET_REPOSITORY = os.getenv("PATH_WINGET_REPOSITORY", os.path.join(BASE_DIR, "Winget_DB"))
 PATH_WINGET_REPOSITORY_DB = os.getenv("PATH_WINGET_REPOSITORY_DB", os.path.join(PATH_WINGET_REPOSITORY, "Public", "index.db"))
 URL_WINGET_REPOSITORY = os.getenv("URL_WINGET_REPOSITORY", "https://cdn.winget.microsoft.com/cache/")
+
+# SSL Certificate Paths (for development mode)
+PATH_SSL_CERT = os.getenv("PATH_SSL_CERT", os.path.join(BASE_DIR, "SSL", "cert.pem"))
+PATH_SSL_KEY = os.getenv("PATH_SSL_KEY", os.path.join(BASE_DIR, "SSL", "key.pem"))
+
+
+#--------------------------------Not Configurable Variables--------------------------------
+# Fallback Logo if no logo is found in the PATH_LOGOS
+PATH_STATIC_DUMMY_LOGO = os.path.join(BASE_DIR, "static", "images", "Logos", "dummy.png")

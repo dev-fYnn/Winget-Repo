@@ -16,7 +16,7 @@ from Modules.Login.Functions import check_Credentials
 from Modules.Packages.Functions import get_package_service, add_package_service, edit_package_service, delete_package_service, delete_package_versions_service, add_package_version_service
 from Modules.User.Functions import user_setup_finished, check_User_Exists
 from Modules.Winget.Functions import authorize_IP_Range, get_winget_Settings, authenticate_Client
-from settings import PATH_LOGOS
+from settings import PATH_LOGOS, PATH_STATIC_DUMMY_LOGO
 
 
 client_api_bp = APIRouter()
@@ -200,8 +200,11 @@ async def get_packages(request: Request, include_disabled: bool=False, auth_toke
             d["VERSIONS"] = [item[0] for item in version_dummy]
             d["VERSIONS_UID"] = [item[1] for item in version_dummy]
 
-            logo_name = d.get("PACKAGE_LOGO", "dummy.png")
+            logo_name = d.get("PACKAGE_LOGO", "dummy")
             logo_path = Path(PATH_LOGOS) / logo_name
+            if not logo_path.exists():
+                # Fall back to static dummy.png
+                logo_path = Path(PATH_STATIC_DUMMY_LOGO)
 
             if logo_path.exists():
                 encoded_logo = base64.b64encode(logo_path.read_bytes()).decode("utf-8")

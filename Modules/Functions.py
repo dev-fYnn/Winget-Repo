@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from werkzeug.datastructures import headers
 from io import StringIO, BytesIO
-from settings import PATH_FILES
+from settings import PATH_FILES, PATH_LOGOS, PATH_DATABASE
 from itsdangerous import base64_decode
 
 
@@ -144,8 +144,18 @@ def get_file_edit_date(path: str) -> datetime:
 
 
 def start_up_check():
+    # Ensure user-uploaded files directory exists
     if not os.path.exists(PATH_FILES):
-        os.makedirs(PATH_FILES)
+        os.makedirs(PATH_FILES, exist_ok=True)
+    
+    # Ensure logos directory exists
+    if not os.path.exists(PATH_LOGOS):
+        os.makedirs(PATH_LOGOS, exist_ok=True)
+    
+    # Ensure database parent directory exists (SQLite creates the file but not the directory)
+    db_dir = os.path.dirname(PATH_DATABASE)
+    if db_dir and not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
 
 
 def decode_flask_cookie(cookie) -> dict:
