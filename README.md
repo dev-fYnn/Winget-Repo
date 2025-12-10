@@ -27,6 +27,8 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 
 # 🛠️ Setup Guide
 
+setup using docker is described here: [Setup-Docker](Doc/Setup-docker.md)
+
 1. **Download and Extract the Repository** 📥  
    First, download the files from the repository and extract them to any location on your system.
 
