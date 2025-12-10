@@ -5,3 +5,7 @@
 /Winget_DB/
 /.idea/
 .env
+
+# Data folder - ignore all contents but keep the folder structure
+/data/*
+!/data/.gitkeep
