@@ -25,9 +25,9 @@ URL_WINGET_REPOSITORY = os.getenv("URL_WINGET_REPOSITORY", "https://cdn.winget.m
 PATH_SSL_CERT = os.getenv("PATH_SSL_CERT", os.path.join(BASE_DIR, "SSL", "cert.pem"))
 PATH_SSL_KEY = os.getenv("PATH_SSL_KEY", os.path.join(BASE_DIR, "SSL", "key.pem"))
 
+# Network Settings
+BIND_ADDRESS = os.getenv("BIND_ADDRESS", "127.0.0.1")
 
 #--------------------------------Not Configurable Variables--------------------------------
 # Fallback Logo if no logo is found in the PATH_LOGOS
 PATH_STATIC_DUMMY_LOGO = os.path.join(BASE_DIR, "static", "images", "Logos", "dummy.png")
-
-BIND_ADDRESS = os.getenv("BIND_ADDRESS", "127.0.0.1")
