@@ -14,10 +14,10 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 - **Support for Nested Installers** 🛠️🔄
 - **Permission Management**: Control access and user rights 🔐
 - **Terms of Service**: Request the agreement of your Terms of Service 📑
-- **Dev-Mode**: Install the Winget-Repo Dev Mode via winget configure with no problems: [Setup](https://github.com/dev-fYnn/Winget-Repo/blob/master/Docs/Dev-Mode.md) 🪛
-- **Version Migration (Beta)**: Easily upgrade to the latest version of Winget-Repo: [Documentation](https://github.com/dev-fYnn/Winget-Repo/blob/master/Docs/Upgrade_Winget-Repo.md) ⬆️🆕
+- **Dev-Mode**: Install the Winget-Repo Dev Mode via winget configure with no problems: [Setup](Docs/Dev-Mode.md) 🪛
+- **Version Migration (Beta)**: Easily upgrade to the latest version of Winget-Repo: [Documentation](Docs/Upgrade_Winget-Repo.md) ⬆️🆕
 - **Winget-Client**: Use Winget easily on your client: [Github](https://github.com/dev-fYnn/Winget-Repo-Client) 🖥️💿
-- **REST-API**: Rest API to Add, edit and delete Packages and Package Versions: [Documentation](https://github.com/dev-fYnn/Winget-Repo/blob/master/Docs/REST-API.md) ☁️
+- **REST-API**: Rest API to Add, edit and delete Packages and Package Versions: [Documentation](Docs/REST-API.md) ☁️
 
 
 # 🚀 Upcoming Features
@@ -27,7 +27,7 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 
 # 🛠️ Setup Guide
 
-setup using docker is described here: [Setup-Docker](Doc/Setup-docker.md)
+setup using docker is described here: [Setup-Docker](Docs/Setup-Docker.md)
 
 1. **Download and Extract the Repository** 📥  
    First, download the files from the repository and extract them to any location on your system.
