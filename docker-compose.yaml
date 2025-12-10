@@ -1,0 +1,36 @@
+services:
+  winget-repo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: winget-repo
+    restart: unless-stopped
+    environment:
+      - PATH_LOGOS=${PATH_LOGOS:-/data/logos}
+      - PATH_FILES=${PATH_FILES:-/data/files}
+      - PATH_DATABASE=${PATH_DATABASE:-/data/database/database.db}
+      
+      - PATH_WINGET_REPOSITORY=${PATH_WINGET_REPOSITORY:-/data/winget-repository/}
+      - PATH_WINGET_REPOSITORY_DB=${PATH_WINGET_REPOSITORY_DB:-/data/winget-repository/Public/index.db}
+      
+      - PATH_SSL_CERT=${PATH_SSL_CERT:-/data/ssl/cert.pem}
+      - PATH_SSL_KEY=${PATH_SSL_KEY:-/data/ssl/key.pem}
+      
+      - BIND_ADDRESS=${BIND_ADDRESS:-0.0.0.0}
+
+      - URL_PACKAGE_DOWNLOAD=${URL_PACKAGE_DOWNLOAD:-DEFAULT}
+      - URL_WINGET_REPOSITORY=${URL_WINGET_REPOSITORY:-https://cdn.winget.microsoft.com/cache/}
+    
+    ports:
+      - "5000:5000"
+    
+    volumes:
+      - ./data:/data
+    
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+

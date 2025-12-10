@@ -1,0 +1,60 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Documentation
+Docs/
+*.md
+!README.md
+
+# Data directories (will be mounted as volumes)
+data/
+Modules/Database/Database.db
+Winget_DB/
+
+# Environment files (will be loaded separately)
+.env
+.env.local
+.env.*.local
+
+# SSL certificates (will be mounted as volume)
+SSL/
+
+# Docker files (don't copy into image)
+docker-compose.yaml
+Dockerfile
+.dockerignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
