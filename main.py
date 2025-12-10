@@ -21,6 +21,7 @@ from Modules.Winget.winget_Routes import winget_routes
 from main_extensions import csrf
 from settings import PATH_SSL_CERT, PATH_SSL_KEY, BIND_ADDRESS
 
+start_up_check()
 settings = get_winget_Settings(True)
 
 app = Flask(__name__)
@@ -65,7 +66,6 @@ def global_settings():
 
 
 if __name__ == '__main__':
-    start_up_check()
 
     if len(sys.argv) > 1 and sys.argv[1] == "/dev":
         status = generate_dev_certificate()

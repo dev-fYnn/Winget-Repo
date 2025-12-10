@@ -15,6 +15,7 @@ from werkzeug.datastructures import headers
 from io import StringIO, BytesIO
 from settings import PATH_FILES, PATH_LOGOS, PATH_DATABASE
 from itsdangerous import base64_decode
+from Modules.Database import init_database
 
 
 def generate_random_string(length: int) -> string:
@@ -157,6 +158,7 @@ def start_up_check():
     if db_dir and not os.path.exists(db_dir):
         os.makedirs(db_dir, exist_ok=True)
 
+    init_database()
 
 def decode_flask_cookie(cookie) -> dict:
     try:
