@@ -1,8 +1,12 @@
+import os
+
 from flask import url_for
 from datetime import datetime
+from hashlib import sha256
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import get_hostname_from_ip_dns
+from settings import PATH_LOGOS
 
 
 def generate_search_Manifest(search_text: str, match_typ: str, match_field: str, auth_token: str = "") -> list:
@@ -85,6 +89,19 @@ def _build_version_info(version_group: list, package: dict, db: SQLiteDatabase) 
         if installer:
             installers.append(installer)
 
+    icon = []
+    p_logo = package.get('PACKAGE_LOGO', '')
+    if len(p_logo) > 0:
+        with open(os.path.join(PATH_LOGOS, p_logo), 'rb') as f:
+            logo_hash = sha256(f.read()).hexdigest()
+        icon.append({
+            "IconUrl": url_for("winget_routes.get_package_logo", logo_name=p_logo, _external=True),
+            "IconFileType": "png",
+            "IconResolution": "custom",
+            "IconTheme": "default",
+            "IconSha256": logo_hash
+        })
+
     return {
         "PackageVersion": first_installer.get('VERSION', '0.0.0.0'),
         # "Channel": first_installer.get('CHANNEL', 'stable')
@@ -93,6 +110,7 @@ def _build_version_info(version_group: list, package: dict, db: SQLiteDatabase) 
             "Publisher": package.get('PACKAGE_PUBLISHER', ''),
             "PackageName": package.get('PACKAGE_NAME', ''),
             "ShortDescription": package.get('PACKAGE_DESCRIPTION', ''),
+            "Icons": icon
         },
         "Installers": installers
     }

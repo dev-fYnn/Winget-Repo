@@ -5,7 +5,7 @@ from functools import wraps
 from pathlib import Path
 
 from Modules.Database.Database import SQLiteDatabase
-from Modules.Functions import parse_version, check_Internet_Connection
+from Modules.Functions import parse_version, check_Internet_Connection, process_package_logo
 from Modules.Login.Login import logged_in, authenticate
 from Modules.Store.Functions import get_All_Packages_from_DB, download_source_msix, get_package_path, download_file, get_All_InstallerInfos_from_Manifest
 from Modules.Winget.Functions import get_winget_Settings
@@ -126,7 +126,7 @@ def add_package(package_id):
             file = request.files.get('Logo')
             logo_filename = f"{package_id}.png" if file else "dummy.png"
             if file:
-                file.save(Path(PATH_LOGOS) / logo_filename)
+                process_package_logo(file, Path(PATH_LOGOS) / logo_filename)
 
             db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:150], logo_filename)
             db.db_commit()

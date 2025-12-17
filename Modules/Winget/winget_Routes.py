@@ -7,7 +7,8 @@ from functools import wraps
 from Modules.Functions import get_Auth_Token_from_Header
 from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client, write_log, authorize_IP_Range
 from main_extensions import csrf
-from settings import PATH_FILES, URL_PACKAGE_DOWNLOAD
+from settings import PATH_FILES, URL_PACKAGE_DOWNLOAD, PATH_LOGOS
+
 
 winget_routes = Blueprint('winget_routes', __name__)
 
@@ -118,3 +119,8 @@ def download(package_name):
             dummy_url += "/"
         dummy_url += package_name
         return redirect(dummy_url, code=302)
+
+
+@winget_routes.route('/logo/<logo_name>', methods=['GET'])
+def get_package_logo(logo_name):
+    return send_from_directory(PATH_LOGOS, logo_name)

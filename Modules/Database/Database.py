@@ -259,7 +259,7 @@ class SQLiteDatabase:
         return row_to_dict(data, self.__cursor.description)
 
     def get_specific_Package(self, package_id: str, version: str, channel: str) -> dict:
-        self.__cursor.execute("""SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION
+        self.__cursor.execute("""SELECT P.PACKAGE_ID, P.PACKAGE_NAME, P.PACKAGE_PUBLISHER, P.PACKAGE_DESCRIPTION, P.PACKAGE_LOGO
                                         FROM tbl_PACKAGES AS P
                                     WHERE P.PACKAGE_ID = ? 
                                         AND P.PACKAGE_ACTIVE = 1""", (package_id,))

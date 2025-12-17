@@ -6,7 +6,7 @@ from hashlib import sha256
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Files.Functions import delete_File
-from Modules.Functions import parse_version
+from Modules.Functions import parse_version, process_package_logo
 from settings import PATH_LOGOS, PATH_FILES
 
 
@@ -21,19 +21,7 @@ def add_package_service(data: dict, file=None):
     if file:
         logo_path = f"{package_id}.png"
         dest_path = Path(PATH_LOGOS) / logo_path
-        file_obj = getattr(file, "file", None)
-        if file_obj is None:
-            file_obj = getattr(file, "stream", None)
-        if file_obj is None:
-            file_obj = file
-
-        with open(dest_path, "wb") as out_file:
-            shutil.copyfileobj(file_obj, out_file)
-
-        try:
-            file_obj.seek(0)
-        except:
-            pass
+        process_package_logo(file, dest_path)
     else:
         logo_path = "dummy.png"
 
@@ -54,19 +42,7 @@ def edit_package_service(package_id: str, data: dict, file=None):
     if file:
         logo_path = f"{package_id}.png"
         dest_path = Path(PATH_LOGOS) / logo_path
-        file_obj = getattr(file, "file", None)
-        if file_obj is None:
-            file_obj = getattr(file, "stream", None)
-        if file_obj is None:
-            file_obj = file
-
-        with open(dest_path, "wb") as out_file:
-            shutil.copyfileobj(file_obj, out_file)
-
-        try:
-            file_obj.seek(0)
-        except:
-            pass
+        process_package_logo(file, dest_path)
     else:
         logo_path = package['PACKAGE_LOGO']
 

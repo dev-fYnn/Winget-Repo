@@ -8,6 +8,7 @@ import string
 import dns.resolver
 import dns.reversename
 import zlib
+import io
 
 from datetime import datetime
 from pathlib import Path
@@ -15,6 +16,7 @@ from werkzeug.datastructures import headers
 from io import StringIO, BytesIO
 from settings import PATH_FILES
 from itsdangerous import base64_decode
+from PIL import Image
 
 
 def generate_random_string(length: int) -> string:
@@ -166,3 +168,32 @@ def decode_flask_cookie(cookie) -> dict:
         return json.loads(data.decode("utf-8"))
     except Exception as e:
         return {}
+
+
+def process_package_logo(file, filename, size=(512, 512)) -> bool:
+    try:
+        file_obj = getattr(file, "file", None)
+        if file_obj is None:
+            file_obj = getattr(file, "stream", None)
+        if file_obj is None:
+            file_obj = file
+
+        img = Image.open(io.BytesIO(file_obj.read()))
+        img = img.convert("RGBA")
+        img.thumbnail(size, Image.Resampling.LANCZOS)
+        canvas = Image.new("RGBA", size, (0, 0, 0, 0))
+        offset = (
+            (size[0] - img.size[0]) // 2,
+            (size[1] - img.size[1]) // 2
+        )
+        canvas.paste(img, offset)
+
+        output_buffer = io.BytesIO()
+        canvas.save(output_buffer, format="PNG", optimize=True)
+        final_content = output_buffer.getvalue()
+
+        with open(filename, "wb") as out_file:
+            out_file.write(final_content)
+        return True
+    except Exception as e:
+        return False

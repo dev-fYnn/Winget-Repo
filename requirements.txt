@@ -9,3 +9,4 @@ flask_seasurf>=2.0.0
 fastapi>=0.122.0
 a2wsgi>=1.10.10
 python-multipart>=0.0.20
+pillow>=12.0.0
