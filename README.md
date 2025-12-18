@@ -23,6 +23,7 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 # 🚀 Upcoming Features
 - **Plugin Support**: Extend Winget-Repo’s functionality with custom plugins 🧩
 - **Multilanguage**: Support multiple languages 🚩
+- **Fonts**: Add font deployment 📑
 - **And much more**: Continuous improvements and new features on the way! 🌱✨
 
 # 🛠️ Setup Guide
@@ -91,3 +92,4 @@ If you have any questions, suggestions, or issues, feel free to reach out via em
 - [Github](https://github.com/dev-fYnn/Winget-Repo/issues)
 
 And if you enjoy using Winget-Repo, we'd be grateful for a star ⭐ on our repository! Thank you for your support! 🙏
+
