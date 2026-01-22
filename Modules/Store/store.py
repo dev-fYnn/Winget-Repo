@@ -148,7 +148,13 @@ def add_package(package_id):
 
             version_uid = str(uuid4())
             filename = f"{version_uid}.{installer['InstallerUrl'].split('.')[-1]}"
-            download_file(installer['InstallerUrl'], filename)
+            try:
+                if not download_file(installer['InstallerUrl'], filename):
+                    flash("Error downloading installer!", "error")
+                    break
+            except Exception as e:
+                flash("Error downloading installer!", "error")
+                break
 
             file_path = Path(PATH_FILES) / filename
             with open(file_path, 'rb') as f:
