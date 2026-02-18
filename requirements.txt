@@ -10,3 +10,5 @@ fastapi>=0.122.0
 a2wsgi>=1.10.10
 python-multipart>=0.0.20
 pillow>=12.0.0
+flask_limiter>=4.1.1
+slowapi>=0.1.9

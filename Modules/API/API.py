@@ -10,6 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
 
 from Modules.API.Filter import LoginResponse, ClientVersionResponse, Package, package_version_form_data, Package_Version
+from Modules.API.api_extensions import api_limiter
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import parse_version, decode_flask_cookie
 from Modules.Login.Functions import check_Credentials
@@ -57,7 +58,8 @@ async def verify_bearer_token(credentials: HTTPAuthorizationCredentials = Depend
 
 # LOGIN
 @client_api_bp.post("/login", tags=["Authentication"], summary="Authenticate user and generate a session token", response_model=LoginResponse)
-async def login(username: str = Form(...), password: str = Form(...)):
+@api_limiter.limit("5/minute")
+async def login(request: Request, username: str = Form(...), password: str = Form(...)):
     """
     Authenticates a user using a username and password.
 
@@ -323,6 +325,7 @@ async def get_package_versions(package_id: str, token: str = Depends(verify_bear
         del db
 
 
+# Bearer
 @client_api_bp.get("/get_specific_package_version/{version_uid}", tags=["Package Versions"], summary="Retrieve a specific version from a package", response_model=Package_Version)
 async def get_specific_package_version(version_uid: str, token: str = Depends(verify_bearer_token)):
     """

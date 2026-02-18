@@ -8,8 +8,10 @@ def check_Credentials(username: str, password: str) -> tuple[bool, str]:
     data = db.check_User_Credentials(username)
     del db
 
-    if len(data) > 0 and check_password_hash(data['PW'], password):
+    if data and check_password_hash(data['PW'], password):
         return True, data['ID']
+    else:
+        check_password_hash("fake_hash_standard", "fake_password")
     return False, ""
 
 

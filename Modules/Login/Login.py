@@ -3,6 +3,7 @@ from flask import Blueprint, request, render_template, session, flash, url_for, 
 
 from Modules.Login.Functions import check_Credentials, check_Rights
 from Modules.User.Functions import user_setup_finished
+from main_extensions import limiter
 
 login_bp = Blueprint('login_bp', __name__, template_folder='templates', static_folder='static')
 
@@ -18,6 +19,7 @@ def index():
 
 
 @login_bp.route('/login', methods=["POST"])
+@limiter.limit("5 per minute")
 def login():
     data = request.form
 
@@ -30,11 +32,8 @@ def login():
             flash("Login successfully!", "success")
             return redirect(url_for("ui_bp.index"))
         else:
-            if 'logged_in' in session:
-                session.pop('logged_in')
-            if 'logged_in_username' in session:
-                session.pop('logged_in_username')
-
+            session.clear()
+            session.modified = True
             flash("Wrong credentials!", "error")
     return redirect(url_for("login_bp.index"))
 
@@ -43,9 +42,8 @@ def login():
 def logout():
     if 'logged_in' in session:
         flash("Logout successfully!", "success")
-        session.pop('logged_in')
-    if 'logged_in_username' in session:
-        session.pop('logged_in_username')
+    session.clear()
+    session.modified = True
     return redirect(url_for("login_bp.index"))
 
 
