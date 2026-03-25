@@ -31,6 +31,7 @@ class Locale(str, Enum):
 class Architecture(str, Enum):
     x64 = "x64"
     x86 = "x86"
+    neutral = "neutral"
 
 
 class FileType(str, Enum):
@@ -54,6 +55,7 @@ class NestedFileType(str, Enum):
     NULLSOFT = "NULLSOFT"
     WIX = "WIX"
     BURN = "BURN"
+    FONT = "FONT"
 
 
 class Scope(str, Enum):
@@ -61,15 +63,22 @@ class Scope(str, Enum):
     user = "user"
 
 
+class Upgrades(str, Enum):
+    install = "install"
+    uninstallPrevious = "uninstallPrevious"
+    deny = "deny"
+
+
 async def package_version_form_data(
     package_version: Annotated[str, Form(max_length=25)],
     file_architect: Annotated[Architecture, Form()],
     file_type: Annotated[FileType, Form()],
     file_scope: Annotated[Scope, Form()],
+    upgrades: Annotated[Upgrades, Form()],
     package_locale: Annotated[Locale, Form()] = Locale.en_US,
     channel: Annotated[str, Form()] = "stable",
     file_type_nested: Annotated[Optional[NestedFileType], Form()] = None,
-    file_nested_path: Annotated[Optional[str], Form()] = "",
+    file_nested_path: Annotated[Optional[list[str]], Form()] = [],
     productcode: Annotated[Optional[str], Form()] = "",
     upgradecode: Annotated[Optional[str], Form()] = "",
     package_family_name: Annotated[Optional[str], Form()] = "",
@@ -81,6 +90,11 @@ async def package_version_form_data(
     switch_Upgrade: Annotated[Optional[str], Form()] = "",
     switch_Custom: Annotated[Optional[str], Form()] = "",
     switch_Repair: Annotated[Optional[str], Form()] = "",
+    dep_windows_features: Annotated[Optional[list[str]], Form()] = [],
+    dep_windows_libraries: Annotated[Optional[list[str]], Form()] = [],
+    dep_external: Annotated[Optional[list[str]], Form()] = [],
+    dep_pkg_identifier: Annotated[Optional[list[str]], Form()] = [],
+    dep_pkg_min_version: Annotated[Optional[list[str]], Form()] = [],
 ):
     data = {
         "package_version": package_version,
@@ -88,6 +102,7 @@ async def package_version_form_data(
         "file_architect": file_architect,
         "file_type": file_type,
         "file_scope": file_scope,
+        "upgrades": upgrades,
         "channel": channel,
         "file_type_nested": file_type_nested,
         "file_nested_path": file_nested_path,
@@ -107,6 +122,16 @@ async def package_version_form_data(
     }
     switches = {k: v for k, v in switches.items() if v}
     data.update(switches)
+
+    data["dep_windows_features"]  = [v for v in (dep_windows_features or [])  if v.strip()]
+    data["dep_windows_libraries"] = [v for v in (dep_windows_libraries or []) if v.strip()]
+    data["dep_external"]          = [v for v in (dep_external or [])          if v.strip()]
+    data["dep_package_dependencies"] = [
+        {"PackageIdentifier": ident, "MinimumVersion": ver.strip() or None}
+        for ident, ver in zip(dep_pkg_identifier or [], dep_pkg_min_version or [])
+        if ident.strip()
+    ]
+
     data = {k: ("" if v is None else v) for k, v in data.items()}
     return data
 

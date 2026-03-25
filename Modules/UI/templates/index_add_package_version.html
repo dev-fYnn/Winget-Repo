@@ -17,7 +17,7 @@
                         <h4>Add Package Version</h4>
                     </div>
                     <div class="card-body">
-                        <form method="POST" action="{{ url_for('ui_bp.add_package_version') }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
+                        <form method="POST" action="{{ url_for('ui_bp.add_package_version', p_type=p_type) }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                             <div class="mb-3">
                                 <label for="package_id" class="form-label">Choose a Package</label>
@@ -52,6 +52,15 @@
                                 <select name="file_architect" id="file_architect" class="form-control" required>
                                     <option value="x64">x64</option>
                                     <option value="x86">x86</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="upgrades" class="form-label">Upgrade Behavior</label>
+                                <select name="upgrades" id="upgrades" class="form-control" required>
+                                    <option value="install">install</option>
+                                    <option value="uninstallPrevious">uninstallPrevious</option>
+                                    <option value="deny">deny</option>
                                 </select>
                             </div>
 
@@ -121,7 +130,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Switch Options</label>
+                                <label class="form-label">Switch Options (Optional)</label>
                                 <div class="d-flex flex-column">
                                     <input type="text" class="form-control mb-2" name="switch_Silent" placeholder="Silent">
                                     <input type="text" class="form-control mb-2" name="switch_SilentWithProgress" placeholder="Silent with progress">
@@ -133,6 +142,58 @@
                                     <input type="text" class="form-control mb-2" name="switch_Repair" placeholder="Repair">
                                 </div>
                             </div>
+
+                            <h6 class="mb-3">Dependencies (Optional)</h6>
+
+                            <div class="mb-3">
+                                <label class="form-label">Windows Features</label>
+                                <div id="windowsFeaturesList">
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" name="dep_windows_features" placeholder="z.B. IIS-WebServer">
+                                        <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addEntry('windowsFeaturesList', 'dep_windows_features', 'z.B. NetFx3')">+ Add Feature</button>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Windows Libraries</label>
+                                <div id="windowsLibrariesList">
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" name="dep_windows_libraries" placeholder="z.B. VC++ Redistributable">
+                                        <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addEntry('windowsLibrariesList', 'dep_windows_libraries', 'z.B. VC++ Redistributable')">+ Add Library</button>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Package Dependencies</label>
+                                <div id="packageDependenciesList">
+                                    <div class="card p-2 mb-2 bg-light dep-pkg-entry">
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control" name="dep_pkg_identifier" placeholder="Package Identifier (z.B. Microsoft.VCRedist.2015+.x64)">
+                                        </div>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" name="dep_pkg_min_version" placeholder="Minimum Version (Optional)">
+                                            <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this, '.dep-pkg-entry')">✕</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addPackageDependency()">+ Add Package Dependency</button>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">External Dependencies</label>
+                                <div id="externalDependenciesList">
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" name="dep_external" placeholder="z.B. Hardware-Driver XY">
+                                        <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addEntry('externalDependenciesList', 'dep_external', 'z.B. Hardware-Driver XY')">+ Add External Dependency</button>
+                            </div>
+                            <hr>
 
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary" id="submit_form">Add Package Version</button>
@@ -230,5 +291,37 @@
             document.getElementById("file_type_nested").addEventListener("change", toggleNestedFields);
             toggleNestedFields();
         });
+
+        function addEntry(listId, name, placeholder) {
+            const list = document.getElementById(listId);
+            const div = document.createElement("div");
+            div.className = "input-group mb-2";
+            div.innerHTML = `
+                <input type="text" class="form-control" name="${name}" placeholder="${placeholder}">
+                <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
+            `;
+            list.appendChild(div);
+        }
+
+        function addPackageDependency() {
+            const list = document.getElementById("packageDependenciesList");
+            const div = document.createElement("div");
+            div.className = "card p-2 mb-2 bg-light dep-pkg-entry";
+            div.innerHTML = `
+                <div class="mb-2">
+                    <input type="text" class="form-control" name="dep_pkg_identifier" placeholder="Package Identifier (z.B. Microsoft.VCRedist.2015+.x64)">
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" name="dep_pkg_min_version" placeholder="Minimum Version (Optional)">
+                    <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this, '.dep-pkg-entry')">✕</button>
+                </div>
+            `;
+            list.appendChild(div);
+        }
+
+        function removeEntry(btn, selector) {
+            const entry = selector ? btn.closest(selector) : btn.parentElement;
+            if (entry) entry.remove();
+        }
     </script>
 {% endblock %}

@@ -82,16 +82,22 @@
                         </div>
 
                         <div class="col-md-6 d-flex flex-column align-items-center justify-content-center">
-                            <form method="GET" action="{{ url_for('ui_bp.add_package') }}" class="mb-3 w-75">
-                                <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm">Add New Package</button>
-                            </form>
-                            <form method="GET" action="{{ url_for('ui_bp.add_package_version') }}" class="w-75">
+                            <div class="w-100 d-flex justify-content-center mb-3">
+                                <a href="{{ url_for('ui_bp.add_package') }}" class="btn btn-primary btn-lg w-75 shadow-sm">Add New Package</a>
+                            </div>
+                            <div class="w-75 d-flex gap-2">
                                 {% if packages|length > 0 %}
-                                    <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm">Add New Version</button>
+                                    <a href="{{ url_for('ui_bp.add_package_version', p_type='package') }}" class="btn btn-success btn-lg flex-fill shadow-sm text-nowrap">
+                                        + Package Version
+                                    </a>
+                                    <a href="{{ url_for('ui_bp.add_package_version', p_type='font') }}" class="btn btn-success btn-lg flex-fill shadow-sm text-nowrap">
+                                        + Font Version
+                                    </a>
                                 {% else %}
-                                    <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm" disabled>Add New Version</button>
+                                    <button class="btn btn-success btn-lg flex-fill shadow-sm" disabled>+ Package Version</button>
+                                    <button class="btn btn-success btn-lg flex-fill shadow-sm" disabled>+ Font Version</button>
                                 {% endif %}
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>

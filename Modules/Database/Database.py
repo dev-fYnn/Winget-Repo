@@ -34,13 +34,20 @@ class SQLiteDatabase:
         if len(data) > 0:
             data = dict(data)
 
-            if secret is False and 'SECRET_KEY' in data.keys():
-                data.pop('SECRET_KEY')
-            elif secret is True and 'SECRET_KEY' not in data.keys():
-                data['SECRET_KEY'] = generate_random_string(32)
-                self.add_wingetrepo_Setting("SECRET_KEY", data['SECRET_KEY'], "TEXT", False)
-                self.db_commit()
-
+            if secret is False:
+                if 'SECRET_KEY' in data.keys():
+                    data.pop('SECRET_KEY')
+                if 'DOWNLOAD_KEY' in data.keys():
+                    data.pop('DOWNLOAD_KEY')
+            else:
+                if 'SECRET_KEY' not in data.keys():
+                    data['SECRET_KEY'] = generate_random_string(32)
+                    self.add_wingetrepo_Setting("SECRET_KEY", data['SECRET_KEY'], "TEXT", False)
+                    self.db_commit()
+                if 'DOWNLOAD_KEY' not in data.keys():
+                    data['DOWNLOAD_KEY'] = generate_random_string(32)
+                    self.add_wingetrepo_Setting("DOWNLOAD_KEY", data['DOWNLOAD_KEY'], "TEXT", False)
+                    self.db_commit()
             return data
         return {}
 
@@ -267,7 +274,7 @@ class SQLiteDatabase:
         package = row_to_dict(data, self.__cursor.description)
 
         if package:
-            sql_versions = """SELECT PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE, PV.PRODUCTCODE, PV.UPGRADECODE, PV.PACKAGE_FAMILY_NAME, PV.CHANNEL 
+            sql_versions = """SELECT PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE, PV.PRODUCTCODE, PV.UPGRADECODE, PV.PACKAGE_FAMILY_NAME, PV.CHANNEL, PV.UPGRADEBEHAVIOR
                                     FROM tbl_PACKAGES_VERSIONS AS PV
                                     INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
                                 WHERE PV.PACKAGE_ID = ?"""
@@ -326,7 +333,7 @@ class SQLiteDatabase:
         return False
 
     def get_All_Versions_from_Package(self, package_id: str) -> list:
-        self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, IFNULL(PV.INSTALLER_NESTED_TYPE, '') AS INSTALLER_NESTED_TYPE, IFNULL(PV.PRODUCTCODE, '') AS PRODUCTCODE, IFNULL(PV.UPGRADECODE, '') AS UPGRADECODE, IFNULL(PV.PACKAGE_FAMILY_NAME, '') AS PACKAGE_FAMILY_NAME, IFNULL(PV.CHANNEL, 'stable') AS CHANNEL FROM tbl_PACKAGES_VERSIONS AS PV
+        self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, IFNULL(PV.INSTALLER_NESTED_TYPE, '') AS INSTALLER_NESTED_TYPE, IFNULL(PV.PRODUCTCODE, '') AS PRODUCTCODE, IFNULL(PV.UPGRADECODE, '') AS UPGRADECODE, IFNULL(PV.PACKAGE_FAMILY_NAME, '') AS PACKAGE_FAMILY_NAME, IFNULL(PV.CHANNEL, 'stable') AS CHANNEL, IFNULL(PV.UPGRADEBEHAVIOR, 'install') AS UPGRADEBEHAVIOR FROM tbl_PACKAGES_VERSIONS AS PV
                                     INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
                                 WHERE PV.PACKAGE_ID = ?
                                 ORDER BY PV.VERSION DESC""", (package_id,))
@@ -338,10 +345,10 @@ class SQLiteDatabase:
         data = self.__cursor.fetchone()
         return row_to_dict(data, self.__cursor.description)
 
-    def add_Package_Version(self, package_id: str, package_version: str, package_local: int, file_architecture: str, file_type: str, file_download: str, file_sha: str, file_scope: str, uid: str, nested_type: str = "", productcode: str = "", upgradecode: str = "", package_family_name: str = "", channel: str = "stable") -> bool:
-        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_PACKAGES_VERSIONS (PACKAGE_ID, VERSION, LOCALE_ID, ARCHITECTURE, INSTALLER_TYPE, INSTALLER_NESTED_TYPE, INSTALLER_URL, INSTALLER_SHA256, INSTALLER_SCOPE, UID, PRODUCTCODE, UPGRADECODE, PACKAGE_FAMILY_NAME, CHANNEL)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                              (package_id, package_version, package_local, file_architecture, file_type, nested_type, file_download, file_sha, file_scope, uid, productcode, upgradecode, package_family_name, channel))
+    def add_Package_Version(self, package_id: str, package_version: str, package_local: int, file_architecture: str, file_type: str, file_download: str, file_sha: str, file_scope: str, uid: str, nested_type: str = "", productcode: str = "", upgradecode: str = "", package_family_name: str = "", channel: str = "stable", upgrades: str = "install") -> bool:
+        self.__cursor.execute("""INSERT OR IGNORE INTO tbl_PACKAGES_VERSIONS (PACKAGE_ID, VERSION, LOCALE_ID, ARCHITECTURE, INSTALLER_TYPE, INSTALLER_NESTED_TYPE, INSTALLER_URL, INSTALLER_SHA256, INSTALLER_SCOPE, UID, PRODUCTCODE, UPGRADECODE, PACKAGE_FAMILY_NAME, CHANNEL, UPGRADEBEHAVIOR)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                              (package_id, package_version, package_local, file_architecture, file_type, nested_type, file_download, file_sha, file_scope, uid, productcode, upgradecode, package_family_name, channel, upgrades))
 
         if self.__cursor.lastrowid > 0:
             return True
@@ -351,6 +358,7 @@ class SQLiteDatabase:
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (version_uid,))
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES_SWITCHES WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES_NESTED WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
+        self.__cursor.execute("""DELETE FROM tbl_PACKAGES_DEPENDENCIES WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
 
     ####################Nested Installer######################
     def get_Nested_Installer(self, package_version_uid: str) -> list[dict]:
@@ -376,10 +384,32 @@ class SQLiteDatabase:
         return {d[0]: d[1] for d in data}
 
     def add_Package_Version_Switch(self, package_version_uid: str, switch_type: str, switch_text: str) -> bool:
-        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES_SWITCHES (PACKAGE_VERSION_UID, SWITCH_TYPE, SWITCH_TEXT)
-                                    VALUES (?, ?, ?)""",
+        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES_SWITCHES (PACKAGE_VERSION_UID, SWITCH_TYPE, SWITCH_TEXT) VALUES (?, ?, ?)""",
                               (package_version_uid, switch_type, switch_text))
 
+        if self.__cursor.lastrowid > 0:
+            return True
+        return False
+
+    #################DEPENDENCIES####################
+    def get_Package_Version_Dependencies(self, package_version_uid: str, dependencie_type: str) -> list:
+        self.__cursor.execute("""SELECT VALUE, MIN_VERSION FROM tbl_PACKAGES_DEPENDENCIES WHERE PACKAGE_VERSION_UID = ? AND DEPENDENCIE_TYPE = ?""", (package_version_uid, dependencie_type))
+        data = self.__cursor.fetchall()
+
+        entries = []
+        for d in data:
+            if dependencie_type == "PackageDependencies":
+                entries.append({
+                    "PackageIdentifier": d[0],
+                    "MinimumVersion": d[1]
+                })
+            else:
+                entries.append(d[0])
+        return entries
+
+    def add_Package_Version_Dependency(self, package_version_uid: str, dependencie_type: str, value: str, min_os: str = None) -> bool:
+        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES_DEPENDENCIES (PACKAGE_VERSION_UID, DEPENDENCIE_TYPE, VALUE, MIN_VERSION) VALUES (?, ?, ?, ?)""",
+                              (package_version_uid, dependencie_type, value, min_os))
         if self.__cursor.lastrowid > 0:
             return True
         return False

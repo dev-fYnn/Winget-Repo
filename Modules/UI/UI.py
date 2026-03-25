@@ -1,10 +1,11 @@
-from flask import Blueprint, request, flash, redirect, url_for, render_template, session, current_app
+from flask import Blueprint, request, flash, redirect, url_for, render_template, session, current_app, send_from_directory
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Login.Functions import check_Rights
 from Modules.Login.Login import logged_in, authenticate
 from Modules.Packages.Functions import add_package_service, get_package_service, edit_package_service, delete_package_service, add_package_version_service, get_all_packages_and_locales_service, delete_package_versions_service, get_package_versions_service
 from Modules.Store.Functions import check_for_new_Version, update_store_db
+from settings import PATH_FILES
 
 
 ui_bp = Blueprint('ui_bp', __name__, template_folder='templates', static_folder='static')
@@ -114,19 +115,47 @@ def delete_package(package_id):
     return redirect(url_for("ui_bp.index"))
 
 
-@ui_bp.route('/add_package_version', methods=['GET', 'POST'])
+@ui_bp.route('/add_package_version/<p_type>', methods=['GET', 'POST'])
 @logged_in
 @authenticate
-def add_package_version():
+def add_package_version(p_type):
+    p_type = p_type.lower()
+    if p_type not in ["package", "font"]:
+        p_type = "package"
+
     if request.method == "POST":
         data = request.form.to_dict()
         file = request.files.get('file')
         package_id = data.get("package_id", "")
 
         if len(data) > 0 and file:
+            if p_type == "font":
+                if data.get('file_type', 'ZIP') == "ZIP":
+                    fnp = request.form.getlist('file_nested_path')
+                    data['file_nested_path'] = fnp
+                else:
+                    del data['file_type_nested'], data['file_nested_path']
+                data['file_architect'] = "neutral"
+                data['file_scope'] = "machine"
+            else:
+                pkg_identifiers = request.form.getlist("dep_pkg_identifier")
+                pkg_min_versions = request.form.getlist("dep_pkg_min_version")
+
+                data["dep_windows_features"] = [v for v in request.form.getlist("dep_windows_features") if v.strip()]
+                data["dep_windows_libraries"] = [v for v in request.form.getlist("dep_windows_libraries") if v.strip()]
+                data["dep_external"] = [v for v in request.form.getlist("dep_external") if v.strip()]
+                data["dep_package_dependencies"] = [
+                    {"PackageIdentifier": ident, "MinimumVersion": ver}
+                    for ident, ver in zip(pkg_identifiers, pkg_min_versions)
+                    if ident.strip()
+                ]
+
             status, message = add_package_version_service(package_id, data, file)
             if status:
-                flash("Package version was added successfully!", "success")
+                if p_type == "font":
+                    flash("Font version was added successfully!", "success")
+                else:
+                    flash("Package version was added successfully!", "success")
             else:
                 flash(message, "error")
         else:
@@ -137,7 +166,10 @@ def add_package_version():
         if len(packages) == 0:
             flash("No packages found!", "error")
             return redirect(url_for("ui_bp.index"))
-        return render_template("index_add_package_version.html", locales=locales, packages=packages)
+
+        if p_type == "font":
+            return render_template("index_add_font_version.html", locales=locales, packages=packages, p_type=p_type)
+        return render_template("index_add_package_version.html", locales=locales, packages=packages, p_type=p_type)
 
 
 @ui_bp.route('/delete_package_version/<package_id>', methods=['GET', 'POST'])
@@ -159,3 +191,9 @@ def delete_package_version(package_id):
         return redirect(url_for("ui_bp.index"))
     versions = get_package_versions_service(package_id)
     return render_template("index_delete_package_version.html", package_id=package_id, versions=versions, Package_Name=package['PACKAGE_NAME'])
+
+
+@ui_bp.route("/files/<package_name>")
+@logged_in
+def serve_files(package_name):
+    return send_from_directory(PATH_FILES, package_name, as_attachment=True)

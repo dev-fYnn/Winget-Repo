@@ -2,93 +2,285 @@
 
 {% block header %}
     <div>
-        <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
-            Back
-        </a>
+        <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary me-3">Back</a>
     </div>
 {% endblock %}
 
 {% block content %}
+    <style>
+        .version-row{
+            background:var(--bs-body-bg);border:1px solid var(--bs-border-color);
+            border-radius:10px;padding:12px 16px;margin-bottom:10px;
+            display:flex;align-items:center;gap:15px;flex-wrap:wrap;
+            transition:.2s
+        }
+        .version-row:hover{
+            border-color:var(--bs-primary);
+            background:var(--bs-tertiary-bg);
+            box-shadow:0 2px 8px rgba(0,0,0,.05)
+        }
+        .version-row:has(input:checked){
+            background:var(--bs-primary-bg-subtle);
+            border-color:var(--bs-primary)
+        }
+        .v-cell{
+            display:flex;
+            flex-direction:column;
+            min-width:70px
+        }
+        .v-label{
+            font-size:.7rem;
+            color:var(--bs-secondary);
+            text-transform:uppercase
+        }
+        .v-value{
+            font-size:.9rem;
+            font-weight:500
+        }
+        .v-divider{
+            width:1px;
+            height:28px;
+            background:var(--bs-border-color-translucent)
+        }
+        .v-actions{
+            margin-left:auto;
+            display:flex;
+            gap:8px
+        }
+        .v-icon{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            width:32px;
+            height:32px;
+            background:var(--bs-light);
+            border-radius:8px
+        }
+        .v-badge{
+            font-size:.75rem;
+            font-weight:600;
+            padding:3px 10px;
+            border-radius:6px
+        }
+        .small-box{
+            padding:.5rem;
+            border-radius:.4rem;
+            background:var(--bs-light)
+        }
+        .form-check-input{
+            width:1.2em;
+            height:1.2em;
+            cursor:pointer
+        }
+    </style>
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="card shadow-sm">
                     <div class="card-header text-center">
-                        <h4>Manage Package Versions</h4>
+                        <h4 class="mb-0">Manage Package Versions</h4>
                     </div>
                     <div class="card-body">
-                        <h4 class="text-center mb-4">{{ Package_Name }}</h4>
-
-                        {% if versions | length > 0 %}
-                            <form method="POST" action="{{ url_for('ui_bp.delete_package_version', package_id=package_id) }}" onsubmit="sure();">
+                        <h5 class="text-center mb-4">{{ Package_Name }}</h5>
+                        {% if versions %}
+                            <form method="POST" action="{{ url_for('ui_bp.delete_package_version', package_id=package_id) }}" onsubmit="return confirm('Are you sure?')">
                                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                <table class="table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-center">Version</th>
-                                            <th class="text-center">Locale</th>
-                                            <th class="text-center d-none d-md-table-cell">Architecture</th>
-                                            <th class="text-center d-none d-lg-table-cell">Scope</th>
-                                            <th class="text-center">Type</th>
-                                            <th class="text-center d-none d-lg-table-cell">Nested</th>
-                                            <th class="text-center">Switches</th>
-                                            <th class="text-center d-none d-lg-table-cell">Download</th>
-                                            <th class="text-center">Delete</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for v in versions %}
-                                            <tr>
-                                                <td class="text-center">{{ v['VERSION'] }}</td>
-                                                <td class="text-center">{{ v['LOCALE'] }}</td>
-                                                <td class="text-center d-none d-md-table-cell">{{ v['ARCHITECTURE'] }}</td>
-                                                <td class="text-center d-none d-lg-table-cell">{{ v['INSTALLER_SCOPE'] }}</td>
-                                                <td class="text-center">{{ v['INSTALLER_TYPE'] }}</td>
-                                                <td class="text-center d-none d-lg-table-cell">{{ v['INSTALLER_NESTED_TYPE'] }}</td>
-                                                <td class="text-center">
-                                                    {% if v['SWITCHES'] | length > 0 %}
-                                                        <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#modal_{{ v['UID'] }}">Show</button>
-                                                    {% else %}
-                                                        Not found!
+                                {% for v in versions %}
+                                    {% set is_font = v['INSTALLER_NESTED_TYPE']|upper == "FONT" or v['INSTALLER_TYPE']|upper == "FONT" %}
+                                    <div class="version-row">
+                                        <div class="v-icon">
+                                            {% if is_font %}
+                                                <i class="bi bi-fonts"></i>
+                                            {% else %}
+                                                <i class="bi bi-box-seam-fill"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="v-cell">
+                                            <div class="v-label">Version</div>
+                                            <div class="v-value fw-bold">{{ v['VERSION'] }}</div>
+                                        </div>
+                                        <div class="v-divider d-none d-sm-block"></div>
+                                        <div class="v-cell">
+                                            <div class="v-label">Type</div>
+                                            <div class="v-value">
+                                                {{ v['INSTALLER_TYPE'] }}
+                                                {% if v['INSTALLER_NESTED_TYPE'] %}/ {{ v['INSTALLER_NESTED_TYPE'] }}{% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="v-divider d-none d-md-block"></div>
+                                        <div class="v-cell d-none d-md-flex">
+                                            <div class="v-label">Arch / Scope</div>
+                                            <div class="v-value">{{ v['ARCHITECTURE'] or '—' }} / {{ v['INSTALLER_SCOPE'] or '—' }}</div>
+                                        </div>
+                                        <div class="v-divider d-none d-lg-block"></div>
+                                        <div class="v-cell d-none d-lg-flex">
+                                            <div class="v-label">Locale</div>
+                                            <div class="v-value">{{ v['LOCALE'] }}</div>
+                                        </div>
+                                        <div class="v-divider d-none d-lg-block"></div>
+                                        <div class="v-cell d-none d-lg-flex flex-row gap-1">
+                                            {% if v['CHANNEL'] %}<span class="v-badge bg-primary-subtle text-primary">{{ v['CHANNEL'] }}</span>{% endif %}
+                                            {% if v['UPGRADEBEHAVIOR'] %}
+                                                <span class="v-badge bg-secondary-subtle text-secondary">{{ v['UPGRADEBEHAVIOR'] }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="v-actions">
+                                            <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#m{{ v['UID'] }}">Details</button>
+                                            <a href="{{ url_for('ui_bp.serve_files', package_name=v['INSTALLER_URL']) }}" class="btn btn-outline-secondary btn-sm" download>
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            <input type="checkbox" class="form-check-input" name="version_select" value="{{ v['UID'] }}">
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                <button class="btn btn-danger w-100 mt-3">Delete selected Versions</button>
+                            </form>
+
+                            {% for v in versions %}
+                                <div class="modal fade" id="m{{ v['UID'] }}" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">
+                                                    {{ v['VERSION'] }}
+                                                    {% if v['INSTALLER_TYPE']|upper == "FONT" or v['INSTALLER_NESTED_TYPE']|upper == "FONT" %}
+                                                        <span class="badge bg-secondary ms-2">Font</span>
                                                     {% endif %}
-                                                </td>
-                                                <td class="text-center d-none d-lg-table-cell">
-                                                    <a href="{{ url_for('winget_routes.download', package_name=v['INSTALLER_URL']) }}" class="btn btn-sm btn-secondary" download>
-                                                        <i class="bi bi-download"></i>
-                                                    </a>
-                                                </td>
-                                                <td class="text-center checkbox-cell"><input type="checkbox" name="version_select" value="{{ v['UID'] }}"></td>
-                                            </tr>
-                                            {% if v['SWITCHES'] | length > 0 %}
-                                                <div class="modal fade" id="modal_{{ v['UID'] }}" tabindex="-1" aria-labelledby="modalLabel_{{ v['UID'] }}" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="modalLabel_{{ v['UID'] }}">Switches for Version: {{ v['VERSION'] }}</h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                {% for name, state in v['SWITCHES'].items() %}
-                                                                    <div class="form-check form-switch">
-                                                                        <label class="form-check-label"><b>{{ name }}:</b> {{ state }}</label>
-                                                                    </div>
-                                                                {% endfor %}
-                                                            </div>
-                                                            <div class="modal-footer"></div>
+                                                </h5>
+                                                <button class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                {% macro box(label, value) %}
+                                                    <div class="col-6 col-md-4">
+                                                        <div class="small-box">
+                                                            <div class="text-muted small">{{ label }}</div>
+                                                            <div class="fw-semibold small">{{ value or '—' }}</div>
                                                         </div>
                                                     </div>
+                                                {% endmacro %}
+                                                <p class="text-muted small fw-bold">General</p>
+                                                <div class="row g-2 mb-3">
+                                                    {{ box('Version', v['VERSION']) }}
+                                                    {{ box('Locale', v['LOCALE']) }}
+                                                    {{ box('Architecture', v['ARCHITECTURE']) }}
+                                                    {{ box('Scope', v['INSTALLER_SCOPE']) }}
+                                                    {{ box('Channel', v['CHANNEL']) }}
+                                                    {{ box('Upgrade', v['UPGRADEBEHAVIOR']) }}
                                                 </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                                                <p class="text-muted small fw-bold">Installer</p>
+                                                <div class="row g-2 mb-3">
+                                                    {{ box('Type', v['INSTALLER_TYPE']) }}
+                                                    {{ box('Nested', v['INSTALLER_NESTED_TYPE']) }}
+                                                </div>
+                                                <div class="small-box mb-3">
+                                                    <div class="text-muted small">SHA256</div>
+                                                    <div class="fw-semibold small">{{ v['INSTALLER_SHA256'] }}</div>
+                                                </div>
+                                                {% if v['PRODUCTCODE'] %}
+                                                    <div class="small-box mb-2">
+                                                        <div class="text-muted small">ProductCode</div>
+                                                        <div class="fw-semibold small text-break">{{ v['PRODUCTCODE'] }}</div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if v['UPGRADECODE'] %}
+                                                    <div class="small-box mb-2">
+                                                        <div class="text-muted small">UpgradeCode</div>
+                                                        <div class="fw-semibold small text-break">{{ v['UPGRADECODE'] }}</div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if v['PACKAGE_FAMILY_NAME'] %}
+                                                    <div class="small-box mb-3">
+                                                        <div class="text-muted small">Package Family Name</div>
+                                                        <div class="fw-semibold small text-break">{{ v['PACKAGE_FAMILY_NAME'] }}</div>
+                                                    </div>
+                                                {% endif %}
 
-                                <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-danger">Delete Versions</button>
+                                                {% if v['SWITCHES'] %}
+                                                    <p class="text-muted small fw-bold">Switches</p>
+                                                    <table class="table table-sm table-bordered">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Switch</th>
+                                                                <th>Value</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for k,vv in v['SWITCHES'].items() %}
+                                                                <tr>
+                                                                    <td>{{ k }}</td>
+                                                                    <td>{{ vv }}</td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                {% endif %}
+
+                                                {% if v['NESTED_FILES'] %}
+                                                    <p class="text-muted small fw-bold">Nested Files</p>
+                                                    <table class="table table-sm table-bordered">
+                                                        <thead><tr><th>Path</th></tr></thead>
+                                                        <tbody>
+                                                            {% for file in v['NESTED_FILES'] %}
+                                                                {% for name, path in file.items() %}
+                                                                    <tr>
+                                                                        <td class="small text-break">{{ path }}</td>
+                                                                    </tr>
+                                                                {% endfor %}
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                {% endif %}
+
+                                                {% if v['DEPENDENCIES']['WINDOWS_FEATURES'] or v['DEPENDENCIES']['WINDOWS_LIBRARIES'] or v['DEPENDENCIES']['EXTERNAL'] or v['DEPENDENCIES']['PACKAGES'] %}
+                                                    <p class="text-muted small fw-bold">Dependencies</p>
+
+                                                    {% macro dep_list(title, items) %}
+                                                        {% if items %}
+                                                            <p class="mb-1 small fw-semibold">{{ title }}</p>
+                                                            <ul class="mb-3 small">
+                                                                {% for i in items %}
+                                                                    <li>{{ i }}</li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                        {% endif %}
+                                                    {% endmacro %}
+
+                                                    {{ dep_list('Windows Features', v['DEPENDENCIES']['WINDOWS_FEATURES']) }}
+                                                    {{ dep_list('Windows Libraries', v['DEPENDENCIES']['WINDOWS_LIBRARIES']) }}
+                                                    {{ dep_list('External Dependencies', v['DEPENDENCIES']['EXTERNAL']) }}
+
+                                                    {% if v['DEPENDENCIES']['PACKAGES'] %}
+                                                        <p class="mb-1 small fw-semibold">Package Dependencies</p>
+                                                        <div class="table-responsive mb-3">
+                                                            <table class="table table-sm table-bordered">
+                                                                <thead class="table-light">
+                                                                    <tr>
+                                                                        <th>Identifier</th>
+                                                                        <th>Min. Version</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {% for p in v['DEPENDENCIES']['PACKAGES'] %}
+                                                                        <tr>
+                                                                            <td class="small">{{ p['PackageIdentifier'] }}</td>
+                                                                            <td class="small">{{ p['MinimumVersion'] or '—' }}</td>
+                                                                        </tr>
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </form>
+                            {% endfor %}
                         {% else %}
-                            <h5 class="text-center text-secondary mb-4">No versions found!</h5>
+                            <h5 class="text-center text-secondary">No versions found!</h5>
                         {% endif %}
                     </div>
                 </div>
@@ -96,13 +288,12 @@
         </div>
     </div>
     <script>
-        function sure(){
-            const isConfirmed = confirm("Are you sure you want to continue?");
-
-            if (!isConfirmed) {
-                event.preventDefault();
+        document.querySelectorAll('.version-row').forEach(row=>{
+            row.onclick=e=>{
+                if(e.target.closest('button,a,input')) return;
+                const cb=row.querySelector('input');
+                cb.checked=!cb.checked;
             }
-        }
+        });
     </script>
 {% endblock %}
-

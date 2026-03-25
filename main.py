@@ -31,6 +31,7 @@ limiter.init_app(app)
 
 app.config['SERVERNAME'] = settings['SERVERNAME']
 app.secret_key = settings['SECRET_KEY'].encode()
+app.config['DOWNLOAD_KEY'] = settings['DOWNLOAD_KEY'].encode()
 app.config['SESSION_COOKIE_NAME'] = app.config['SERVERNAME']
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['active_downloads'] = {}

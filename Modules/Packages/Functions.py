@@ -105,21 +105,43 @@ def add_package_version_service(package_id: str, data: dict, file=None):
         if not str(p_locale).isnumeric():
             p_locale = db.get_Locale_ID_by_Value(p_locale)
 
-        status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], p_locale, data.get("file_architect", ""), file_type, filename, readable_hash, data.get("file_scope", ""), version_uid, data.get('file_type_nested', '').lower(), data.get('productcode', ""), data.get('upgradecode', ""), data.get('package_family_name', ""), data.get('channel', "stable").lower())
+        status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], p_locale, data.get("file_architect", ""), file_type, filename, readable_hash, data.get("file_scope", ""), version_uid, data.get('file_type_nested', '').lower(), data.get('productcode', ""), data.get('upgradecode', ""), data.get('package_family_name', ""), data.get('channel', "stable").lower(), data.get('upgrades', "install"))
 
-        if status and file_type == "zip" and len(data.get('file_nested_path', '')) > 0:
-            db.add_Nested_Installer(version_uid, 'RelativeFilePath', data.get('file_nested_path', ''))
+        if isinstance(data.get('file_nested_path'), list):
+            if status and file_type == "zip":
+                for fnp in data.get('file_nested_path'):
+                    db.add_Nested_Installer(version_uid, 'RelativeFilePath', fnp)
+        else:
+            if status and file_type == "zip" and len(data.get('file_nested_path', '')) > 0:
+                db.add_Nested_Installer(version_uid, 'RelativeFilePath', data.get('file_nested_path', ''))
 
         switches = {key.replace("switch_", ""): value for key, value in data.items() if key.startswith('switch_')}
         for s in ["Silent", "SilentWithProgress", "Interactive", "InstallLocation", "Log", "Upgrade", "Custom", "Repair"]:
             if s in switches and switches[s] != "":
                 db.add_Package_Version_Switch(version_uid, s, switches[s])
+
+        dep_map = {
+            "WindowsFeatures": data.get("dep_windows_features", []),
+            "WindowsLibraries": data.get("dep_windows_libraries", []),
+            "ExternalDependencies": data.get("dep_external", []),
+        }
+        for dep_type, entries in dep_map.items():
+            for value in entries:
+                if value.strip():
+                    db.add_Package_Version_Dependency(version_uid, dep_type, value.strip(), None)
+
+        for pkg_dep in data.get("dep_package_dependencies", []):
+            identifier = pkg_dep.get("PackageIdentifier", "").strip()
+            min_version = pkg_dep.get("MinimumVersion", "").strip() or None
+            if identifier:
+                db.add_Package_Version_Dependency(version_uid, "PackageDependencies", identifier, min_version)
+
         db.db_commit()
         del db
         return status, version_uid
     else:
         del db
-        return False, "Package version already exists or file missing"
+        return False, "Package/Font version already exists or file missing"
 
 
 def delete_package_versions_service(version_ids: list):
@@ -157,9 +179,18 @@ def get_package_versions_service(package_id: str):
     if not db.check_Package_exists(package_id):
         del db
         return []
+
     versions = db.get_All_Versions_from_Package(package_id)
     versions = sorted(versions, key=lambda x: parse_version(x["VERSION"]), reverse=True)
+
     for v in versions:
         v['SWITCHES'] = db.get_Package_Switche(v['UID'])
+        v['NESTED_FILES'] = db.get_Nested_Installer(v['UID'])
+        v['DEPENDENCIES'] = {
+            "WINDOWS_FEATURES": db.get_Package_Version_Dependencies(v['UID'], "WindowsFeatures"),
+            "WINDOWS_LIBRARIES": db.get_Package_Version_Dependencies(v['UID'], "WindowsLibraries"),
+            "EXTERNAL":          db.get_Package_Version_Dependencies(v['UID'], "ExternalDependencies"),
+            "PACKAGES":          db.get_Package_Version_Dependencies(v['UID'], "PackageDependencies"),
+        }
     del db
     return versions

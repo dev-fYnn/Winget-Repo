@@ -55,7 +55,7 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str,
     return data
 
 
-def generate_Installer_Manifest(package_id: str, version: str = None, channel: str = None, auth_token: str = "") -> dict:
+def generate_Installer_Manifest(package_id: str, serializer, version: str = None, channel: str = None, auth_token: str = "") -> dict:
     db = SQLiteDatabase()
     package = db.get_specific_Package(package_id, version, channel)
     blacklist = db.get_Blacklist_for_client(auth_token)
@@ -63,7 +63,7 @@ def generate_Installer_Manifest(package_id: str, version: str = None, channel: s
     versions = []
     if package and package['PACKAGE_ID'] not in blacklist:
         for version_group in package['VERSIONS']:
-            version_info = _build_version_info(version_group, package, db)
+            version_info = _build_version_info(serializer, version_group, package, db)
             if version_info:
                 versions.append(version_info)
     del db
@@ -80,12 +80,12 @@ def generate_Installer_Manifest(package_id: str, version: str = None, channel: s
     return r_data
 
 
-def _build_version_info(version_group: list, package: dict, db: SQLiteDatabase) -> dict:
+def _build_version_info(serializer, version_group: list, package: dict, db: SQLiteDatabase) -> dict:
     first_installer = version_group[0]
 
     installers = []
     for installer_data in version_group:
-        installer = _build_installer_entry(installer_data, db)
+        installer = _build_installer_entry(serializer, installer_data, db)
         if installer:
             installers.append(installer)
 
@@ -95,7 +95,7 @@ def _build_version_info(version_group: list, package: dict, db: SQLiteDatabase) 
         with open(os.path.join(PATH_LOGOS, p_logo), 'rb') as f:
             logo_hash = sha256(f.read()).hexdigest()
         icon.append({
-            "IconUrl": url_for("winget_routes.get_package_logo", logo_name=p_logo, _external=True),
+            "IconUrl": url_for("winget_routes.get_package_logo", logo_name=serializer.dumps(p_logo), _external=True),
             "IconFileType": "png",
             "IconResolution": "custom",
             "IconTheme": "default",
@@ -116,14 +116,21 @@ def _build_version_info(version_group: list, package: dict, db: SQLiteDatabase) 
     }
 
 
-def _build_installer_entry(installer_data: dict, db: SQLiteDatabase) -> dict:
+def _build_installer_entry(serializer, installer_data: dict, db: SQLiteDatabase) -> dict:
     installer = {
         "Architecture": installer_data.get('ARCHITECTURE', 'x64'),
         "InstallerType": installer_data.get('INSTALLER_TYPE', ''),
-        "InstallerUrl": url_for("winget_routes.download", package_name=installer_data.get('INSTALLER_URL', ''), _external=True),
+        "InstallerUrl": url_for("winget_routes.download", package_name=serializer.dumps(installer_data.get('INSTALLER_URL', '')), _external=True),
         "InstallerSha256": installer_data.get('INSTALLER_SHA256', ''),
         "Scope": installer_data.get('INSTALLER_SCOPE', 'machine'),
-        "InstallerSwitches": db.get_Package_Switche(installer_data.get('UID'))
+        "UpgradeBehavior": installer_data.get('UPGRADEBEHAVIOR', 'install'),
+        "InstallerSwitches": db.get_Package_Switche(installer_data.get('UID')),
+        "Dependencies": {
+            "WindowsFeatures": db.get_Package_Version_Dependencies(installer_data.get('UID'), "WindowsFeatures"),
+            "WindowsLibraries": db.get_Package_Version_Dependencies(installer_data.get('UID'), "WindowsLibraries"),
+            "PackageDependencies": db.get_Package_Version_Dependencies(installer_data.get('UID'), "PackageDependencies"),
+            "ExternalDependencies": db.get_Package_Version_Dependencies(installer_data.get('UID'), "ExternalDependencies")
+        }
     }
 
     package_family_name = installer_data.get('PACKAGE_FAMILY_NAME', '')

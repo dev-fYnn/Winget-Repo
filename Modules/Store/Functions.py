@@ -108,6 +108,8 @@ def get_All_InstallerInfos_from_Manifest(p_path: str, manifest_name: str) -> dic
                 i["InstallerSwitches"] = manifest.get("InstallerSwitches", {})
             if i.get("Channel", '') == '':
                 i["Channel"] = manifest.get("Channel", 'stable')
+            if i.get("UpgradeBehavior", '') == '':
+                i["UpgradeBehavior"] = manifest.get("UpgradeBehavior", 'install')
 
             if i["InstallerType"].upper() == "ZIP":
                 if len(i.get("NestedInstallerFiles", [])) == 0:

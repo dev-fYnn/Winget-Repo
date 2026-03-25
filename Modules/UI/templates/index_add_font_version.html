@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block header %}
+    <div>
+        <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
+            Back
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header text-center">
+                        <h4>Add Font Version</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('ui_bp.add_package_version', p_type=p_type) }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+                            <div class="mb-3">
+                                <label for="package_id" class="form-label">Choose a Package</label>
+                                <select name="package_id" id="package_id" class="form-control" required>
+                                    {% for p in packages %}
+                                        <option value="{{ p['PACKAGE_ID'] }}">{{ p['PACKAGE_NAME'] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="package_version" class="form-label">Package Version</label>
+                                <input type="text" class="form-control" id="package_version" name="package_version" placeholder="Package version" maxlength="25" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="package_local" class="form-label">Locale</label>
+                                <select name="package_local" id="package_local" class="form-control" required>
+                                    {% for l in locales %}
+                                        <option value="{{ l['LOCALE_ID'] }}">{{ l['LOCALE'] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="channel" class="form-label">Channel</label>
+                                <input type="text" class="form-control" id="channel" name="channel" placeholder="Font Channel: stable, beta, ..." value="stable" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="file_type" class="form-label">File Type</label>
+                                <select name="file_type" id="file_type" class="form-control" required>
+                                    <option value="FONT">Font (TTF / OTF)</option>
+                                    <option value="ZIP">ZIP</option>
+                                </select>
+                            </div>
+
+                            <div id="zip_options" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="file_type_nested" class="form-label">Nested File Type</label>
+                                    <select name="file_type_nested" id="file_type_nested" class="form-control">
+                                        <option value="FONT" selected>Font</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label d-flex justify-content-between align-items-center">
+                                        Nested File Paths (in ZIP)
+                                        <button type="button" class="btn btn-sm btn-outline-success" id="add_path_btn">+ Add Path</button>
+                                    </label>
+                                    <div id="nestedPathContainer">
+                                        <div class="input-group mb-2 path-entry">
+                                            <input type="text" class="form-control" name="file_nested_path" placeholder="e.g. fonts/myfont.ttf">
+                                            <button class="btn btn-outline-danger remove-path" type="button" style="display: none;">&times;</button>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Specify the path to each font file within the ZIP archive.</small>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="file" class="form-label" id="file_label">Font File (TTF / OTF)</label>
+                                <input type="file" class="form-control" id="file" name="file" accept=".ttf,.otf" required>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary" id="submit_form">Add Font Version</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const packagesSelect = document.getElementById("package_id");
+        const savedPackage = sessionStorage.getItem("selected_package");
+        if (savedPackage) packagesSelect.value = savedPackage;
+        packagesSelect.addEventListener("change", () => sessionStorage.setItem("selected_package", packagesSelect.value));
+
+        const fileTypeSelect = document.getElementById('file_type');
+        const zipOptions = document.getElementById('zip_options');
+        const fileInput = document.getElementById('file');
+        const fileLabel = document.getElementById('file_label');
+
+        function updateFileType() {
+            const isZip = fileTypeSelect.value === 'ZIP';
+
+            zipOptions.style.display = isZip ? 'block' : 'none';
+            fileInput.accept = isZip ? '.zip' : '.ttf,.otf';
+            fileLabel.textContent = isZip ? 'Font File (ZIP)' : 'Font File (TTF / OTF)';
+
+            document.querySelectorAll('input[name="file_nested_path"]').forEach(input => {
+                input.required = isZip;
+            });
+        }
+
+        fileTypeSelect.addEventListener('change', updateFileType);
+        updateFileType();
+
+        const container = document.getElementById('nestedPathContainer');
+        const addBtn = document.getElementById('add_path_btn');
+
+        function updateRemoveButtons() {
+            const entries = container.querySelectorAll('.path-entry');
+            entries.forEach(entry => {
+                const btn = entry.querySelector('.remove-path');
+                btn.style.display = entries.length > 1 ? 'block' : 'none';
+            });
+        }
+
+        addBtn.addEventListener('click', () => {
+            const newEntry = container.querySelector('.path-entry').cloneNode(true);
+            const input = newEntry.querySelector('input');
+            input.value = '';
+            input.required = fileTypeSelect.value === 'ZIP';
+            container.appendChild(newEntry);
+            updateRemoveButtons();
+        });
+
+        container.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-path')) {
+                e.target.closest('.path-entry').remove();
+                updateRemoveButtons();
+            }
+        });
+    </script>
+{% endblock %}

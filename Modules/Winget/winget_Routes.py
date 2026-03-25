@@ -1,6 +1,7 @@
 import json
 
 from flask import Blueprint, jsonify, request, send_from_directory, current_app, redirect
+from itsdangerous import URLSafeTimedSerializer
 from datetime import timedelta, datetime
 from functools import wraps
 
@@ -38,6 +39,12 @@ def check_authentication(f):
     return decorated_function
 
 
+def get_serializer():
+    return URLSafeTimedSerializer(
+        current_app.config['DOWNLOAD_KEY']
+    )
+
+
 @winget_routes.route('/information', methods=["GET"])
 @check_authentication
 def information():
@@ -70,7 +77,7 @@ def get_package_manifest(package_id):
     client_auth_token = get_Auth_Token_from_Header(request.headers)
     version = request.args.get("Version")
     channel = request.args.get("Channel")
-    result = generate_Installer_Manifest(package_id, version, channel, client_auth_token)
+    result = generate_Installer_Manifest(package_id, get_serializer(), version, channel, client_auth_token)
     return jsonify(result)
 
 
@@ -82,7 +89,7 @@ def manifestSearch():
 
     result = {"Data": []}
     if 'Query' in (data := request.json):
-        result['Data'] = generate_search_Manifest(data['Query'].get('KeyWord', ''), data['Query'].get('MatchType', 'Substring'), "PackageName", client_auth_token)
+        result['Data'].extend(generate_search_Manifest(data['Query'].get('KeyWord', ''), data['Query'].get('MatchType', 'Substring'), "PackageName", client_auth_token))
     else:
         key = ""
 
@@ -104,6 +111,12 @@ def manifestSearch():
 
 @winget_routes.route('/download/<package_name>', methods=['GET'])
 def download(package_name):
+    try:
+        serializer = get_serializer()
+        package_name = serializer.loads(package_name, max_age=3600)
+    except:
+        return "Link expired!", 403
+
     key = (request.remote_addr, package_name)
     now = datetime.now()
 
@@ -123,4 +136,10 @@ def download(package_name):
 
 @winget_routes.route('/logo/<logo_name>', methods=['GET'])
 def get_package_logo(logo_name):
+    try:
+        serializer = get_serializer()
+        logo_name = serializer.loads(logo_name, max_age=600)
+    except:
+        return "Link expired!", 403
+
     return send_from_directory(PATH_LOGOS, logo_name)
