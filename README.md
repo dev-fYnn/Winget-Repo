@@ -11,7 +11,7 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 - **Cross-platform**: The server runs on all environments that support Python 🖥️💻
 - **Client Overview**: Track and manage your clients and control who is accessing Winget-Repo 🖥️👀
 - **Library for Click and Deploy Software**: Simplified deployment of software with just a click 🖱️📲
-- **Support for Nested Installers** 🛠️🔄
+- **Support for Nested Installers and Package Dependencies** 🛠️🔄
 - **Permission Management**: Control access and user rights 🔐
 - **Terms of Service**: Request the agreement of your Terms of Service 📑
 - **Dev-Mode**: Install the Winget-Repo Dev Mode via winget configure with no problems: [Setup](https://github.com/dev-fYnn/Winget-Repo/blob/master/Docs/Dev-Mode.md) 🪛
@@ -28,6 +28,27 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 
 # 🛠️ Setup Guide
 
+Winget-Repo provides two installation methods.
+
+> ⚠️ **Production Note:** Regardless of the installation method, it is strongly recommended to set up a reverse proxy (e.g., nginx or Apache) in front of the server for production environments. This ensures proper HTTPS termination, security, and performance.
+
+### Option A: Running with Docker 🐳
+
+1. **Pull the Image** Open your terminal and run:
+```bash
+   docker pull ghcr.io/dev-fynn/winget-repo:latest
+```
+
+2. **Run the Container** Start the repository with the following command:
+```bash
+   docker run -d -p 127.0.0.1:5000:5000 --name winget-repo ghcr.io/dev-fynn/winget-repo:latest
+```
+
+3. **Access the Interface** The server will be available locally at:
+   https://localhost:5000
+
+### Option B: Manual Installation 🐍
+
 1. **Download and Extract the Repository** 📥  
    First, download the files from the repository and extract them to any location on your system.
 
@@ -38,21 +59,21 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
    Open a Command Prompt (CMD) and run the following command to install all required dependencies: ```pip install -r requirements.txt```
 
 4. **Set Up Reverse Proxy (Recommended)** 🔒  
-   Since the connection between Winget and the repository only works over HTTPS, it is recommended to set up a reverse proxy (e.g., Apache) in front of the repository for secure communication.
+   Since the connection between Winget and the repository only works over HTTPS, it is recommended to set up a reverse proxy (e.g., Apache or nginx) in front of the repository for secure communication.
 
    **Alternative (Not Recommended)** ⚠️  
-   If you choose not to set up a reverse proxy, you can use Flask’s built-in web server with HTTPS (though this is not recommended for production). To enable HTTPS on the Flask server, modify the `main.py` file as follows:
-   ```python
+   If you choose not to set up a reverse proxy, you can use Flask's built-in web server with HTTPS (though this is not recommended for production). To enable HTTPS on the Flask server, modify the `main.py` file as follows:
+```python
    if __name__ == '__main__':
        app.run(ssl_context=('SSL/cert.pem', 'SSL/server.pem'))
-   ```
+```
    You will also need to create your own SSL certificates using tools like OpenSSL or similar.
 
-6. **Accessing the Repository** 🌐  
+5. **Accessing the Repository** 🌐  
    Once everything is set up, you should be able to access Winget-Repo under:
-   ```
+```
    https://localhost:5000
-   ```
+```
    Or any port you have configured for the server.
 
 # 🔗 Connecting Winget with Winget-Repo

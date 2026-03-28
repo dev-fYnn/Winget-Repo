@@ -95,11 +95,16 @@ def global_settings():
 if __name__ == '__main__':
     start_up_check()
 
-    if len(sys.argv) > 1 and sys.argv[1] == "/dev":
+    if len(sys.argv) > 1:
         status = generate_dev_certificate()
         if status:
-            app.config['dev_mode'] = True
-            app.run(ssl_context=('SSL/cert.pem', 'SSL/key.pem'), threaded=True)
+            if sys.argv[1] == "/dev":
+                app.config['dev_mode'] = True
+                app.run(ssl_context=('SSL/cert.pem', 'SSL/key.pem'), threaded=True)
+            elif sys.argv[1] == "/docker":
+                app.run(host="0.0.0.0", ssl_context=('SSL/cert.pem', 'SSL/key.pem'), threaded=True)
+            else:
+                app.run()
         else:
             print("Error while starting the development server! Please check the certificates!")
     else:

@@ -86,9 +86,17 @@ def get_package_manifest(package_id):
 @check_authentication
 def manifestSearch():
     client_auth_token = get_Auth_Token_from_Header(request.headers)
-
     result = {"Data": []}
-    if 'Query' in (data := request.json):
+
+    try:
+        data = request.get_json(force=True, silent=True)
+    except OSError:
+        return jsonify(result), 400
+
+    if data is None:
+        return jsonify(result), 400
+
+    if 'Query' in data:
         result['Data'].extend(generate_search_Manifest(data['Query'].get('KeyWord', ''), data['Query'].get('MatchType', 'Substring'), "PackageName", client_auth_token))
     else:
         key = ""

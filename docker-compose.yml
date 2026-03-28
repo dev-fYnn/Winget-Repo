@@ -1,0 +1,7 @@
+services:
+  winget-repo:
+    image: ghcr.io/dev-fynn/winget-repo:latest
+    container_name: winget-repo
+    ports:
+      - "127.0.0.1:5000:5000"
+    restart: unless-stopped
