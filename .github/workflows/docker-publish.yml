@@ -23,9 +23,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set lowercase image name and tag
+        env:
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref_name }}
         run: |
-          echo "IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-          echo "IMAGE_TAG=$(echo ${{ github.ref_name }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "IMAGE_NAME=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$(echo "$REF" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
