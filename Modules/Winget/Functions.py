@@ -1,3 +1,4 @@
+import ipaddress
 import os
 
 from flask import url_for
@@ -180,47 +181,41 @@ def authenticate_Client(token: str, ip: str, settings: dict, client: int = 0) ->
     return False
 
 
-def ip_to_int(ip):
-    parts = ip.strip().split('.')
-    if len(parts) != 4:
-        raise ValueError("Invalid IPv4")
-    return (int(parts[0]) << 24) | (int(parts[1]) << 16) | \
-           (int(parts[2]) << 8) | int(parts[3])
-
-
-def authorize_IP_Range(ip: str) -> bool:
-    if ":" in ip:
+def authorize_IP_Range(client_ip_str: str) -> bool:
+    try:
+        client_ip = ipaddress.ip_address(client_ip_str.strip())
+    except ValueError:
         return False
 
     db = SQLiteDatabase()
     settings = db.get_winget_Settings()
     del db
 
-    ip_ranges = settings.get('IP_RESTRICTION', 'DEFAULT').upper()
-    if ip_ranges.upper() == "DEFAULT":
+    ip_ranges_raw = settings.get('IP_RESTRICTION', 'DEFAULT').upper()
+    if ip_ranges_raw == "DEFAULT":
         return True
 
-    if ";" in ip_ranges:
-        ip_ranges = ip_ranges.split(";")
-    elif "," in ip_ranges:
-        ip_ranges = ip_ranges.split(",")
-    else:
-        ip_ranges = [ip_ranges]
+    ip_ranges = ip_ranges_raw.replace(';', ',').split(',')
 
-    try:
-        ip_int = ip_to_int(ip)
-    except ValueError:
-        return False
+    for entry in ip_ranges:
+        entry = entry.strip()
+        if not entry: continue
 
-    for ip_range in ip_ranges:
-        ip_range = ip_range.strip()
-        if '-' in ip_range:
-            start, end = [x.strip() for x in ip_range.split('-')]
-            if ip_to_int(start) <= ip_int <= ip_to_int(end):
-                return True
-        else:
-            if ip_int == ip_to_int(ip_range):
-                return True
+        try:
+            if '-' in entry:
+                start_str, end_str = [x.strip() for x in entry.split('-')]
+                start_ip = ipaddress.ip_address(start_str)
+                end_ip = ipaddress.ip_address(end_str)
+
+                if client_ip.version == start_ip.version:
+                    if start_ip <= client_ip <= end_ip:
+                        return True
+            else:
+                network = ipaddress.ip_network(entry, strict=False)
+                if client_ip in network:
+                    return True
+        except ValueError:
+            continue
     return False
 
 

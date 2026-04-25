@@ -118,7 +118,13 @@
 
                             <div class="mb-3">
                                 <label for="file" class="form-label">Package File</label>
-                                <input type="file" class="form-control" id="file" name="file" required>
+                                <input type="file" class="form-control" id="file" name="file">
+                                <div class="form-text text-muted">Either upload a file <strong>or</strong> provide a URL.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="installer_url" class="form-label">Installer URL (Internet required)</label>
+                                <input type="url" class="form-control" id="installer_url" name="installer_url" placeholder="https://example.com/installer.exe">
                             </div>
 
                             <div class="mb-3">
@@ -323,5 +329,17 @@
             const entry = selector ? btn.closest(selector) : btn.parentElement;
             if (entry) entry.remove();
         }
+
+        const fileInput = document.getElementById("file");
+        const urlInput = document.getElementById("installer_url");
+
+        fileInput.addEventListener("change", function () {
+            urlInput.disabled = !!this.files.length;
+            if (this.files.length) urlInput.value = "";
+        });
+
+        urlInput.addEventListener("input", function () {
+            fileInput.disabled = !!this.value.trim();
+        });
     </script>
 {% endblock %}

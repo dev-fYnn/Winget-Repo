@@ -6,6 +6,8 @@ import requests
 import datetime
 
 from pathlib import Path
+from io import BytesIO
+from werkzeug.datastructures import FileStorage
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Database.Store_DB import StoreDB
@@ -124,15 +126,22 @@ def get_All_InstallerInfos_from_Manifest(p_path: str, manifest_name: str) -> dic
     return manifest
 
 
-def download_file(url: str, filename: str) -> bool:
-    response = requests.get(url)
+def download_file(url: str, filename: str, return_filestorage: bool = False) -> bool | FileStorage:
+    with requests.get(url, stream=True, timeout=60) as response:
+        if response.status_code != 200:
+            return False
 
-    if response.status_code == 200:
-        with open(Path(PATH_FILES) / filename, 'wb') as f:
-            f.write(response.content)
-        return True
-    else:
-        return False
+        if return_filestorage:
+            buffer = BytesIO()
+            for chunk in response.iter_content(chunk_size=8192):
+                buffer.write(chunk)
+            buffer.seek(0)
+            return FileStorage(stream=buffer, filename=filename)
+        else:
+            with open(Path(PATH_FILES) / filename, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            return True
 
 
 #Update

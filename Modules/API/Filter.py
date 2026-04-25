@@ -77,6 +77,7 @@ async def package_version_form_data(
     upgrades: Annotated[Upgrades, Form()],
     package_locale: Annotated[Locale, Form()] = Locale.en_US,
     channel: Annotated[str, Form()] = "stable",
+    installer_url: Annotated[Optional[str], Form()] = None,
     file_type_nested: Annotated[Optional[NestedFileType], Form()] = None,
     file_nested_path: Annotated[Optional[list[str]], Form()] = [],
     productcode: Annotated[Optional[str], Form()] = "",
@@ -109,6 +110,7 @@ async def package_version_form_data(
         "productcode": productcode,
         "upgradecode": upgradecode,
         "package_family_name": package_family_name,
+        "installer_url": installer_url or "",
     }
     switches = {
         "switch_Silent": switch_Silent,

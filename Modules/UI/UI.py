@@ -4,7 +4,7 @@ from Modules.Database.Database import SQLiteDatabase
 from Modules.Login.Functions import check_Rights
 from Modules.Login.Login import logged_in, authenticate
 from Modules.Packages.Functions import add_package_service, get_package_service, edit_package_service, delete_package_service, add_package_version_service, get_all_packages_and_locales_service, delete_package_versions_service, get_package_versions_service
-from Modules.Store.Functions import check_for_new_Version, update_store_db
+from Modules.Store.Functions import check_for_new_Version, update_store_db, download_file
 from settings import PATH_FILES
 
 
@@ -126,7 +126,26 @@ def add_package_version(p_type):
     if request.method == "POST":
         data = request.form.to_dict()
         file = request.files.get('file')
+        installer_url = data.get("installer_url", "").strip()
         package_id = data.get("package_id", "")
+
+        has_file = file and file.filename
+        has_url = bool(installer_url)
+
+        if not has_file and not has_url:
+            flash("Please upload a file or provide a URL!", "error")
+            return redirect(url_for("ui_bp.index"))
+
+        if not has_file and has_url:
+            filename = installer_url.split("/")[-1].split("?")[0]
+            try:
+                file = download_file(installer_url, filename, return_filestorage=True)
+                if not file:
+                    flash("Error downloading file from URL!", "error")
+                    return redirect(url_for("ui_bp.index"))
+            except Exception as e:
+                flash(f"Download error: {str(e)}", "error")
+                return redirect(url_for("ui_bp.index"))
 
         if len(data) > 0 and file:
             if p_type == "font":

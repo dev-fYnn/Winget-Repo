@@ -15,6 +15,7 @@ from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import parse_version, decode_flask_cookie
 from Modules.Login.Functions import check_Credentials
 from Modules.Packages.Functions import get_package_service, add_package_service, edit_package_service, delete_package_service, delete_package_versions_service, add_package_version_service
+from Modules.Store.Functions import download_file
 from Modules.User.Functions import user_setup_finished, check_User_Exists
 from Modules.Winget.Functions import authorize_IP_Range, get_winget_Settings, authenticate_Client
 from settings import PATH_LOGOS
@@ -349,20 +350,38 @@ async def get_specific_package_version(version_uid: str, token: str = Depends(ve
 
 # Bearer
 @client_api_bp.post("/add_package_version/{package_id}", tags=["Package Versions"], summary="Add a new package version", response_model=dict)
-async def add_package_version(package_id: str, file: UploadFile = File(...), token: str = Depends(verify_bearer_token), data: dict = Depends(package_version_form_data)):
+async def add_package_version(package_id: str, file: Optional[UploadFile] = File(None), token: str = Depends(verify_bearer_token), data: dict = Depends(package_version_form_data)):
     """
     Adds a new version to an existing package, including file upload and optional switches.
 
     **Parameters:**
     - **package_id**: ID of the package
-    - **file**: File of the new version
-    - **data**: Metadata and switches for the new version
+    - **file**: File of the new version (either this or installer_url is required)
+    - **data**: Metadata and switches for the new version. Can contain `installer_url` as alternative to file upload.
 
     **Returns:**
     - JSON message confirming version addition and the new version UID
     """
-    if not file or not data:
-        raise HTTPException(status_code=400, detail="File or data is missing!")
+    installer_url = data.get("installer_url", "").strip()
+    has_file = file and file.filename
+    has_url = bool(installer_url)
+
+    if not has_file and not has_url:
+        raise HTTPException(status_code=400, detail="Either a file or an URL must be provided!")
+
+    if not has_file and has_url:
+        filename = installer_url.split("/")[-1].split("?")[0]
+        try:
+            file = download_file(installer_url, filename, return_filestorage=True)
+            if not file:
+                raise HTTPException(status_code=400, detail="Error downloading file from URL!")
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Download error: {str(e)}")
+
+    if not data:
+        raise HTTPException(status_code=400, detail="Data is missing!")
 
     try:
         status, message_or_uid = add_package_version_service(package_id, data, file)
