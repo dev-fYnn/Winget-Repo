@@ -5,6 +5,7 @@ from a2wsgi import ASGIMiddleware
 from fastapi import FastAPI
 from flask import Flask, send_from_directory, url_for, render_template
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from werkzeug.middleware.proxy_fix import ProxyFix
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
@@ -57,6 +58,10 @@ client_api.include_router(client_api_bp)
 app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
     '/client/api': ASGIMiddleware(client_api)
 })
+
+
+if int(settings.get('USE_PROXY', "0")) == 1:
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 
 @app.route('/favicon.ico')

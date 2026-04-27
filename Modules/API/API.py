@@ -32,7 +32,7 @@ class APICheckerMiddleware(BaseHTTPMiddleware):
 
         client_ip = request.client.host
         if not authorize_IP_Range(client_ip):
-            raise HTTPException(status_code=403, detail="IP address not authorized")
+            return JSONResponse(status_code=403, content={"error": "IP address not authorized"})
 
         if request.url.path.lower() in ["/client/api/docs", "/client/api/redoc", "/client/api/openapi.json"]:
             flask_cookies = decode_flask_cookie(request.cookies.get('Winget-Repo'))

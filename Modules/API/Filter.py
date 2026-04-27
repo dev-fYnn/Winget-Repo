@@ -31,6 +31,8 @@ class Locale(str, Enum):
 class Architecture(str, Enum):
     x64 = "x64"
     x86 = "x86"
+    arm = "arm"
+    arm64 = "arm64"
     neutral = "neutral"
 
 
