@@ -1,10 +1,12 @@
-
 # ![Winget-Repo](https://winget-repo.io/wp-content/uploads/2025/07/logo-e1752093406888.png)
 
-Winget-Repo is a private repository for the Windows Package Manager (Winget), designed to provide software and updates within local networks without internet access. It allows centralized management and efficient installation and updating of software on multiple Windows clients. 
-[Website](https://winget-repo.io/) | [Docs](https://docs.winget-repo.io/local)
+[Cloud](https://cloud.winget-repo.io) | [Website](https://winget-repo.io/) | [Docs](https://docs.winget-repo.io/local)
 
-**Don’t want to host it yourself?** Try our [Cloud Version](https://cloud.winget-repo.io) for hassle-free deployment.
+Winget-Repo is a private repository for the Windows Package Manager (Winget), designed to provide software and updates within local networks without internet access. It allows centralized management, efficient installation and updating of software on multiple Windows clients.
+
+> 🏆 **Winget-Repo is the first private repository that supports both Winget repository types** — the **REST variant** as well as the **pre-indexed variant** (similar to the official public GitHub repository).
+
+**Don't want to host it yourself?** Try our [Cloud Version](https://cloud.winget-repo.io) for hassle-free deployment.
 
 # 🌟 Current Features
 - **Easy-to-use Web Interface** for managing packages and package versions 🌐
@@ -19,8 +21,8 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 - **Version Migration (Beta)**: Easily upgrade to the latest version of Winget-Repo: [Documentation](https://docs.winget-repo.io/local/Upgrade_Winget-Repo) ⬆️🆕
 - **Winget-Client**: Use Winget easily on your client: [Github](https://github.com/dev-fYnn/Winget-Repo-Client) 🖥️💿
 - **REST-API**: Rest API to Add, edit and delete Packages and Package Versions: [Documentation](https://docs.winget-repo.io/local/REST-API) ☁️
+- **Pre-Indexed Repository**: Full support for the pre-indexed source type, just like the official Microsoft Community Repository 📁
 - **Fonts**: Deploy Fonts (currently not working in the WinGet CLI when used with REST sources [Issue](https://github.com/microsoft/winget-cli/issues/6099)) 📑
-
 
 # 🚀 Upcoming Features
 - **Plugin Support**: Extend Winget-Repo’s functionality with custom plugins 🧩
@@ -35,18 +37,22 @@ Winget-Repo provides two installation methods.
 
 ### Option A: Running with Docker 🐳
 
-1. **Pull the Image** Open your terminal and run:
+1. **Pull the Image** - Open your terminal and run:
 ```bash
    docker pull ghcr.io/dev-fynn/winget-repo:latest
 ```
 
-2. **Run the Container** Start the repository with the following command:
+2. **Run the Container** - Start the repository with the following command:
 ```bash
    docker run -d -p 127.0.0.1:5000:5000 --name winget-repo ghcr.io/dev-fynn/winget-repo:latest
 ```
 
-3. **Access the Interface** The server will be available locally at:
+3. **Access the Interface** - The server will be available locally at:
    https://localhost:5000
+
+4. **Settings** - Enable the **"Use Reverse Proxy (X-Forwarded Headers)"** option in the repository settings to ensure correct IP and domain resolution.
+
+5. **Restart the Server**
 
 ### Option B: Manual Installation 🐍
 
@@ -58,6 +64,7 @@ Winget-Repo provides two installation methods.
 
 3. **Install Packages** 🔌  
    Open a Command Prompt (CMD) and run the following command to install all required dependencies: ```pip install -r requirements.txt```
+   Make sure you installed all dependencies for pymsix correctly: [Github](https://github.com/dev-fYnn/pymsix)
 
 4. **Set Up Reverse Proxy (Recommended)** 🔒  
    Since the connection between Winget and the repository only works over HTTPS, it is recommended to set up a reverse proxy (e.g., Apache or nginx) in front of the repository for secure communication.

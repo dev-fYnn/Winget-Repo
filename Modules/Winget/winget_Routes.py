@@ -1,15 +1,16 @@
 import json
+import os
 
-from flask import Blueprint, jsonify, request, send_from_directory, current_app, redirect
+from flask import Blueprint, jsonify, request, send_from_directory, current_app, redirect, Response, send_file
 from itsdangerous import URLSafeTimedSerializer
 from datetime import timedelta, datetime
 from functools import wraps
 
+from Modules.PreIndexed.Manifests import rest_response_to_manifests
 from Modules.Functions import get_Auth_Token_from_Header
 from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client, write_log, authorize_IP_Range
 from main_extensions import csrf
-from settings import PATH_FILES, URL_PACKAGE_DOWNLOAD, PATH_LOGOS
-
+from settings import PATH_FILES, URL_PACKAGE_DOWNLOAD, PATH_LOGOS, PATH_CERTIFICATES
 
 winget_routes = Blueprint('winget_routes', __name__)
 
@@ -25,6 +26,9 @@ def check_authentication(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         settings = get_winget_Settings()
+        if bool(int(settings.get('INDEXED_DB_ACTIV', '0'))):
+            return jsonify({"ErrorCode": 404, "ErrorMessage": "Not found"}), 404
+
         if bool(int(settings.get('CLIENT_AUTHENTICATION', '0'))):
             header_value = request.headers.get('Windows-Package-Manager')
             if not header_value:
@@ -77,7 +81,7 @@ def get_package_manifest(package_id):
     client_auth_token = get_Auth_Token_from_Header(request.headers)
     version = request.args.get("Version")
     channel = request.args.get("Channel")
-    result = generate_Installer_Manifest(package_id, get_serializer(), version, channel, client_auth_token)
+    result = generate_Installer_Manifest(package_id, version, channel, client_auth_token, get_serializer())
     return jsonify(result)
 
 
@@ -117,13 +121,39 @@ def manifestSearch():
     return jsonify(result)
 
 
+@winget_routes.route('/indexed/source.msix', methods=['GET', 'HEAD'])
+def source():
+    if current_app.config['INDEXED_DB_ACTIV'] == "1":
+        file_path = os.path.join(PATH_CERTIFICATES, "source.msix")
+        return send_file(file_path, mimetype='application/octet-stream', as_attachment=True, download_name='source.msix')
+    return jsonify({"ErrorCode": 404, "ErrorMessage": "Not found"}), 404
+
+
+@winget_routes.route('/indexed/source2.msix', methods=['GET', 'HEAD'])
+def source2():
+    if current_app.config['INDEXED_DB_ACTIV'] == "1":
+        file_path = os.path.join(PATH_CERTIFICATES, "source.msix")
+        return send_file(file_path, mimetype='application/octet-stream', as_attachment=True, download_name='source.msix')
+    return jsonify({"ErrorCode": 404, "ErrorMessage": "Not found"}), 404
+
+
+@winget_routes.route('/indexed/manifest/<package_id>/<version>/<channel>/<hash>', methods=['GET'])
+def indexed_manifest(package_id, version, channel, hash):
+    if current_app.config['INDEXED_DB_ACTIV'] == "1":
+        data = generate_Installer_Manifest(package_id, version, channel, "", use_serializer=False)
+        installer, installer_bytes = rest_response_to_manifests(data)
+        return Response(installer, mimetype='text/yaml')
+    return jsonify({"ErrorCode": 404, "ErrorMessage": "Not found"}), 404
+
+
 @winget_routes.route('/download/<package_name>', methods=['GET'])
 def download(package_name):
     try:
         serializer = get_serializer()
         package_name = serializer.loads(package_name, max_age=3600)
     except:
-        return "Link expired!", 403
+        if not os.path.exists(os.path.join(PATH_FILES, package_name)) or current_app.config['INDEXED_DB_ACTIV'] != "1":
+            return "Link expired!", 403
 
     key = (request.remote_addr, package_name)
     now = datetime.now()
@@ -148,6 +178,7 @@ def get_package_logo(logo_name):
         serializer = get_serializer()
         logo_name = serializer.loads(logo_name, max_age=600)
     except:
-        return "Link expired!", 403
+        if not os.path.exists(os.path.join(PATH_LOGOS, logo_name)) or current_app.config['INDEXED_DB_ACTIV'] != "1":
+            return "Link expired!", 403
 
     return send_from_directory(PATH_LOGOS, logo_name)

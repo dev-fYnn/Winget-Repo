@@ -11,6 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 
 from Modules.API.API import client_api_bp, APICheckerMiddleware
 from Modules.API.api_extensions import api_limiter
+from Modules.Config import Config
 from Modules.DevMode.Functions import generate_dev_certificate
 from Modules.Functions import start_up_check
 from Modules.Clients.Clients import client_bp
@@ -24,15 +25,17 @@ from Modules.Winget.Functions import get_winget_Settings
 from Modules.Winget.winget_Routes import winget_routes
 from main_extensions import csrf, limiter
 
-settings = get_winget_Settings(True)
+settings = get_winget_Settings()
+Config.init()
 
 app = Flask(__name__)
 csrf.init_app(app)
 limiter.init_app(app)
 
+app.__version__ = "2.8.0"
+app.config.from_object(Config)
 app.config['SERVERNAME'] = settings['SERVERNAME']
-app.secret_key = settings['SECRET_KEY'].encode()
-app.config['DOWNLOAD_KEY'] = settings['DOWNLOAD_KEY'].encode()
+app.config['INDEXED_DB_ACTIV'] = settings.get('INDEXED_DB_ACTIV', "0")
 app.config['SESSION_COOKIE_NAME'] = app.config['SERVERNAME']
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['active_downloads'] = {}
@@ -92,6 +95,7 @@ def server_error(e):
 @app.context_processor
 def global_settings():
     return {
+        'version_counter': app.__version__,
         'app_name': app.config['SERVERNAME'],
         'app_logo': url_for('static', filename='images/logo.png')
     }

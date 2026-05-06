@@ -12,9 +12,8 @@ user_bp = Blueprint('user_bp', __name__, template_folder='templates', static_fol
 @logged_in
 @authenticate
 def index():
-    db = SQLiteDatabase()
-    user = db.get_All_User()
-    del db
+    with SQLiteDatabase() as db:
+        user = db.get_All_User()
     return render_template("index_manage_user.html", user=user)
 
 
@@ -55,9 +54,8 @@ def add_user():
         else:
             return redirect(url_for("user_bp.index"))
 
-    db = SQLiteDatabase()
-    groups = db.get_All_Permission_Groups()
-    del db
+    with SQLiteDatabase() as db:
+        groups = db.get_All_Permission_Groups()
     return render_template("index_add_user.html", back=request.args.get("back", ""), groups=groups)
 
 
@@ -92,9 +90,8 @@ def edit_user(user_id):
             else:
                 flash("Select only one group at a time!", "error")
         else:
-            db = SQLiteDatabase()
-            groups = db.get_All_Permission_Groups()
-            del db
+            with SQLiteDatabase() as db:
+                groups = db.get_All_Permission_Groups()
             return render_template("index_edit_user.html", user_id=user_id, username=u_attributes.get('USERNAME', ''), groups=groups, current_group=u_attributes.get('GROUP', ''))
     elif u_status is True and u_attributes.get('DELETABLE', 0) == 0:
         flash("User can't be changed!", "error")

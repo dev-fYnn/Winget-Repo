@@ -5,16 +5,15 @@ from settings import PATH_WINGET_REPOSITORY_DB
 
 class StoreDB:
     def __init__(self, db_file=PATH_WINGET_REPOSITORY_DB):
-        self.__conn = sqlite3.connect(db_file, timeout=10)
+        self.__db_file = db_file
+
+    def __enter__(self):
+        self.__conn = sqlite3.connect(self.__db_file, timeout=10)
         self.__cursor = self.__conn.cursor()
+        return self
 
-    def __del__(self):
-        if self.__conn:
-            self.__conn.close()
-
-    def db_commit(self):
-        if self.__conn and (self.__cursor.rowcount > 0):
-            self.__conn.commit()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.__conn.close()
 
     def get_Package_Path(self, p_id: str, version: str) -> list:
         self.__cursor.execute("""SELECT m.pathpart FROM manifest AS m

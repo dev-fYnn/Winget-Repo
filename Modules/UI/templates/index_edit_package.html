@@ -19,7 +19,7 @@
                 <div class="card shadow-sm">
                     <div class="card-header d-flex align-items-center justify-content-center position-relative">
                         <div class="position-absolute start-0 ms-3 d-flex align-items-center">
-                            <img src="{{ url_for('static', filename='images/Logos/' + logo) }}" alt="Package Logo" class="package-logo">
+                            <img src="{{ url_for('ui_bp.get_package_logo', logo_name=logo) }}" alt="Package Logo" class="package-logo">
                         </div>
                         <h4 class="mb-0 mx-auto">Edit Package</h4>
                     </div>

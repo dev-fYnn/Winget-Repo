@@ -7,6 +7,19 @@
         <h6 class="text-secondary mb-0 text-center">{{ version_counter }}</h6>
     </div>
 
+    {% if pre_indexed_used %}
+        <div class="d-flex flex-column align-items-center me-2">
+            <form method="POST" action="{{ url_for('ui_bp.update_indexed_source') }}" onsubmit="showLoader(this)">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" name="action" value="refresh_index" class="btn btn-outline-secondary btn-sm shadow-sm" title="Update the pre-indexed Winget source" data-bs-toggle="tooltip" data-bs-placement="bottom">
+                    <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </form>
+            <small class="text-muted text-center" style="font-size: 0.7rem; white-space: nowrap;">{{ pre_indexed_date }}</small>
+        </div>
+    {% endif %}
+
     {% if user_mng_btn %}
         <div class="dropdown me-2">
             <button class="btn btn-light dropdown-toggle" type="button" id="settingsButton" data-bs-toggle="dropdown" aria-expanded="false">
@@ -208,6 +221,16 @@
         packages.addEventListener("change", function () {
             sessionStorage.setItem("selected_package", packages.value);
         });
+
+        function showLoader(form) {
+            const button = form.querySelector("button");
+            const spinner = button.querySelector(".spinner-border");
+            const icon = button.querySelector("i");
+
+            spinner.classList.remove("d-none");
+            icon.classList.add("d-none");
+            button.disabled = true;
+        }
     </script>
 {% endblock %}
 

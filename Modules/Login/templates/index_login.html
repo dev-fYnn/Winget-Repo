@@ -44,7 +44,7 @@
                     <label for="password" class="form-label">Password</label>
                     <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required />
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Sign In</button>
+                <button type="submit" class="btn btn-primary w-100" id="loginBtn">Sign In</button>
             </form>
         </div>
 
@@ -68,6 +68,15 @@
                     bootstrapAlert.close();
                 });
             }, 2000);
+
+            document.querySelector('form').addEventListener('submit', function() {
+                const btn = document.getElementById('loginBtn');
+                btn.disabled = true;
+                btn.innerHTML = `
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Loading...
+                `;
+            });
         </script>
     </body>
 </html>

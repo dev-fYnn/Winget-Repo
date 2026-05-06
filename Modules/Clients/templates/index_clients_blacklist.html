@@ -63,7 +63,7 @@
                                 <div class="card shadow-sm h-100">
                                     <div class="card-body d-flex align-items-start gap-3">
                                         <div class="logo-container">
-                                            <img src="{{ url_for('static', filename='images/Logos/' + package.PACKAGE_LOGO) }}" alt="{{ package.PACKAGE_NAME }}" class="package-logo">
+                                            <img src="{{ url_for('ui_bp.get_package_logo', logo_name=package.PACKAGE_LOGO) }}" alt="{{ package.PACKAGE_NAME }}" class="package-logo">
                                         </div>
 
                                         <div class="flex-grow-1">

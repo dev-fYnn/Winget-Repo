@@ -2,61 +2,336 @@
 
 {% block header %}
     <div>
-        <a href="/client/api/docs" class="btn btn-outline-info" style="margin-right: 10px;" title="View the REST-API Docs">
+        <a href="/client/api/docs" class="btn btn-outline-secondary" style="margin-right: 10px;" title="View the REST-API Docs">
             <i class="bi bi-ethernet"></i>
         </a>
         <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
-            Back
+            <i class="bi bi-arrow-left me-1"></i>Back
         </a>
     </div>
 {% endblock %}
 
 {% block header_title %}
     <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
-        <h4 class="text-secondary font-weight-bold">Server Settings</h4>
+        <h4 class="text-secondary fw-bold">Server Settings</h4>
     </div>
 {% endblock %}
 
 {% block content %}
-    <div class="container">
+    <div class="container py-4" style="max-width: 900px;">
         <form action="{{ url_for('settings_bp.index') }}" method="POST">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            <table class="table table-bordered table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th style="width: 30%;">Name</th>
-                        <th>Value</th>
-                    </tr>
-                </thead>
-                <tbody>
+
+            <div class="card border shadow-sm">
+                <div class="card-header bg-light d-flex align-items-center gap-2 py-3">
+                    <i class="bi bi-sliders text-secondary"></i>
+                    <span class="fw-semibold text-secondary">Configuration</span>
+                </div>
+                <div class="list-group list-group-flush">
                     {% for setting in settings %}
-                        <tr>
-                            <td>{% if setting in texts %} {{ texts[setting] }} {% else %} {{ setting }} {% endif %}</td>
-                            <td {% if settings[setting]['TYPE'] == "CHECKBOX" %}class="checkbox-cell"{% endif %}>
+                    <div class="list-group-item px-4 py-3">
+                        <div class="row align-items-center">
+                            <div class="col-sm-5">
+                                <span class="fw-medium">
+                                    {% if setting in texts %}{{ texts[setting] }}{% else %}{{ setting }}{% endif %}
+                                </span>
+                                {% if setting == "USE_PROXY" %}
+                                    <span class="badge text-bg-warning ms-2 fw-normal" style="font-size: 0.7rem;" title="Requires a restart to take effect.">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>Restart required
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-sm-7">
                                 {% if settings[setting]['TYPE'] == "CHECKBOX" %}
-                                    <div class="form-check d-flex align-items-center gap-3">
-                                        <input class="form-check-input" type="checkbox" name="setting_{{ setting }}" value="1"
-                                               {% if settings[setting]['VALUE']|int == 1 %}checked{% endif %}>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input" type="checkbox"
+                                                   role="switch"
+                                                   name="setting_{{ setting }}"
+                                                   value="1"
+                                                   style="width: 2.5em; height: 1.25em; cursor: pointer;"
+                                                   {% if settings[setting]['VALUE']|int == 1 %}checked{% endif %}
+                                                   {% if setting == "INDEXED_DB_ACTIV" %}id="checkbox_INDEXED_DB_ACTIV"{% endif %}
+                                                   {% if setting == "CLIENT_AUTHENTICATION" %}id="checkbox_CLIENT_AUTHENTICATION"{% endif %}>
+                                        </div>
 
                                         {% if setting == "TOS" %}
-                                            <a href="{{ url_for('settings_bp.terms') }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                            <a href="{{ url_for('settings_bp.terms') }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil me-1"></i>Edit
+                                            </a>
+                                        {% endif %}
+
+                                        {% if setting == "INDEXED_DB_ACTIV" and settings[setting]['VALUE']|int == 1 %}
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="openCertModalBtn" onclick="event.stopPropagation()">
+                                                <i class="bi bi-shield-lock me-1"></i>Certificate
+                                            </button>
                                         {% endif %}
                                     </div>
+
                                 {% else %}
-                                    <input type="text" name="setting_{{ setting }}" value="{{ settings[setting]['VALUE'] }}" class="form-control">
+                                    <input type="text"
+                                           name="setting_{{ setting }}"
+                                           value="{{ settings[setting]['VALUE'] }}"
+                                           class="form-control form-control-sm">
                                 {% endif %}
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
-            <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-check2-circle me-2"></i>Save Settings
+                </button>
+            </div>
         </form>
     </div>
 
+    <div class="modal fade" id="indexedDbWarningModal" tabindex="-1" aria-labelledby="indexedDbWarningLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title d-flex align-items-center gap-2" id="indexedDbWarningLabel">
+                        <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                        Enable Indexed DB Source?
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <p>Enabling the <strong>Winget pre-indexed DB source</strong> will replace the default REST source. As a result:</p>
+                    <ul class="mb-0">
+                        <li>The <strong>REST source will no longer function.</strong></li>
+                        <li><strong>Client authentication</strong> will not be available.</li>
+                        <li><strong>IP restriction</strong> remains supported.</li>
+                    </ul>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary" id="indexedDbCancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-warning" id="indexedDbConfirmBtn">Enable anyway</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="clientAuthWarningModal" tabindex="-1" aria-labelledby="clientAuthWarningLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title d-flex align-items-center gap-2" id="clientAuthWarningLabel">
+                        <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                        Disable Client Authentication?
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <p>Disabling <strong>client authentication</strong> for the REST source means that authentication will no longer be required to access it. As a result:</p>
+                    <ul class="mb-0">
+                        <li><strong>Any client within an allowed IP range</strong> will be able to download software without authentication.</li>
+                        <li>Make sure your <strong>IP restrictions</strong> are configured correctly to limit unintended access.</li>
+                    </ul>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary" id="clientAuthCancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-warning" id="clientAuthConfirmBtn">Disable anyway</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="certModal" tabindex="-1" aria-labelledby="certModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-1">
+                    <h5 class="modal-title d-flex align-items-center gap-2" id="certModalLabel">
+                        <i class="bi bi-shield-lock text-primary"></i>
+                        Generate Certificate
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    {% if certificate_exists %}
+                        <div class="alert alert-warning d-flex align-items-start gap-2 py-2 alert-static" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+                            <span>A certificate already exists. Generating a new one will <strong>overwrite</strong> the existing certificate. Make sure to redistribute it to all client machines afterwards.</span>
+                        </div>
+                    {% endif %}
+
+                    <p class="text-muted small">
+                        This will generate a certificate required for signing MSIX packages. After generation, distribute it to all client machines so they trust the signed packages.
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="certPassword" class="form-label">Password <span class="text-muted">(optional)</span></label>
+                        <input type="password" class="form-control" id="certPassword" placeholder="Leave empty for no password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="certValidDays" class="form-label">Validity period</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="certValidDays" value="365" min="1" max="3650">
+                            <span class="input-group-text">days</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info d-flex align-items-start gap-2 py-2 mb-0 alert-static" role="alert">
+                        <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+                        <div>
+                            To trust the certificate on client machines, run the following command as Administrator in PowerShell:
+                            <pre class="mb-0 mt-2"><code>Import-PfxCertificate -FilePath "winget-repo.pfx" -CertStoreLocation Cert:\LocalMachine\Root</code></pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary" id="certCancelBtn">Cancel</button>
+                    {% if certificate_exists %}
+                        <button type="button" class="btn btn-primary" id="download_cert">
+                            <i class="bi bi-download me-1"></i>Download existing
+                        </button>
+                    {% endif %}
+                    <button type="button" class="btn btn-primary" id="certGenerateBtn">
+                        <i class="bi bi-shield-lock me-1"></i>Generate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <style>
-        th, td {
-            vertical-align: middle;
+        pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 0.875rem;
         }
     </style>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        (function () {
+            const indexedDbCheckbox = document.getElementById('checkbox_INDEXED_DB_ACTIV');
+            if (indexedDbCheckbox) {
+                const indexedDbModal = new bootstrap.Modal(
+                    document.getElementById('indexedDbWarningModal'),
+                    { backdrop: 'static', keyboard: false }
+                );
+                indexedDbCheckbox.addEventListener('change', function () {
+                    if (this.checked) {
+                        this.checked = false;
+                        indexedDbModal.show();
+                    }
+                });
+                document.getElementById('indexedDbConfirmBtn').addEventListener('click', function () {
+                    indexedDbCheckbox.checked = true;
+                    indexedDbModal.hide();
+                    indexedDbCheckbox.focus();
+                });
+                document.getElementById('indexedDbCancelBtn').addEventListener('click', function () {
+                    indexedDbCheckbox.checked = false;
+                    indexedDbModal.hide();
+                    indexedDbCheckbox.focus();
+                });
+            }
+
+            const clientAuthCheckbox = document.getElementById('checkbox_CLIENT_AUTHENTICATION');
+            if (clientAuthCheckbox) {
+                const clientAuthModal = new bootstrap.Modal(
+                    document.getElementById('clientAuthWarningModal'),
+                    { backdrop: 'static', keyboard: false }
+                );
+                clientAuthCheckbox.addEventListener('change', function () {
+                    if (!this.checked) {
+                        this.checked = true;
+                        clientAuthModal.show();
+                    }
+                });
+                document.getElementById('clientAuthConfirmBtn').addEventListener('click', function () {
+                    clientAuthCheckbox.checked = false;
+                    clientAuthModal.hide();
+                    clientAuthCheckbox.focus();
+                });
+                document.getElementById('clientAuthCancelBtn').addEventListener('click', function () {
+                    clientAuthCheckbox.checked = true;
+                    clientAuthModal.hide();
+                    clientAuthCheckbox.focus();
+                });
+            }
+
+            const openCertModalBtn = document.getElementById('openCertModalBtn');
+            if (openCertModalBtn) {
+                const certModalEl = document.getElementById('certModal');
+                const certModal = new bootstrap.Modal(certModalEl, { backdrop: 'static', keyboard: false });
+
+                openCertModalBtn.addEventListener('click', function () { certModal.show(); });
+
+                document.getElementById('certCancelBtn').addEventListener('click', function () {
+                    certModal.hide();
+                    openCertModalBtn.focus();
+                });
+
+                certModalEl.addEventListener('hidden.bs.modal', function () {
+                    openCertModalBtn.focus();
+                });
+
+                async function handleCertAction(isDownloadOnly = false) {
+                    const btn = isDownloadOnly ? document.getElementById('download_cert') : document.getElementById('certGenerateBtn');
+                    const password = document.getElementById('certPassword').value;
+                    const validDays = document.getElementById('certValidDays').value;
+                    const originalContent = btn.innerHTML;
+
+                    btn.disabled = true;
+                    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>${isDownloadOnly ? 'Downloading...' : 'Generating...'}`;
+
+                    try {
+                        const response = await fetch("{{ url_for('settings_bp.generate_certificate') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                password: password,
+                                valid_days: parseInt(validDays),
+                                download_only: isDownloadOnly
+                            })
+                        });
+
+                        if (!response.ok) throw new Error('Action failed');
+
+                        const contentType = response.headers.get('Content-Type');
+                        if (!contentType || !contentType.includes('application/x-pkcs12')) {
+                            throw new Error('Missing permissions or invalid file');
+                        }
+
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'winget-repo.pfx';
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+
+                        certModal.hide();
+                        if (!isDownloadOnly) location.reload();
+                    } catch (err) {
+                        certModal.hide();
+                        if (typeof showAlert === "function") {
+                            showAlert('Error: ' + err.message, 'alert-danger');
+                        } else {
+                            alert('Error: ' + err.message);
+                        }
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalContent;
+                    }
+                }
+
+                document.getElementById('certGenerateBtn').addEventListener('click', () => handleCertAction(false));
+                const downloadBtn = document.getElementById('download_cert');
+                if (downloadBtn) {
+                    downloadBtn.addEventListener('click', () => handleCertAction(true));
+                }
+            }
+        })();
+    </script>
 {% endblock %}

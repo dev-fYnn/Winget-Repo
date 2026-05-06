@@ -4,9 +4,9 @@ from Modules.Database.Database import SQLiteDatabase
 from Modules.Login.Functions import check_Rights
 from Modules.Login.Login import logged_in, authenticate
 from Modules.Packages.Functions import add_package_service, get_package_service, edit_package_service, delete_package_service, add_package_version_service, get_all_packages_and_locales_service, delete_package_versions_service, get_package_versions_service
+from Modules.PreIndexed.Creator import update_pre_indexed_source, generate_indexed_db_package
 from Modules.Store.Functions import check_for_new_Version, update_store_db, download_file
-from settings import PATH_FILES
-
+from settings import PATH_FILES, PATH_LOGOS
 
 ui_bp = Blueprint('ui_bp', __name__, template_folder='templates', static_folder='static')
 
@@ -27,15 +27,22 @@ def index():
                     flash("Action not found!", "error")
         flash("Package not found!", "error")
     else:
-        db = SQLiteDatabase()
-        packages = db.get_All_Packages()
-        settings = db.get_winget_Settings()
-        del db
+        with SQLiteDatabase() as db:
+            packages = db.get_All_Packages()
+            settings = db.get_winget_Settings()
 
         update_status=False
         if settings['PACKAGE_STORE'] == "1":
-            update_store_db()
+            if check_Rights(session['logged_in'], "STORE_BP.REFRESH_SOURCE"):
+                update_store_db()
             packages, update_status = check_for_new_Version(packages)
+
+        pre_indexed_used = bool(int(current_app.config.get('INDEXED_DB_ACTIV', "0")))
+        if pre_indexed_used and check_Rights(session['logged_in'], "UI_BP.UPDATE_INDEXED_SOURCE"):
+            pre_indexed_date = update_pre_indexed_source(current_app.config['ENCRYPTION_KEY'])
+        else:
+            pre_indexed_used = False
+            pre_indexed_date = ""
 
         user_mng_btn = False
         group_mng_btn = False
@@ -51,7 +58,16 @@ def index():
         if check_Rights(session['logged_in'], "SETTINGS_BP.INDEX"):
             settings_btn = True
 
-        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, version_counter=settings.get('VERSION_COUNTER', '1.0.0'), dev_mode=current_app.config.get('dev_mode', False))
+        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, dev_mode=current_app.config.get('dev_mode', False), pre_indexed_used=pre_indexed_used, pre_indexed_date=pre_indexed_date)
+    return redirect(url_for("ui_bp.index"))
+
+
+@ui_bp.route("/update_indexed_source", methods=["POST"])
+@logged_in
+@authenticate
+def update_indexed_source():
+    status, s_type = generate_indexed_db_package(current_app.config['ENCRYPTION_KEY'])
+    flash(status, s_type)
     return redirect(url_for("ui_bp.index"))
 
 
@@ -216,3 +232,9 @@ def delete_package_version(package_id):
 @logged_in
 def serve_files(package_name):
     return send_from_directory(PATH_FILES, package_name, as_attachment=True)
+
+
+@ui_bp.route('/logo/<logo_name>', methods=['GET'])
+@logged_in
+def get_package_logo(logo_name):
+    return send_from_directory(PATH_LOGOS, logo_name)

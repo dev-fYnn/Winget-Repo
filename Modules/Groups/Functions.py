@@ -11,10 +11,9 @@ groups_bp = Blueprint('groups_bp', __name__, template_folder='templates', static
 @logged_in
 @authenticate
 def index():
-    db = SQLiteDatabase()
-    groups = db.get_All_Permission_Groups()
-    text = db.get_Fields_by_Section("PERMISSIONS", "EN")
-    del db
+    with SQLiteDatabase() as db:
+        groups = db.get_All_Permission_Groups()
+        text = db.get_Fields_by_Section("PERMISSIONS", "EN")
     return render_template("index_manage_groups.html", groups=groups, texts=text)
 
 
@@ -25,9 +24,8 @@ def add_group():
     group_name = request.form.get('group_name', '')
 
     if 15 >= len(group_name) > 0:
-        db = SQLiteDatabase()
-        status = db.add_New_Group(group_name, str(uuid4()))
-        del db
+        with SQLiteDatabase() as db:
+            status = db.add_New_Group(group_name, str(uuid4()))
 
         if status:
             flash("Successfully added!", "success")
@@ -42,26 +40,23 @@ def add_group():
 @logged_in
 @authenticate
 def save():
-    db = SQLiteDatabase()
-    groups = db.get_All_Permission_Groups()
+    with SQLiteDatabase() as db:
+        groups = db.get_All_Permission_Groups()
 
-    perm_names = {}
-    for group in groups:
-        group_id = group["ID"]
-        for perm in group:
-            if perm not in ("ID", "NAME"):
-                perm_names[perm] = ""
-                db.update_Permission(group_id, perm, 0)
+        perm_names = {}
+        for group in groups:
+            group_id = group["ID"]
+            for perm in group:
+                if perm not in ("ID", "NAME"):
+                    perm_names[perm] = ""
+                    db.update_Permission(group_id, perm, 0)
 
-    for d in request.form:
-        if d.startswith("right="):
-            group, right = d.split("§")
-            group = group.replace("right=", "")
-            if right in perm_names.keys():
-                db.update_Permission(group, right, 1)
-
-    db.db_commit()
-    del db
+        for d in request.form:
+            if d.startswith("right="):
+                group, right = d.split("§")
+                group = group.replace("right=", "")
+                if right in perm_names.keys():
+                    db.update_Permission(group, right, 1)
     flash("Saved successfully!", "success")
     return redirect(url_for("groups_bp.index"))
 
@@ -71,9 +66,8 @@ def save():
 @authenticate
 def delete_group(group_id):
     if group_id != "f4b8b5af-a414-466f-aad9-184e7e386425":
-        db = SQLiteDatabase()
-        db.delete_Group(group_id)
-        del db
+        with SQLiteDatabase() as db:
+            db.delete_Group(group_id)
         flash("Successfully deleted!", "success")
     else:
         flash("Admin group can't be deleted!", "error")

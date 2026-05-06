@@ -17,7 +17,7 @@ from Modules.Login.Functions import check_Credentials
 from Modules.Packages.Functions import get_package_service, add_package_service, edit_package_service, delete_package_service, delete_package_versions_service, add_package_version_service
 from Modules.Store.Functions import download_file
 from Modules.User.Functions import user_setup_finished, check_User_Exists
-from Modules.Winget.Functions import authorize_IP_Range, get_winget_Settings, authenticate_Client
+from Modules.Winget.Functions import authorize_IP_Range, authenticate_Client
 from settings import PATH_LOGOS
 
 
@@ -45,15 +45,12 @@ class APICheckerMiddleware(BaseHTTPMiddleware):
 async def verify_bearer_token(credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme)) -> str:
     if credentials:
         token = credentials.credentials
-        db = SQLiteDatabase()
-        try:
+        with SQLiteDatabase() as db:
             session = db.get_Session_Token(token)
             if not session:
                 raise HTTPException(status_code=401, detail="Invalid or expired token")
             db.update_Session_Timestamp(token)
             return token
-        finally:
-            del db
     raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
@@ -74,13 +71,11 @@ async def login(request: Request, username: str = Form(...), password: str = For
     **Returns:**
     - JSON object containing the generated session token
     """
-    db = SQLiteDatabase()
-    exists, user_id = check_Credentials(username, password)
-    if exists:
-        token = db.create_Session_Token(user_id, secrets.token_urlsafe(32))
-        del db
-        return JSONResponse(content={"message": token}, status_code=200)
-    del db
+    with SQLiteDatabase() as db:
+        exists, user_id = check_Credentials(username, password)
+        if exists:
+            token = db.create_Session_Token(user_id, secrets.token_urlsafe(32))
+            return JSONResponse(content={"message": token}, status_code=200)
     raise HTTPException(status_code=401, detail="Unauthorized")
 
 
@@ -99,11 +94,10 @@ async def logout(token: str = Form(...)):
     **Returns:**
     - JSON confirmation message
     """
-    db = SQLiteDatabase()
-    exists = db.get_Session_Token(token)
-    if exists:
-        db.delete_Session_Token(token=token)
-    del db
+    with SQLiteDatabase() as db:
+        exists = db.get_Session_Token(token)
+        if exists:
+            db.delete_Session_Token(token=token)
     return JSONResponse(content={"message": "Logout Successful!"}, status_code=200)
 
 
@@ -132,27 +126,19 @@ async def client_version(request: Request, auth_token: Optional[str] = Form(None
     Returns the latest available version of the Winget-Repo Client.
     Checks Bearer Token first, then 'Auth-Token' in body.
     """
-    db = SQLiteDatabase()
-    settings = get_winget_Settings()
-    if bool(int(settings.get("CLIENT_AUTHENTICATION", "0"))):
-        if token_auth:
-            try:
+    with SQLiteDatabase() as db:
+        settings = db.get_winget_Settings()
+        if bool(int(settings.get("CLIENT_AUTHENTICATION", "0"))):
+            if token_auth:
                 session = db.get_Session_Token(token_auth.credentials)
                 if not session:
                     raise HTTPException(status_code=401, detail="Invalid or expired token")
                 db.update_Session_Timestamp(token_auth.credentials)
-            finally:
-                del db
-        else:
-            try:
+            else:
                 client_value = client if client else 0
                 client_ip = request.client.host
                 if not authenticate_Client(auth_token, client_ip, settings, client_value):
                     raise HTTPException(status_code=401, detail="Invalid Auth-Token")
-            finally:
-                del db
-    else:
-        del db
     return JSONResponse(content={"Version": "2.5.0.0"}, status_code=200)
 
 
@@ -173,29 +159,20 @@ async def get_packages(request: Request, include_disabled: bool=False, auth_toke
     **Returns:**
     - JSON list of package objects containing full metadata
     """
-    db = SQLiteDatabase()
-    settings = get_winget_Settings()
-    if bool(int(settings.get("CLIENT_AUTHENTICATION", "0"))):
-        if token_auth:
-            try:
+    with SQLiteDatabase() as db:
+        settings = db.get_winget_Settings()
+        if bool(int(settings.get("CLIENT_AUTHENTICATION", "0"))):
+            if token_auth:
                 session = db.get_Session_Token(token_auth.credentials)
                 if not session:
-                    del db
                     raise HTTPException(status_code=401, detail="Invalid or expired token")
                 db.update_Session_Timestamp(token_auth.credentials)
-            finally:
-                pass
-        else:
-            try:
+            else:
                 client_value = client if client else 0
                 client_ip = request.client.host
                 if not authenticate_Client(auth_token, client_ip, settings, client_value):
-                    del db
                     raise HTTPException(status_code=401, detail="Invalid Auth-Token")
-            finally:
-                pass
 
-    try:
         data = db.get_All_Packages(include_disabled)
         for d in data:
             versions = db.get_All_Versions_from_Package(d["PACKAGE_ID"])
@@ -215,8 +192,6 @@ async def get_packages(request: Request, include_disabled: bool=False, auth_toke
             blacklist = db.get_Blacklist_for_client(auth_token)
             data = [d for d in data if d["PACKAGE_ID"] not in blacklist]
         return JSONResponse(content=data, status_code=200)
-    finally:
-        del db
 
 
 # Bearer
@@ -315,15 +290,12 @@ async def get_package_versions(package_id: str, token: str = Depends(verify_bear
     **Returns:**
     - JSON list of package version objects containing full metadata
     """
-    db = SQLiteDatabase()
-    try:
+    with SQLiteDatabase() as db:
         data = db.get_All_Versions_from_Package(package_id)
         if data:
             for d in data:
                 d['NESTED_PACKAGE_INSTALLER_PATHS'] = db.get_Nested_Installer(d['UID'])
         return JSONResponse(content=data, status_code=200)
-    finally:
-        del db
 
 
 # Bearer
@@ -338,14 +310,11 @@ async def get_specific_package_version(version_uid: str, token: str = Depends(ve
     **Returns:**
     - JSON String of a package version objects containing full metadata
     """
-    db = SQLiteDatabase()
-    try:
+    with SQLiteDatabase() as db:
         data = db.get_specfic_Versions_from_Package(version_uid)
         if data:
             data['NESTED_PACKAGE_INSTALLER_PATHS'] = db.get_Nested_Installer(data['UID'])
         return JSONResponse(content=data, status_code=200)
-    finally:
-        del db
 
 
 # Bearer

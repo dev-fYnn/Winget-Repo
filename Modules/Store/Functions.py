@@ -19,44 +19,39 @@ from settings import PATH_WINGET_REPOSITORY, PATH_WINGET_REPOSITORY_DB, URL_WING
 def get_All_Packages_from_DB(search: str = "") -> list:
     download_source_msix()
 
-    db = StoreDB()
-    packages = db.get_All_Packages_from_DB(search)
-    del db
+    with StoreDB() as db:
+        packages = db.get_All_Packages_from_DB(search)
     return packages
 
 
 def check_for_new_Version(packages: list) -> tuple[list[dict], bool]:
     download_source_msix()
 
-    db = StoreDB()
-    ddb = SQLiteDatabase()
+    with StoreDB() as db:
+        with SQLiteDatabase() as ddb:
+            update_status = False
+            for p in packages:
+                a_v = db.get_Package_Versions(p['PACKAGE_ID'])
+                c_v = [v['VERSION'] for v in ddb.get_All_Versions_from_Package(p['PACKAGE_ID'])]
+                available_versions = sorted(a_v, key=parse_version, reverse=True)
+                current_versions = sorted(c_v, key=parse_version, reverse=True)
 
-    update_status = False
-    for p in packages:
-        a_v = db.get_Package_Versions(p['PACKAGE_ID'])
-        c_v = [v['VERSION'] for v in ddb.get_All_Versions_from_Package(p['PACKAGE_ID'])]
-        available_versions = sorted(a_v, key=parse_version, reverse=True)
-        current_versions = sorted(c_v, key=parse_version, reverse=True)
-
-        if current_versions and available_versions:
-            available = parse_version(available_versions[0])
-            current = parse_version(current_versions[0])
-            if available > current:
-                p['NEW_VERSION'] = [True, current_versions[0], available_versions[0]]
-                update_status = True
-            else:
-                p['NEW_VERSION'] = [False, current_versions[0], available_versions[0]]
-        else:
-            p['NEW_VERSION'] = [False, "", ""]
-
-    del db, ddb
+                if current_versions and available_versions:
+                    available = parse_version(available_versions[0])
+                    current = parse_version(current_versions[0])
+                    if available > current:
+                        p['NEW_VERSION'] = [True, current_versions[0], available_versions[0]]
+                        update_status = True
+                    else:
+                        p['NEW_VERSION'] = [False, current_versions[0], available_versions[0]]
+                else:
+                    p['NEW_VERSION'] = [False, "", ""]
     return packages, update_status
 
 
 def get_package_path(package_id: str, version: str) -> tuple[str, str]:
-    db = StoreDB()
-    p_path = db.get_Package_Path(package_id, version)
-    del db
+    with StoreDB() as db:
+        p_path = db.get_Package_Path(package_id, version)
     return "/".join(p_path), f'{"_".join(p_path)}.yaml'
 
 

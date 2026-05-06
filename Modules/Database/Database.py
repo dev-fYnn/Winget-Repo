@@ -2,22 +2,27 @@ import sqlite3
 
 from datetime import datetime, timedelta
 from itertools import groupby
-from Modules.Functions import generate_random_string, all_to_dict, row_to_dict, parse_version
+from Modules.Functions import all_to_dict, row_to_dict, parse_version
 from settings import PATH_DATABASE
 
 
 class SQLiteDatabase:
     def __init__(self, db_file=PATH_DATABASE):
-        self.__conn = sqlite3.connect(db_file, timeout=10)
+        self.__db_file = db_file
+
+    def __enter__(self):
+        self.__conn = sqlite3.connect(self.__db_file, timeout=10)
         self.__cursor = self.__conn.cursor()
+        return self
 
-    def __del__(self):
-        if self.__conn:
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            if exc_type is None:
+                self.__conn.commit()
+            else:
+                self.__conn.rollback()
+        finally:
             self.__conn.close()
-
-    def db_commit(self, without: bool = False):
-        if self.__conn and (self.__cursor.rowcount > 0 or without):
-            self.__conn.commit()
 
     #----------------Settings--------------------
     ##############Fields##################
@@ -27,27 +32,26 @@ class SQLiteDatabase:
         return {d[0]: d[1] for d in data}
 
     ##############Settings##################
-    def get_winget_Settings(self, secret: bool = False) -> dict:
+    def get_winget_Settings(self) -> dict:
         self.__cursor.execute("""SELECT SETTING_NAME, VALUE FROM tbl_SETTINGS""")
         data = self.__cursor.fetchall()
 
         if len(data) > 0:
             data = dict(data)
 
-            if secret is False:
-                if 'SECRET_KEY' in data.keys():
-                    data.pop('SECRET_KEY')
-                if 'DOWNLOAD_KEY' in data.keys():
-                    data.pop('DOWNLOAD_KEY')
-            else:
-                if 'SECRET_KEY' not in data.keys():
-                    data['SECRET_KEY'] = generate_random_string(32)
-                    self.add_wingetrepo_Setting("SECRET_KEY", data['SECRET_KEY'], "TEXT", False)
-                    self.db_commit()
-                if 'DOWNLOAD_KEY' not in data.keys():
-                    data['DOWNLOAD_KEY'] = generate_random_string(32)
-                    self.add_wingetrepo_Setting("DOWNLOAD_KEY", data['DOWNLOAD_KEY'], "TEXT", False)
-                    self.db_commit()
+            if 'INDEXED_DB_VERSION' not in data.keys():
+                data["INDEXED_DB_VERSION"] = "2026.4.2.1"
+                self.add_wingetrepo_Setting("INDEXED_DB_VERSION", data["INDEXED_DB_VERSION"], "TEXT", False)
+
+            if 'SECRET_KEY' in data.keys():
+                self.remove_wingetrepo_Setting('SECRET_KEY')
+                data.pop('SECRET_KEY')
+            if 'DOWNLOAD_KEY' in data.keys():
+                self.remove_wingetrepo_Setting('DOWNLOAD_KEY')
+                data.pop('DOWNLOAD_KEY')
+            if 'ENCRYPTION_KEY' in data.keys():
+                self.remove_wingetrepo_Setting('ENCRYPTION_KEY')
+                data.pop('ENCRYPTION_KEY')
             return data
         return {}
 
@@ -67,6 +71,9 @@ class SQLiteDatabase:
 
     def update_wingetrepo_Setting(self, name: str, value: str):
         self.__cursor.execute("""UPDATE tbl_SETTINGS SET VALUE = ? WHERE SETTING_NAME = ?""", (value, name))
+
+    def remove_wingetrepo_Setting(self, name: str):
+        self.__cursor.execute("""DELETE FROM tbl_SETTINGS WHERE SETTING_NAME = ?""", (name,))
 
     ##############Texts##################
     def get_Text_by_Typ(self, text_id: str) -> dict:
@@ -116,7 +123,6 @@ class SQLiteDatabase:
 
         if data is None:
             self.__cursor.execute("""INSERT INTO tbl_CLIENTS (UID, NAME, IP, TOKEN) VALUES (?, ?, ?, ?)""", (uid, client_name, ip, token))
-            self.db_commit()
 
         if self.__cursor.lastrowid > 0:
             return True
@@ -124,18 +130,15 @@ class SQLiteDatabase:
 
     def update_Client_Enable_Status(self, client_id: str, status: int):
         self.__cursor.execute("""UPDATE tbl_CLIENTS SET ENABLED = ? WHERE UID = ?""", (status, client_id,))
-        self.db_commit()
 
     def update_Client_Informations(self, ip: str, last_seen: str, uid: str, client: int = 0):
         self.__cursor.execute("""UPDATE tbl_CLIENTS SET IP = ?, LASTSEEN = ?, CLIENT = ? WHERE UID = ?""", (ip, last_seen, client, uid))
-        self.db_commit()
 
     def delete_Client(self, client_id: str, auth_token: str):
         self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_GROUPS_CLIENTS WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_PACKAGES_BLACKLIST WHERE CLIENT_AUTH_TOKEN = ?""", (auth_token,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ?""", (client_id,))
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS WHERE UID = ?""", (client_id,))
-        self.db_commit()
 
     ##############Blacklist##################
     def get_Blacklist_for_client(self, auth_token: str, groups: bool=True) -> list:
@@ -156,7 +159,6 @@ class SQLiteDatabase:
 
         for p in packages:
             self.__cursor.execute("""INSERT INTO tbl_CLIENTS_PACKAGES_BLACKLIST (CLIENT_AUTH_TOKEN, PACKAGE_ID) VALUES (?, ?)""", (auth_token, p))
-        self.db_commit()
 
     ##############Blacklist-Groups################
     def get_All_Blacklist_Groups(self) -> list:
@@ -186,7 +188,6 @@ class SQLiteDatabase:
 
         for g in groups:
             self.__cursor.execute("""INSERT INTO tbl_BLACKLIST_GROUPS_CLIENTS (GROUP_ID, CLIENT_AUTH_TOKEN) VALUES (?, ?)""", (g, auth_token))
-        self.db_commit(True)
 
     def insert_update_Blacklist_Group(self, uid: str, name: str, packages: list):
         self.__cursor.execute("""INSERT OR REPLACE INTO tbl_BLACKLIST_GROUPS (UID, NAME) VALUES (?, ?)""", (uid, name))
@@ -194,13 +195,11 @@ class SQLiteDatabase:
         self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_PACKAGES WHERE GROUP_ID = ?""", (uid,))
         for p in packages:
             self.__cursor.execute("""INSERT INTO tbl_BLACKLIST_PACKAGES (GROUP_ID, PACKAGE_ID) VALUES (?, ?)""", (uid, p))
-        self.db_commit(True)
 
     def remove_Blacklist_Group(self, group_id: str):
         self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_PACKAGES WHERE GROUP_ID = ?""", (group_id,))
         self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_GROUPS_CLIENTS WHERE GROUP_ID = ?""", (group_id,))
         self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_GROUPS WHERE UID = ?""", (group_id,))
-        self.db_commit()
 
     ##############Logs##################
     def get_Logs_for_Client(self, client_id: str) -> list:
@@ -213,11 +212,9 @@ class SQLiteDatabase:
 
     def insert_Log(self, client_id: str, log_type: str, log_message: str, timestamp: str):
         self.__cursor.execute("""INSERT INTO tbl_CLIENTS_LOGS (CLIENT_ID, LOG_TYPE, LOG_MESSAGE, TIMESTAMP) VALUES (?, ?, ?, ?)""", (client_id, log_type, log_message, timestamp))
-        self.db_commit()
 
     def remove_logs(self, client_id: str):
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ?""", (client_id,))
-        self.db_commit()
 
     #-------------------Packages--------------------
     def check_Package_exists(self, package_id: str) -> bool:
@@ -445,7 +442,6 @@ class SQLiteDatabase:
 
     def add_New_Group(self, group_name: str, id: str) -> bool:
         self.__cursor.execute("""INSERT INTO tbl_USER_RIGHTS (ID, NAME) VALUES (?, ?)""", (id, group_name))
-        self.db_commit()
 
         if self.__cursor.lastrowid > 0:
             return True
@@ -456,7 +452,6 @@ class SQLiteDatabase:
 
     def delete_Group(self, group_id: str):
         self.__cursor.execute("""DELETE FROM tbl_USER_RIGHTS WHERE ID = ?""", (group_id,))
-        self.db_commit()
 
 
     #-------------------User----------------------
@@ -494,8 +489,6 @@ class SQLiteDatabase:
 
     def delete_User(self, user_id: str):
         self.__cursor.execute("""DELETE FROM tbl_USER WHERE ID = ? AND DELETABLE = 1""", (user_id,))
-        self.db_commit()
-
 
     #-------------------User-Authentication----------------------
     def check_User_Credentials(self, username: str) -> dict:
@@ -512,7 +505,6 @@ class SQLiteDatabase:
 
     def update_User_Password(self, user_id: str, password: str):
         self.__cursor.execute(f"""UPDATE tbl_USER SET PW = ? WHERE ID = ?""", (password, user_id))
-        self.db_commit()
 
     #-------------------API----------------------
     def get_Session_Token(self, token: str) -> str:
@@ -550,7 +542,6 @@ class SQLiteDatabase:
                 return old_token
             self.delete_Session_Token(user_id)
         self.__cursor.execute("""INSERT INTO tbl_USER_API (UID, TOKEN, TIMESTAMP) VALUES (?, ?, ?)""", (user_id, token, datetime.now()))
-        self.db_commit()
         return token
 
     def update_Session_Timestamp(self, token: str) -> bool:
@@ -558,12 +549,9 @@ class SQLiteDatabase:
         self.__cursor.execute("""UPDATE tbl_USER_API
                                        SET TIMESTAMP = ?
                                      WHERE TOKEN = ?""", (new_timestamp, token))
-        self.db_commit()
         return True
 
     def delete_Session_Token(self, user_id: str = "", token: str = "") -> bool:
         self.__cursor.execute("""DELETE FROM tbl_USER_API 
                                      WHERE UID = ? OR TOKEN = ?""", (user_id, token))
-        self.db_commit()
         return True
-
