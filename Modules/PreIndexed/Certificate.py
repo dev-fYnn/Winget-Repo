@@ -8,7 +8,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import pkcs12
 
 
-def generate_pfx_certificate(password: str = None, valid_days: int = 365) -> bytes:
+def generate_pfx_certificate(password: str = None, valid_days: int = 365) -> tuple[bytes, bytes]:
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=4096,
@@ -70,4 +70,5 @@ def generate_pfx_certificate(password: str = None, valid_days: int = 365) -> byt
         )
     )
 
-    return pfx_bytes
+    cert_bytes = certificate.public_bytes(serialization.Encoding.DER)
+    return pfx_bytes, cert_bytes

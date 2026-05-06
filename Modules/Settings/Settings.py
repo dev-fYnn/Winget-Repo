@@ -82,17 +82,18 @@ def generate_certificate():
         data = request.get_json()
         download_only = data.get('download_only', False)
         cert_file_path = os.path.join(PATH_CERTIFICATES, "preindexed.pfx")
+        cer_file_path = os.path.join(PATH_CERTIFICATES, "public_preindexed.cer")
 
         if download_only:
-            if os.path.exists(cert_file_path):
-                return send_file(cert_file_path, mimetype='application/x-pkcs12', as_attachment=True, download_name='winget-repo.pfx')
+            if os.path.exists(cer_file_path):
+                return send_file(cer_file_path, mimetype='application/x-x509-ca-cert', as_attachment=True, download_name='winget-repo.cer')
             else:
                 return "Certificate not found", 404
 
         password = data.get('password') or None
         valid_days = data.get('valid_days', 365)
 
-        pfx = generate_pfx_certificate(password=password, valid_days=valid_days)
+        pfx, cer = generate_pfx_certificate(password=password, valid_days=valid_days)
 
         with SQLiteDatabase() as db:
             db_pw = "0" if password is None else encrypt_text(current_app.config['ENCRYPTION_KEY'], password)
@@ -100,5 +101,8 @@ def generate_certificate():
 
         with open(cert_file_path, "wb") as f:
             f.write(pfx)
-        return send_file(io.BytesIO(pfx), mimetype='application/x-pkcs12', as_attachment=True, download_name='winget-repo.pfx')
+        with open(cer_file_path, "wb") as f:
+            f.write(cer)
+
+        return send_file(io.BytesIO(cer), mimetype='application/x-x509-ca-cert', as_attachment=True, download_name='winget-repo.cer')
     return ""

@@ -176,7 +176,7 @@
                         <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
                         <div>
                             To trust the certificate on client machines, run the following command as Administrator in PowerShell:
-                            <pre class="mb-0 mt-2"><code>Import-PfxCertificate -FilePath "winget-repo.pfx" -CertStoreLocation Cert:\LocalMachine\Root</code></pre>
+                            <pre class="mb-0 mt-2"><code>Import-Certificate -FilePath "winget-repo.cer" -CertStoreLocation Cert:\LocalMachine\TrustedPeople</code></pre>
                         </div>
                     </div>
                 </div>
@@ -297,7 +297,7 @@
                         if (!response.ok) throw new Error('Action failed');
 
                         const contentType = response.headers.get('Content-Type');
-                        if (!contentType || !contentType.includes('application/x-pkcs12')) {
+                        if (!contentType || !contentType.includes('application/x-x509-ca-cert')) {
                             throw new Error('Missing permissions or invalid file');
                         }
 
@@ -305,7 +305,7 @@
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = 'winget-repo.pfx';
+                        a.download = 'winget-repo.cer';
                         document.body.appendChild(a);
                         a.click();
                         a.remove();

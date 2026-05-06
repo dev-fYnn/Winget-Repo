@@ -32,7 +32,7 @@ app = Flask(__name__)
 csrf.init_app(app)
 limiter.init_app(app)
 
-app.__version__ = "2.8.0"
+app.__version__ = "2.8.1"
 app.config.from_object(Config)
 app.config['SERVERNAME'] = settings['SERVERNAME']
 app.config['INDEXED_DB_ACTIV'] = settings.get('INDEXED_DB_ACTIV', "0")
@@ -113,8 +113,8 @@ if __name__ == '__main__':
             elif sys.argv[1] == "/docker":
                 app.run(host="0.0.0.0", ssl_context=('SSL/cert.pem', 'SSL/key.pem'), threaded=True)
             else:
-                app.run()
+                app.run(threaded=True)
         else:
             print("Error while starting the development server! Please check the certificates!")
     else:
-        app.run()
+        app.run(threaded=True)
