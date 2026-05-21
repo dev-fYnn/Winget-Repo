@@ -8,11 +8,12 @@ from pathlib import Path
 from typing import Optional
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
+from uuid import uuid4
 
 from Modules.API.Filter import LoginResponse, ClientVersionResponse, Package, package_version_form_data, Package_Version
 from Modules.API.api_extensions import api_limiter
 from Modules.Database.Database import SQLiteDatabase
-from Modules.Functions import parse_version, decode_flask_cookie
+from Modules.Functions import parse_version, decode_flask_cookie, get_ip_from_hostname
 from Modules.Login.Functions import check_Credentials
 from Modules.Packages.Functions import get_package_service, add_package_service, edit_package_service, delete_package_service, delete_package_versions_service, add_package_version_service
 from Modules.Store.Functions import download_file
@@ -393,3 +394,82 @@ async def delete_package_version(package_id: str, versions_uids: list[str] = For
 
     delete_package_versions_service(versions_uids)
     return JSONResponse(content={"Message": "Package versions deleted successfully!"}, status_code=200)
+
+
+# Bearer
+@client_api_bp.get("/get_clients", tags=["Clients"], summary="Retrieve all clients", response_model=list)
+async def get_clients(token: str = Depends(verify_bearer_token)):
+    """
+    Returns a complete list of all registered clients.
+
+    **Returns:**
+    - JSON list of client objects containing full metadata
+    """
+    with SQLiteDatabase() as db:
+        clients = db.get_All_Clients()
+
+    return JSONResponse(content=clients, status_code=200)
+
+
+# Bearer
+@client_api_bp.post("/add_client", tags=["Clients"], summary="Add a new client and return its auth token", response_model=dict)
+async def add_client(request: Request, client_name: str = Form(...), token: str = Depends(verify_bearer_token)):
+    """
+    Adds a new client by hostname, resolves its IP via DNS (if enabled) and generates an auth token.
+
+    **Parameters:**
+    - **client_name**: The hostname of the client to add
+
+    **Returns:**
+    - JSON object containing the client ID and the generated auth token
+    """
+    if not client_name:
+        raise HTTPException(status_code=400, detail="No client name provided!")
+
+    with SQLiteDatabase() as db:
+        settings = db.get_winget_Settings()
+
+    if settings.get('CLIENT_AUTHENTICATION_DNS_USAGE', "1") == "1":
+        ip = get_ip_from_hostname(client_name, settings.get('DNS_SUFFIX', ''), settings.get('DNS_SERVER', '192.168.1.1'))
+    else:
+        ip = "127.0.0.1"
+
+    if not ip:
+        raise HTTPException(status_code=400, detail="Could not resolve IP from hostname. Check the input or DNS config!")
+
+    c_id = str(uuid4())
+    auth_token = str(uuid4())
+
+    with SQLiteDatabase() as db:
+        status = db.add_New_Client(c_id, client_name.upper()[:25], ip, auth_token)
+
+    if status:
+        return JSONResponse(content={"Message": "Client was added successfully!", "client_id": c_id, "auth_token": auth_token}, status_code=201)
+    else:
+        raise HTTPException(status_code=409, detail="Hostname already exists!")
+
+
+# Bearer
+@client_api_bp.delete("/delete_client/{client_id}/{auth_token}", tags=["Clients"], summary="Delete an existing client", response_model=dict)
+async def delete_client(client_id: str, auth_token: str, token: str = Depends(verify_bearer_token)):
+    """
+    Deletes an existing client by its ID and auth token.
+
+    **Parameters:**
+    - **client_id**: The unique ID of the client to delete
+    - **auth_token**: The auth token of the client to delete
+
+    **Returns:**
+    - JSON message confirming client deletion
+    """
+    if not client_id or not auth_token:
+        raise HTTPException(status_code=400, detail="No data provided!")
+
+    with SQLiteDatabase() as db:
+        client = db.get_Client_by_ID(client_id)
+        if not client:
+            raise HTTPException(status_code=404, detail="Client not found!")
+
+        db.delete_Client(client_id, auth_token)
+
+    return JSONResponse(content={"Message": "Client was removed successfully!"}, status_code=200)
