@@ -33,7 +33,11 @@ def add_client():
         else:
             with SQLiteDatabase() as db:
                 settings = db.get_winget_Settings()
-            ip = get_ip_from_hostname(name, settings.get('DNS_SUFFIX', ''), settings.get('DNS_SERVER', '192.168.1.1'))
+
+            if settings.get('CLIENT_AUTHENTICATION_DNS_USAGE', "1") == "1":
+                ip = get_ip_from_hostname(name, settings.get('DNS_SUFFIX', ''), settings.get('DNS_SERVER', '192.168.1.1'))
+            else:
+                ip = "127.0.0.1"
 
         if len(ip) > 0:
             c_id = str(uuid4())

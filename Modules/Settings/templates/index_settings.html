@@ -53,7 +53,8 @@
                                                    style="width: 2.5em; height: 1.25em; cursor: pointer;"
                                                    {% if settings[setting]['VALUE']|int == 1 %}checked{% endif %}
                                                    {% if setting == "INDEXED_DB_ACTIV" %}id="checkbox_INDEXED_DB_ACTIV"{% endif %}
-                                                   {% if setting == "CLIENT_AUTHENTICATION" %}id="checkbox_CLIENT_AUTHENTICATION"{% endif %}>
+                                                   {% if setting == "CLIENT_AUTHENTICATION" %}id="checkbox_CLIENT_AUTHENTICATION"{% endif %}
+                                                   {% if setting == "CLIENT_AUTHENTICATION_DNS_USAGE" %}id="checkbox_DNS_VALIDATION"{% endif %}>
                                         </div>
 
                                         {% if setting == "TOS" %}
@@ -195,6 +196,29 @@
         </div>
     </div>
 
+    <div class="modal fade" id="dnsValidationWarningModal" tabindex="-1" aria-labelledby="dnsValidationWarningLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-1">
+                        <h5 class="modal-title d-flex align-items-center gap-2" id="dnsValidationWarningLabel">
+                            <i class="bi bi-shield-exclamation text-warning"></i>
+                            Disable DNS Validation?
+                        </h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>Disabling <strong>DNS reverse lookup validation</strong> reduces the security of client authentication. When disabled:</p>
+                        <ul class="mb-0">
+                            <li>The server will <strong>no longer verify</strong> if the client's reported identity matches its DNS records.</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-secondary" id="dnsValidationCancelBtn">Cancel</button>
+                        <button type="button" class="btn btn-warning" id="dnsValidationConfirmBtn">Disable anyway</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <style>
         pre {
             white-space: pre-wrap;
@@ -252,6 +276,33 @@
                     clientAuthCheckbox.checked = true;
                     clientAuthModal.hide();
                     clientAuthCheckbox.focus();
+                });
+            }
+
+            const dnsValidationCheckbox = document.getElementById('checkbox_DNS_VALIDATION');
+            if (dnsValidationCheckbox) {
+                const dnsValidationModal = new bootstrap.Modal(
+                    document.getElementById('dnsValidationWarningModal'),
+                    { backdrop: 'static', keyboard: false }
+                );
+
+                dnsValidationCheckbox.addEventListener('change', function () {
+                    if (!this.checked) {
+                        this.checked = true;
+                        dnsValidationModal.show();
+                    }
+                });
+
+                document.getElementById('dnsValidationConfirmBtn').addEventListener('click', function () {
+                    dnsValidationCheckbox.checked = false;
+                    dnsValidationModal.hide();
+                    dnsValidationCheckbox.focus();
+                });
+
+                document.getElementById('dnsValidationCancelBtn').addEventListener('click', function () {
+                    dnsValidationCheckbox.checked = true;
+                    dnsValidationModal.hide();
+                    dnsValidationCheckbox.focus();
                 });
             }
 

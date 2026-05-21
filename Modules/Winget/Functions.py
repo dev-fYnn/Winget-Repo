@@ -180,15 +180,22 @@ def get_winget_Settings() -> dict:
     return data
 
 
-def authenticate_Client(token: str, ip: str, settings: dict, client: int = 0) -> bool:
+def authenticate_Client(token: str, ip: str, settings: dict, client_id: int = 0) -> bool:
     with SQLiteDatabase() as db:
-        data = db.authenticate_client(token)
-        if data:
-            hostname = get_hostname_from_ip_dns(ip, settings.get('DNS_SERVER', '192.168.1.1'))
-            if hostname.upper() == data['NAME'] and data['ENABLED'] == 1:
-                db.update_Client_Informations(ip, datetime.now().strftime("%d.%m.%Y %H:%M:%S"), data['UID'], client)
-                return True
-    return False
+        client_data = db.authenticate_client(token)
+        if not client_data or client_data.get('ENABLED') != 1:
+            return False
+
+        dns_auth_enabled = settings.get('CLIENT_AUTHENTICATION_DNS_USAGE', "1") == "1"
+        if dns_auth_enabled:
+            dns_server = settings.get('DNS_SERVER', '192.168.1.1')
+            hostname = get_hostname_from_ip_dns(ip, dns_server)
+            if hostname.upper() != client_data.get('NAME', '').upper():
+                return False
+
+        now_str = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+        db.update_Client_Informations(ip, now_str, client_data['UID'], client_id)
+        return True
 
 
 def authorize_IP_Range(client_ip_str: str) -> bool:
