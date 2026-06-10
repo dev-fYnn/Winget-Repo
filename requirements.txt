@@ -16,3 +16,4 @@ starlette>=0.50.0
 pydantic>=2.12.5
 itsdangerous>=2.2.0
 pymsix>=1.1.5
+mcp>=1.27.2
