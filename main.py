@@ -17,6 +17,7 @@ from Modules.Functions import start_up_check
 from Modules.Clients.Clients import client_bp
 from Modules.Groups.Functions import groups_bp
 from Modules.Login.Login import login_bp
+from Modules.Plugins.Plugin_Manager import load_plugins
 from Modules.Settings.Settings import settings_bp
 from Modules.Store.store import store_bp
 from Modules.UI.UI import ui_bp
@@ -32,7 +33,7 @@ app = Flask(__name__)
 csrf.init_app(app)
 limiter.init_app(app)
 
-app.__version__ = "2.8.2"
+app.__version__ = "2.8.3"
 app.config.from_object(Config)
 app.config['SERVERNAME'] = settings['SERVERNAME']
 app.config['INDEXED_DB_ACTIV'] = settings.get('INDEXED_DB_ACTIV', "0")
@@ -52,15 +53,13 @@ app.register_blueprint(winget_routes, url_prefix='/api')
 
 
 client_api = FastAPI(title="Winget-Repo REST-API")
-client_api.state.limiter = api_limiter
-client_api.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-client_api.add_middleware(APICheckerMiddleware)
-client_api.include_router(client_api_bp)
-
 app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
     '/client/api': ASGIMiddleware(client_api)
 })
+client_api.add_middleware(APICheckerMiddleware)
+client_api.include_router(client_api_bp)
+client_api.state.limiter = api_limiter
+client_api.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 if int(settings.get('USE_PROXY', "0")) == 1:
@@ -103,6 +102,7 @@ def global_settings():
 
 if __name__ == '__main__':
     start_up_check()
+    load_plugins(app, client_api)
 
     if len(sys.argv) > 1:
         status = generate_dev_certificate()

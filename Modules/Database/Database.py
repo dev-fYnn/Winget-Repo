@@ -467,6 +467,11 @@ class SQLiteDatabase:
             return True, data
         return False, data
 
+    def get_User_by_ID(self, user_id: str) -> dict:
+        self.__cursor.execute("""SELECT ID, USERNAME, DELETABLE, "GROUP" FROM tbl_USER WHERE ID = ?""", (user_id,))
+        data = self.__cursor.fetchone()
+        return row_to_dict(data, self.__cursor.description)
+
     def get_All_User(self):
         self.__cursor.execute("""SELECT TU.*, TUR.NAME FROM tbl_USER AS TU
                                     LEFT JOIN tbl_USER_RIGHTS AS TUR ON TU."GROUP" = TUR.ID""")

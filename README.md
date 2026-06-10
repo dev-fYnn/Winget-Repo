@@ -23,12 +23,15 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 - **REST-API**: Rest API to Add, edit and delete Packages and Package Versions: [Documentation](https://docs.winget-repo.io/local/REST-API) ☁️
 - **Pre-Indexed Repository**: Full support for the pre-indexed source type, just like the official Microsoft Community Repository [Documentation](https://docs.winget-repo.io/local/Pre-Indexed) 📁
 - **Fonts**: Deploy Fonts (currently not working in the WinGet CLI when used with REST sources [Issue](https://github.com/microsoft/winget-cli/issues/6099)) 📑
+- **Plugin Support**: Extend Winget-Repo’s functionality with custom plugins [Documentation](https://docs.winget-repo.io/local/Plugins) 🧩
 
 # 🚀 Upcoming Features
 - **Export/Import**: Easily export and import your repository packages and settings 🌱
 - **Multilanguage**: Support multiple languages 🚩
-- **Plugin Support**: Extend Winget-Repo’s functionality with custom plugins 🧩
 - **And much more**: Continuous improvements and new features on the way! ✨
+
+# 🔌 Plugins
+- **MCP Server**: Soon
 
 # 🛠️ Setup Guide
 

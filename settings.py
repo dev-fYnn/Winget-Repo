@@ -20,3 +20,6 @@ PATH_PREINDEXED_FILES = os.path.join(PATH_FILES, "PreIndexed_Files")
 PATH_CERTIFICATES = os.path.join(PATH_FILES, "PreIndexed")
 PATH_PACKER_TOOL = "DEFAULT"
 PATH_SIGNING_TOOL = "DEFAULT"
+
+#Plugins
+PATH_PLUGINS = os.path.join(BASE_DIR, "Plugins")

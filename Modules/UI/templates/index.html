@@ -1,78 +1,99 @@
 {% extends "base.html" %}
 
+{% block custom_links %}
+    <link href="{{ url_for('ui_bp.static', filename='css/index_css.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block header %}
-<div class="d-flex align-items-center justify-content-between" style="margin-right: 10px;">
-    <div class="d-flex flex-column align-items-center" style="margin-right: 30px;">
-        <h6 class="text-secondary mb-1 text-center">{{ username }}</h6>
-        <h6 class="text-secondary mb-0 text-center">{{ version_counter }}</h6>
-    </div>
+    <div class="d-flex align-items-center gap-2" style="margin-right: 12px;">
 
-    {% if pre_indexed_used %}
-        <div class="d-flex flex-column align-items-center me-2">
-            <form method="POST" action="{{ url_for('ui_bp.update_indexed_source') }}" onsubmit="showLoader(this)">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" name="action" value="refresh_index" class="btn btn-outline-secondary btn-sm shadow-sm" title="Update the pre-indexed Winget source" data-bs-toggle="tooltip" data-bs-placement="bottom">
-                    <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
-                    <i class="bi bi-arrow-clockwise"></i>
+        {% if pre_indexed_used %}
+            <div class="d-flex flex-column align-items-center">
+                <form method="POST" action="{{ url_for('ui_bp.update_indexed_source') }}" onsubmit="showLoader(this)">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" name="action" value="refresh_index"
+                        class="btn btn-outline-secondary btn-sm idx-btn shadow-sm"
+                        title="Update the pre-indexed Winget source"
+                        data-bs-toggle="tooltip" data-bs-placement="bottom">
+                        <span class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </form>
+                <small class="text-muted text-center" style="font-size: 0.68rem; white-space: nowrap; margin-top: 2px;">{{ pre_indexed_date }}</small>
+            </div>
+        {% endif %}
+
+        <div class="d-flex flex-column align-items-end me-1">
+            <span style="font-size: 0.9rem; font-weight: 600; color: #374151;">{{ username }}</span>
+            <span style="font-size: 0.85rem; color: #9ca3af;">{{ version_counter }}</span>
+        </div>
+
+        {% if user_mng_btn %}
+            <div class="dropdown">
+                <button class="btn btn-light btn-sm idx-btn dropdown-toggle d-flex align-items-center gap-1" type="button"
+                    id="settingsButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-gear-fill"></i>
+                    <span class="d-none d-sm-inline">Settings</span>
                 </button>
-            </form>
-            <small class="text-muted text-center" style="font-size: 0.7rem; white-space: nowrap;">{{ pre_indexed_date }}</small>
-        </div>
-    {% endif %}
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="settingsButton"
+                    style="border-radius: 12px; padding: 0.4rem; min-width: 190px; border: 1px solid #e5e9f2 !important;">
+                    {% if client_mng_btn %}
+                        <li><a class="dropdown-item" href="{{ url_for('client_bp.index') }}" style="border-radius: 8px; font-size: 0.88rem; padding: 0.5rem 0.85rem;">
+                            <i class="bi bi-pc-display me-2 text-primary"></i>Manage Clients
+                        </a></li>
+                    {% endif %}
+                    {% if user_mng_btn %}
+                        <li><a class="dropdown-item" href="{{ url_for('user_bp.index') }}" style="border-radius: 8px; font-size: 0.88rem; padding: 0.5rem 0.85rem;">
+                            <i class="bi bi-person-fill me-2 text-primary"></i>Manage User
+                        </a></li>
+                    {% endif %}
+                    {% if group_mng_btn %}
+                        <li><a class="dropdown-item" href="{{ url_for('groups_bp.index') }}" style="border-radius: 8px; font-size: 0.88rem; padding: 0.5rem 0.85rem;">
+                            <i class="bi bi-shield-lock-fill me-2 text-primary"></i>Manage Permissions
+                        </a></li>
+                    {% endif %}
+                    {% if settings_btn %}
+                        <li>
+                            <div style="margin: 0.3rem 0.5rem; height: 1px; background: #f3f4f6;"></div>
+                        </li>
+                        <li><a class="dropdown-item" href="{{ url_for('settings_bp.index') }}" style="border-radius: 8px; font-size: 0.88rem; padding: 0.5rem 0.85rem;">
+                            <i class="bi bi-sliders me-2 text-secondary"></i>Settings
+                        </a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endif %}
 
-    {% if user_mng_btn %}
-        <div class="dropdown me-2">
-            <button class="btn btn-light dropdown-toggle" type="button" id="settingsButton" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-gear-fill"></i>
-            </button>
-
-            <ul class="dropdown-menu dropdown-menu-start" aria-labelledby="settingsButton">
-                {% if client_mng_btn %}
-                    <li><a class="dropdown-item" href="{{ url_for('client_bp.index') }}">Manage Clients</a></li>
-                {% endif %}
-
-                {% if user_mng_btn %}
-                    <li><a class="dropdown-item" href="{{ url_for('user_bp.index') }}">Manage User</a></li>
-                {% endif %}
-
-                {% if group_mng_btn %}
-                    <li><a class="dropdown-item" href="{{ url_for('groups_bp.index') }}">Manage Permissions</a></li>
-                {% endif %}
-
-                {% if settings_btn %}
-                    <li><a class="dropdown-item" href="{{ url_for('settings_bp.index') }}">Settings</a></li>
-                {% endif %}
-            </ul>
-        </div>
-    {% endif %}
-
-    <a href="{{ url_for('login_bp.logout') }}" class="btn btn-danger">
-        Logout
-    </a>
-</div>
+        <a href="{{ url_for('login_bp.logout') }}" class="btn btn-sm idx-btn" style="background:#fef2f2; border-color:#fca5a5; color:#e02424;">
+            <i class="bi bi-box-arrow-right me-1"></i><span class="d-none d-sm-inline">Logout</span>
+        </a>
+    </div>
 {% endblock %}
 
 {% block header_title %}
     {% if dev_mode %}
-        <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
-            <h4 class="font-weight-bold" style="color: Tomato">Dev-Mode</h4>
-        </div>
+        <div class="dev-mode-banner">Dev-Mode</div>
     {% endif %}
 {% endblock %}
 
 {% block content %}
-    <div class="row justify-content-center">
-        <div class="col-md-7">
-            <div class="card shadow-lg border-0 rounded-lg w-100 mb-4">
-                <div class="card-body p-4">
-                    <h3 class="card-title text-primary mb-4 text-center">Manage Packages & Versions</h3>
-                    <div class="row">
-                        <div class="col-md-6 mb-4 mb-md-0">
-                            <form method="POST" action="{{ url_for('ui_bp.index') }}">
+    <div class="container-fluid" style="max-width: 1600px; padding: 0.5rem 2.5rem 0;">
+
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="idx-card">
+                    <div class="idx-section-label">
+                        <div class="label-bar"></div>
+                        <h3>Packages & Versions</h3>
+                    </div>
+
+                    <div class="d-flex align-items-stretch gap-4 flex-wrap">
+                        <div style="flex: 1; min-width: 240px;">
+                            <form method="POST" action="{{ url_for('ui_bp.index') }}" id="pkg-form" class="h-100 d-flex flex-column justify-content-between">
                                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                <div class="form-group">
-                                    <label for="selected_package" class="h5 font-weight-bold">Choose a Package</label>
-                                    <select name="selected_package" id="selected_package" class="form-control form-control-lg" required>
+                                <div class="mb-3">
+                                    <label id="pkg-label" class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--idx-text); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Select Package</label>
+                                    <select name="selected_package" id="selected_package" class="form-control pkg-select" required>
                                         {% for p in packages %}
                                             <option value="{{ p['PACKAGE_ID'] }}"
                                                 {% if p['PACKAGE_ACTIVE'] == 0 %} class="inactive" {% endif %}>
@@ -81,156 +102,181 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-
-                                <div class="d-flex mt-3 gap-3">
+                                <div class="d-flex gap-2">
                                     {% if packages|length > 0 %}
-                                        <button type="submit" name="action" value="edit" class="btn btn-outline-primary btn-lg w-50 shadow-sm">Edit</button>
-                                        <button type="submit" name="action" value="open_versions" class="btn btn-outline-success btn-lg w-50 shadow-sm">Versions</button>
+                                        <button type="submit" name="action" value="edit" class="btn idx-btn idx-btn-outline-primary flex-fill">
+                                            <i class="bi bi-pencil me-1"></i>Edit
+                                        </button>
+                                        <button type="submit" name="action" value="open_versions" class="btn idx-btn idx-btn-outline-success flex-fill">
+                                            <i class="bi bi-layers me-1"></i>Versions
+                                        </button>
                                     {% else %}
-                                        <button type="button" class="btn btn-outline-primary btn-lg w-50 shadow-sm" disabled>Edit</button>
-                                        <button type="button" class="btn btn-outline-success btn-lg w-50 shadow-sm" disabled>Versions</button>
+                                        <button type="button" class="btn idx-btn flex-fill" disabled>Edit</button>
+                                        <button type="button" class="btn idx-btn flex-fill" disabled>Versions</button>
                                     {% endif %}
                                 </div>
                             </form>
                         </div>
 
-                        <div class="col-md-6 d-flex flex-column align-items-center justify-content-center">
-                            <div class="w-100 d-flex justify-content-center mb-3">
-                                <a href="{{ url_for('ui_bp.add_package') }}" class="btn btn-primary btn-lg w-75 shadow-sm">Add New Package</a>
+                        <div class="d-none d-md-block" style="width: 1px; background: var(--idx-border); height: auto; flex-shrink: 0;"></div>
+
+                        <div style="flex: 1; min-width: 240px;" class="d-flex flex-column justify-content-between">
+                            <div style="height: calc(0.8rem * 1.2 + 0.5rem); display: flex; align-items: center;"></div>
+
+                            <div>
+                                <a href="{{ url_for('ui_bp.add_package') }}" class="btn idx-btn idx-btn-primary w-100">
+                                    <i class="bi bi-plus-circle me-1"></i>Add New Package
+                                </a>
                             </div>
-                            <div class="w-75 d-flex gap-2">
+                            <div class="d-flex gap-2">
                                 {% if packages|length > 0 %}
-                                    <a href="{{ url_for('ui_bp.add_package_version', p_type='package') }}" class="btn btn-success btn-lg flex-fill shadow-sm text-nowrap">
-                                        + Package Version
+                                    <a href="{{ url_for('ui_bp.add_package_version', p_type='package') }}" class="btn idx-btn idx-btn-success flex-fill">
+                                        <i class="bi bi-plus-circle me-1"></i> Package
                                     </a>
-                                    <a href="{{ url_for('ui_bp.add_package_version', p_type='font') }}" class="btn btn-success btn-lg flex-fill shadow-sm text-nowrap">
-                                        + Font Version
+                                    <a href="{{ url_for('ui_bp.add_package_version', p_type='font') }}" class="btn idx-btn idx-btn-success flex-fill">
+                                        <i class="bi bi-plus-circle me-1"></i> Font
                                     </a>
                                 {% else %}
-                                    <button class="btn btn-success btn-lg flex-fill shadow-sm" disabled>+ Package Version</button>
-                                    <button class="btn btn-success btn-lg flex-fill shadow-sm" disabled>+ Font Version</button>
+                                    <button class="btn idx-btn flex-fill" disabled>
+                                        <i class="bi bi-plus-circle me-1"></i> Package
+                                    </button>
+                                    <button class="btn idx-btn flex-fill" disabled>
+                                        <i class="bi bi-plus-circle me-1"></i> Font
+                                    </button>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            {% if store == "1" %}
-                <div class="card shadow-lg border-0 rounded-lg w-100 mt-4 mb-4">
-                    <div class="card-body p-4">
-                        <h3 class="card-title text-primary mb-3 text-center">Available Updates</h3>
+        </div>
+
+        {% if store == "1" and update_status %}
+            <div class="row g-3 mb-3">
+                <div class="col-12">
+                    <div class="idx-card">
+                        <div class="idx-section-label">
+                            <div class="label-bar" style="background: #f59e0b;"></div>
+                            <h3>Available Updates</h3>
+                        </div>
                         <div class="table-responsive">
-                            {% if update_status %}
-                                <table class="table table-hover align-middle">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th scope="col">Package</th>
-                                            <th scope="col">Installed Version</th>
-                                            <th scope="col">Available Version</th>
-                                            <th scope="col">View</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for p in packages %}
-                                            {% if p['NEW_VERSION'][0] %}
-                                                <tr>
-                                                    <td><strong>{{ p['PACKAGE_NAME'] }}</strong></td>
-                                                    <td>{{ p['NEW_VERSION'][1] }}</td>
-                                                    <td class="text-success">{{ p['NEW_VERSION'][2] }}</td>
-                                                    <td>
-                                                        <form method="GET" action="{{ url_for('store_bp.add_package', package_id=p['PACKAGE_ID']) }}">
-                                                            <button type="submit" class="btn btn-primary btn-sm" title="Show update">
-                                                                <i class="bi bi-eye"></i>
-                                                            </button>
-                                                            <input type="hidden" name="version" value="{{ p['NEW_VERSION'][2] }}">
-                                                            <input type="hidden" name="main" value="1">
-                                                        </form>
-                                                    </td>
-                                                </tr>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            {% else %}
-                                <p class="text-muted text-center mb-0">All packages are up to date.</p>
-                            {% endif %}
+                            <table class="table updates-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Package</th>
+                                        <th>Installed</th>
+                                        <th>Available</th>
+                                        <th style="width: 60px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in packages %}
+                                        {% if p['NEW_VERSION'][0] %}
+                                            <tr>
+                                                <td><strong>{{ p['PACKAGE_NAME'] }}</strong></td>
+                                                <td><span class="version-badge version-old">{{ p['NEW_VERSION'][1] }}</span></td>
+                                                <td><span class="version-badge version-new">{{ p['NEW_VERSION'][2] }}</span></td>
+                                                <td>
+                                                    <form method="GET" action="{{ url_for('store_bp.add_package', package_id=p['PACKAGE_ID']) }}">
+                                                        <input type="hidden" name="version" value="{{ p['NEW_VERSION'][2] }}">
+                                                        <input type="hidden" name="main" value="1">
+                                                        <button type="submit" class="btn btn-sm idx-btn" style="background: var(--idx-accent-light); color: var(--idx-accent); border-color: transparent;" title="View update">
+                                                            <i class="bi bi-arrow-up-circle"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-            {% endif %}
+            </div>
+        {% endif %}
 
-            <div class="card shadow-lg border-0 rounded-lg w-100">
-                <div class="card-body p-4 text-center">
-                    <h3 class="card-title text-primary mb-3">Package Store</h3>
-                    <div class="d-flex justify-content-center align-items-center gap-3 text-muted mb-4 flex-wrap">
-                        <span>Status
-                            {% if store == '0' %}<i class="bi bi-bag-x" style="color: red;" title="Disabled"></i>{% else %}<i class="bi bi-bag-check" style="color: green;" title="Enabled"></i>{% endif %}
-                        </span>
-                        <span></span>
-                        <span>
-                            📦 <strong>9300+</strong> available packages!
-                        </span>
-                        <span></span>
-                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Package data from the Winget Community Repository">
-                            🛈 Based on <a href="https://github.com/microsoft/winget-pkgs" target="_blank" rel="noopener">
-                                Winget Community Repository
-                            </a>
-                        </span>
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="idx-card">
+                    <div class="store-card-inner">
+                        <div>
+                            <div class="idx-section-label mb-2">
+                                <div class="label-bar" style="background: {% if store == '1' %}var(--idx-success){% else %}var(--idx-danger){% endif %};"></div>
+                                <h3>Package Store</h3>
+                                <span class="d-flex align-items-center gap-1 ms-2" style="font-size: 0.8rem; color: var(--idx-muted);">
+                                    <span class="store-status-dot {% if store == '1' %}on{% else %}off{% endif %}"></span>
+                                    {% if store == '1' %}Enabled{% else %}Disabled{% endif %}
+                                </span>
+                            </div>
+                            <div class="store-meta">
+                                <span class="store-stat">📦 <strong>9300+</strong>&nbsp;available packages</span>
+                                <span class="store-stat" style="font-size: 0.8rem;">
+                                    Based on&nbsp;<a href="https://github.com/microsoft/winget-pkgs" target="_blank" rel="noopener" style="color: var(--idx-accent);">Winget Community Repository</a>
+                                </span>
+                            </div>
+                        </div>
+                        <form method="GET" action="{{ url_for('store_bp.index') }}" onsubmit="button_Loading('store-btn');" style="flex-shrink: 0;">
+                            <button type="submit" id="store-btn" class="btn idx-btn idx-btn-primary px-4" {% if store == '0' %}disabled{% endif %} style="white-space: nowrap;">
+                                <i class="bi bi-shop me-1"></i>Visit Store
+                            </button>
+                        </form>
                     </div>
-                    <form method="GET" action="{{ url_for('store_bp.index') }}" onsubmit="button_Loading('submit_form');">
-                        <button type="submit" id="submit_form" class="btn btn-primary btn-lg w-50 shadow-sm" {% if store == '0' %}disabled{% endif %}>Visit Package Store</button>
-                    </form>
                 </div>
             </div>
         </div>
+
+        {% if plugins is defined and plugins|length > 0 %}
+            <div class="row g-3 mb-3">
+                <div class="col-12">
+                    <div class="idx-card">
+                        <div class="idx-section-label">
+                            <div class="label-bar" style="background: #7c3aed;"></div>
+                            <h3>Tools</h3>
+                        </div>
+                        <div class="plugin-grid">
+                            {% for plugin in plugins %}
+                                <a href="{% if plugin.endpoint.startswith('/') %}{{ plugin.endpoint }}{% else %}{{ url_for(plugin.endpoint) }}{% endif %}" class="plugin-tile plugin-color-{{ plugin.color | default('blue') }}" title="{{ plugin.description | default('') }}">
+                                    {% if plugin.badge %}
+                                    <span class="plugin-badge plugin-badge-{{ plugin.badge }}">{{ plugin.badge }}</span>
+                                    {% endif %}
+                                    <div class="plugin-icon">
+                                        <i class="bi bi-{{ plugin.icon | default('puzzle') }}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="plugin-name">{{ plugin.name }}</div>
+                                        {% if plugin.description %}
+                                        <div class="plugin-desc">{{ plugin.description }}</div>
+                                        {% endif %}
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
-    <style>
-        option.inactive {
-            color: #6c757d;
-            font-style: italic;
-        }
-    </style>
+
     <script>
-        const settingsButton = document.getElementById('settingsButton');
-        const dropdownMenu = document.getElementById('dropdownMenu');
-
-        settingsButton.addEventListener('click', function() {
-            if (!settingsButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
-                dropdownMenu.style.display = 'none';
-            }
-        });
-
-        const packages = document.getElementById("selected_package");
-        const savedPackage = sessionStorage.getItem("selected_package");
-
-        let found = false;
-        for (let i = 0; i < packages.options.length; i++) {
-            if (packages.options[i].value === savedPackage) {
-                found = true;
-                break;
-            }
+        const pkgSelect  = document.getElementById("selected_package");
+        const savedPkg   = sessionStorage.getItem("selected_package");
+        if (pkgSelect) {
+            let found = [...pkgSelect.options].some(o => o.value === savedPkg);
+            pkgSelect.value = (savedPkg && found) ? savedPkg : (pkgSelect.options[0]?.value ?? "");
+            sessionStorage.setItem("selected_package", pkgSelect.value);
+            pkgSelect.addEventListener("change", () => {
+                sessionStorage.setItem("selected_package", pkgSelect.value);
+            });
         }
-
-        if (savedPackage && found) {
-            packages.value = savedPackage;
-        } else if (packages.options.length > 0) {
-            packages.value = packages.options[0].value;
-            sessionStorage.setItem("selected_package", packages.value);
-        }
-
-        packages.addEventListener("change", function () {
-            sessionStorage.setItem("selected_package", packages.value);
-        });
 
         function showLoader(form) {
-            const button = form.querySelector("button");
-            const spinner = button.querySelector(".spinner-border");
-            const icon = button.querySelector("i");
-
-            spinner.classList.remove("d-none");
-            icon.classList.add("d-none");
-            button.disabled = true;
+            const btn     = form.querySelector("button");
+            const spinner = btn.querySelector(".spinner-border");
+            const icon    = btn.querySelector("i");
+            if (spinner) spinner.classList.remove("d-none");
+            if (icon)    icon.classList.add("d-none");
+            if (btn)     btn.disabled = true;
         }
     </script>
 {% endblock %}
-

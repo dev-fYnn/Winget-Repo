@@ -58,7 +58,9 @@ def index():
         if check_Rights(session['logged_in'], "SETTINGS_BP.INDEX"):
             settings_btn = True
 
-        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, dev_mode=current_app.config.get('dev_mode', False), pre_indexed_used=pre_indexed_used, pre_indexed_date=pre_indexed_date)
+        plugins = current_app.config.get('ACTIV_PLUGINS', []).copy()
+        plugins.append({"name": "REST-API", "description": "Makes the Winget-Repo available through a REST API.", "icon": "server", "color": "blue", "endpoint": "/client/api/docs"})
+        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, dev_mode=current_app.config.get('dev_mode', False), pre_indexed_used=pre_indexed_used, pre_indexed_date=pre_indexed_date, plugins=plugins)
     return redirect(url_for("ui_bp.index"))
 
 

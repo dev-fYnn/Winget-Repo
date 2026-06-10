@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from werkzeug.datastructures import headers
 from io import StringIO, BytesIO
-from settings import PATH_FILES, PATH_CERTIFICATES
+from settings import PATH_FILES, PATH_CERTIFICATES, PATH_PLUGINS
 from itsdangerous import base64_decode
 from PIL import Image
 
@@ -142,6 +142,8 @@ def start_up_check():
         os.makedirs(PATH_FILES)
     if not os.path.exists(PATH_CERTIFICATES):
         os.makedirs(PATH_CERTIFICATES)
+    if not os.path.exists(PATH_PLUGINS):
+        os.makedirs(PATH_PLUGINS)
 
 
 def decode_flask_cookie(cookie) -> dict:
