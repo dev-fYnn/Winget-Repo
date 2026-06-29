@@ -1,10 +1,9 @@
 /venv/
-/SSL/
 /Modules/Database/Database.db-shm
 /Modules/Database/Database.db-wal
 /Winget_DB/
 /.idea/
-.env
 /Files/PreIndexed_Files/Public/
 /Files/PreIndexed_Files/AppxManifest.xml
-/Plugins/
+/Config/
+/Files/PreIndexed/

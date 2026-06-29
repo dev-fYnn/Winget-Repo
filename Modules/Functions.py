@@ -7,6 +7,8 @@ import dns.resolver
 import dns.reversename
 import zlib
 import io
+import shutil
+import sys
 
 from datetime import datetime
 from pathlib import Path
@@ -15,6 +17,7 @@ from io import StringIO, BytesIO
 from settings import PATH_FILES, PATH_CERTIFICATES, PATH_PLUGINS
 from itsdangerous import base64_decode
 from PIL import Image
+from Modules.Database.Upgrade import migrate_database
 
 
 def all_to_dict(data: list, header_data: tuple) -> list:
@@ -144,6 +147,24 @@ def start_up_check():
         os.makedirs(PATH_CERTIFICATES)
     if not os.path.exists(PATH_PLUGINS):
         os.makedirs(PATH_PLUGINS)
+
+    base_dir = sys.path[0]
+    seed_db = os.path.join(base_dir, "Modules", "Database", "Database.db")
+    live_db = os.path.join(base_dir, "Config", "Database", "Database.db")
+    old_db = os.path.join(base_dir, "Config", "Database", "old_database.db")
+
+    os.makedirs(os.path.dirname(live_db), exist_ok=True)
+    if os.path.exists(old_db):
+        print("[STARTUP] old_database.db found – running migration...")
+        shutil.copy2(seed_db, live_db)
+        migrate_database(old_db_path=old_db, new_db_path=live_db)
+        os.rename(old_db, old_db.replace(".db", "_migrated.db"))
+        print("[STARTUP] Migration complete. old_database.db renamed to old_database_migrated.db.")
+    elif os.path.exists(live_db):
+        print("[STARTUP] Existing database found – starting normally...")
+    else:
+        print("[STARTUP] No database found – initializing from seed...")
+        shutil.copy2(seed_db, live_db)
 
 
 def decode_flask_cookie(cookie) -> dict:

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from settings import BASE_DIR
 
-SECRETS_FILE = os.path.join(BASE_DIR, ".env")
+SECRETS_FILE = os.path.join(BASE_DIR, "Config", ".env")
 
 
 def _ensure_keys():

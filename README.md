@@ -1,6 +1,6 @@
 # ![Winget-Repo](https://winget-repo.io/wp-content/uploads/2025/07/logo-e1752093406888.png)
 
-[Cloud](https://cloud.winget-repo.io) | [Website](https://winget-repo.io/) | [Docs](https://docs.winget-repo.io/local)
+[Cloud](https://cloud.winget-repo.io) | [Website](https://winget-repo.io/) | [Docs](https://docs.winget-repo.io/local) | [Store](https://store.winget-repo.io/)
 
 Winget-Repo is a private repository for the Windows Package Manager (Winget), designed to provide software and updates within local networks without internet access. It allows centralized management, efficient installation and updating of software on multiple Windows clients.
 
@@ -48,7 +48,7 @@ Winget-Repo provides two installation methods.
 
 2. **Run the Container** - Start the repository with the following command:
 ```bash
-   docker run -d -p 127.0.0.1:5000:5000 --name winget-repo ghcr.io/dev-fynn/winget-repo:latest
+   docker compose up
 ```
 
 3. **Access the Interface** - The server will be available locally at:
@@ -77,7 +77,7 @@ Winget-Repo provides two installation methods.
    If you choose not to set up a reverse proxy, you can use Flask's built-in web server with HTTPS (though this is not recommended for production). To enable HTTPS on the Flask server, modify the `main.py` file as follows:
 ```python
    if __name__ == '__main__':
-       app.run(ssl_context=('SSL/cert.pem', 'SSL/server.pem'))
+       app.run(ssl_context=(CERT_FILE, KEY_FILE))
 ```
    You will also need to create your own SSL certificates using tools like OpenSSL or similar.
 

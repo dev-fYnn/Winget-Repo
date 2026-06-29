@@ -25,7 +25,10 @@ from Modules.User.User import user_bp
 from Modules.Winget.Functions import get_winget_Settings
 from Modules.Winget.winget_Routes import winget_routes
 from main_extensions import csrf, limiter
+from settings import CERT_FILE, KEY_FILE
 
+
+start_up_check()
 settings = get_winget_Settings()
 Config.init()
 
@@ -33,7 +36,7 @@ app = Flask(__name__)
 csrf.init_app(app)
 limiter.init_app(app)
 
-app.__version__ = "2.8.3"
+app.__version__ = "2.8.4"
 app.config.from_object(Config)
 app.config['SERVERNAME'] = settings['SERVERNAME']
 app.config['INDEXED_DB_ACTIV'] = settings.get('INDEXED_DB_ACTIV', "0")
@@ -101,7 +104,6 @@ def global_settings():
 
 
 if __name__ == '__main__':
-    start_up_check()
     load_plugins(app, client_api)
 
     if len(sys.argv) > 1:
@@ -109,9 +111,9 @@ if __name__ == '__main__':
         if status:
             if sys.argv[1] == "/dev":
                 app.config['dev_mode'] = True
-                app.run(ssl_context=('SSL/cert.pem', 'SSL/key.pem'), threaded=True)
+                app.run(ssl_context=(CERT_FILE, KEY_FILE), threaded=True)
             elif sys.argv[1] == "/docker":
-                app.run(host="0.0.0.0", ssl_context=('SSL/cert.pem', 'SSL/key.pem'), threaded=True)
+                app.run(host="0.0.0.0", ssl_context=(CERT_FILE, KEY_FILE), threaded=True)
             else:
                 app.run(threaded=True)
         else:

@@ -23,4 +23,7 @@ RUN MSIX_BIN=$(python -c "import msix; import os; print(os.path.join(os.path.dir
 
 COPY . .
 
+VOLUME ["/wingetrepo/Files"]
+VOLUME ["/wingetrepo/Config"]
+
 CMD ["python", "./main.py", "/docker"]

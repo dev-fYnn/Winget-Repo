@@ -8,14 +8,15 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 
+from settings import CERT_FILE, KEY_FILE
 
 def generate_dev_certificate(cert_file: str = None, key_file: str = None) -> bool:
     path = sys.path[0]
 
     if cert_file is None:
-        cert_file = os.path.join("SSL", "cert.pem")
+        cert_file = CERT_FILE
     if key_file is None:
-        key_file = os.path.join("SSL", "key.pem")
+        key_file = KEY_FILE
 
     cert_file = os.path.join(path, cert_file)
     key_file = os.path.join(path, key_file)
