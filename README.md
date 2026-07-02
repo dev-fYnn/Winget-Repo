@@ -25,13 +25,13 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 - **Fonts**: Deploy Fonts (currently not working in the WinGet CLI when used with REST sources [Issue](https://github.com/microsoft/winget-cli/issues/6099)) 📑
 - **Plugin Support**: Extend Winget-Repo’s functionality with custom plugins [Documentation](https://docs.winget-repo.io/local/Plugins) 🧩
 
+# 🔌 Plugins
+- **MCP Server**: [View](https://store.winget-repo.io/)
+
 # 🚀 Upcoming Features
 - **Export/Import**: Easily export and import your repository packages and settings 🌱
 - **Multilanguage**: Support multiple languages 🚩
 - **And much more**: Continuous improvements and new features on the way! ✨
-
-# 🔌 Plugins
-- **MCP Server**: Soon
 
 # 🛠️ Setup Guide
 
