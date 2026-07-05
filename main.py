@@ -36,7 +36,7 @@ app = Flask(__name__)
 csrf.init_app(app)
 limiter.init_app(app)
 
-app.__version__ = "2.8.4"
+app.__version__ = "2.8.5"
 app.config.from_object(Config)
 app.config['SERVERNAME'] = settings['SERVERNAME']
 app.config['INDEXED_DB_ACTIV'] = settings.get('INDEXED_DB_ACTIV', "0")
@@ -106,17 +106,28 @@ def global_settings():
 if __name__ == '__main__':
     load_plugins(app, client_api)
 
-    if len(sys.argv) > 1:
-        status = generate_dev_certificate()
-        if status:
-            if sys.argv[1] == "/dev":
-                app.config['dev_mode'] = True
-                app.run(ssl_context=(CERT_FILE, KEY_FILE), threaded=True)
-            elif sys.argv[1] == "/docker":
-                app.run(host="0.0.0.0", ssl_context=(CERT_FILE, KEY_FILE), threaded=True)
+    run_kwargs = {"threaded": True}
+    ssl_env = os.environ.get('USE_SSL')
+    use_ssl = False
+    for arg in sys.argv[1:]:
+        if arg == "/dev":
+            app.config['dev_mode'] = True
+            use_ssl = True
+        elif arg == "/docker":
+            run_kwargs["host"] = "0.0.0.0"
+            if ssl_env is None:
+                use_ssl = True
             else:
-                app.run(threaded=True)
-        else:
+                use_ssl = ssl_env.lower() == "true"
+        elif arg.startswith("/ssl=") and ssl_env is None:
+            value = arg.split("=", 1)[1].lower()
+            use_ssl = value == "true"
+
+    if use_ssl:
+        status = generate_dev_certificate()
+        if not status:
             print("Error while starting the development server! Please check the certificates!")
-    else:
-        app.run(threaded=True)
+            sys.exit(1)
+        run_kwargs["ssl_context"] = (CERT_FILE, KEY_FILE)
+
+    app.run(**run_kwargs)

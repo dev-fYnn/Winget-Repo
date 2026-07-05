@@ -54,7 +54,7 @@ Winget-Repo provides two installation methods.
 3. **Access the Interface** - The server will be available locally at:
    https://localhost:5000
 
-4. **Settings** - Enable the **"Use Reverse Proxy (X-Forwarded Headers)"** option in the repository settings to ensure correct IP and domain resolution.
+4. **Settings** - Enable the **"Use Reverse Proxy (X-Forwarded Headers)"** option in the repository settings to ensure correct IP and domain resolution. To disable TLS, add `USE_SSL='False'` to your `.env` file.
 
 5. **Restart the Server**
 

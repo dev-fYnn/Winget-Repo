@@ -2,7 +2,10 @@ import ipaddress
 import configparser
 import json
 import os
+import random
 import socket
+import sqlite3
+import string
 import dns.resolver
 import dns.reversename
 import zlib
@@ -140,6 +143,15 @@ def get_file_edit_date(path: str) -> datetime:
     return datetime.fromtimestamp(mtime)
 
 
+def _make_way(path):
+    if os.path.exists(path):
+        suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+        base, ext = os.path.splitext(path)
+        new_path = f"{base}_{suffix}{ext}"
+        os.rename(path, new_path)
+        print(f"[STARTUP] Existing old database file found – renamed to {os.path.basename(new_path)}")
+
+
 def start_up_check():
     if not os.path.exists(PATH_FILES):
         os.makedirs(PATH_FILES)
@@ -153,18 +165,32 @@ def start_up_check():
     live_db = os.path.join(base_dir, "Config", "Database", "Database.db")
     old_db = os.path.join(base_dir, "Config", "Database", "old_database.db")
 
+    conn = sqlite3.connect(seed_db)
+    seed_version = conn.execute("PRAGMA user_version").fetchone()[0]
+    conn.close()
+
     os.makedirs(os.path.dirname(live_db), exist_ok=True)
-    if os.path.exists(old_db):
-        print("[STARTUP] old_database.db found – running migration...")
-        shutil.copy2(seed_db, live_db)
-        migrate_database(old_db_path=old_db, new_db_path=live_db)
-        os.rename(old_db, old_db.replace(".db", "_migrated.db"))
-        print("[STARTUP] Migration complete. old_database.db renamed to old_database_migrated.db.")
-    elif os.path.exists(live_db):
-        print("[STARTUP] Existing database found – starting normally...")
-    else:
-        print("[STARTUP] No database found – initializing from seed...")
-        shutil.copy2(seed_db, live_db)
+    if os.path.exists(live_db):
+        conn = sqlite3.connect(live_db)
+        old_version = conn.execute("PRAGMA user_version").fetchone()[0]
+        conn.close()
+
+        if old_version < seed_version:
+            _make_way(old_db)
+            _make_way(old_db.replace(".db", "_migrated.db"))
+
+            print("[STARTUP] old_database.db found – running migration...")
+            os.rename(live_db, live_db.replace("Database.db", "old_database.db"))
+            shutil.copy2(seed_db, live_db)
+            migrate_database(old_db_path=old_db, new_db_path=live_db)
+            os.rename(old_db, old_db.replace(".db", "_migrated.db"))
+            print("[STARTUP] Migration complete. old_database.db renamed to old_database_migrated.db.")
+            return
+        elif old_version >= seed_version:
+            print("[STARTUP] Existing database found – starting normally...")
+            return
+    print("[STARTUP] No database found – initializing from seed...")
+    shutil.copy2(seed_db, live_db)
 
 
 def decode_flask_cookie(cookie) -> dict:
