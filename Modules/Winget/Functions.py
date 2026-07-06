@@ -166,6 +166,9 @@ def _build_installer_entry(installer_data: dict, db: SQLiteDatabase) -> dict:
     if installer_data['INSTALLER_TYPE'] == "zip":
         installer["NestedInstallerType"] = installer_data['INSTALLER_NESTED_TYPE']
         installer["NestedInstallerFiles"] = db.get_Nested_Installer(installer_data['UID'])
+
+        if installer_data['INSTALLER_NESTED_TYPE'] == "portable":
+            installer["ArchiveBinariesDependOnPath"] = True
     return installer
 
 

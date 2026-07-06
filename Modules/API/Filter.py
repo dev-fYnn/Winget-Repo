@@ -46,6 +46,7 @@ class FileType(str, Enum):
     NULLSOFT = "NULLSOFT"
     WIX = "WIX"
     BURN = "BURN"
+    PORTABLE = "PORTABLE"
 
 
 class NestedFileType(str, Enum):
@@ -58,6 +59,7 @@ class NestedFileType(str, Enum):
     WIX = "WIX"
     BURN = "BURN"
     FONT = "FONT"
+    PORTABLE = "PORTABLE"
 
 
 class Scope(str, Enum):
