@@ -1,0 +1,16 @@
+.installer-row-selectable {
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+}
+
+.installer-row-selectable:hover {
+    background-color: var(--idx-accent-light, #eef2ff);
+}
+
+.installer-row-selectable.row-selected {
+    background-color: var(--idx-accent-light, #eef2ff);
+}
+
+.installer-checkbox {
+    pointer-events: none;
+}

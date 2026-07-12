@@ -1,0 +1,102 @@
+.store-search-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.store-search-icon {
+    display: none;
+}
+
+.store-search-input {
+    flex: 1;
+}
+
+.store-package-tile {
+    position: relative;
+    height: 100%;
+    background: var(--idx-card-bg, #fff);
+    border: 1px solid var(--idx-border, #e5e9f2);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.store-package-tile:hover {
+    border-color: var(--idx-accent, #4f46e5);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.store-package-action {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.store-package-body {
+    padding-right: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.store-package-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--idx-text, #1f2937);
+}
+
+.store-package-publisher {
+    font-size: 0.8rem;
+    color: var(--idx-muted, #9ca3af);
+    margin-bottom: 0.6rem;
+}
+
+.store-package-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--idx-muted, #9ca3af);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.35rem;
+}
+
+.store-version-select {
+    font-size: 0.85rem;
+}
+
+.store-empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--idx-muted, #9ca3af);
+}
+
+.store-empty-state i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.store-pagination .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border-color: var(--idx-border, #e5e9f2);
+    color: var(--idx-text, #1f2937);
+}
+
+.store-pagination .page-item.active .page-link {
+    background-color: var(--idx-accent, #4f46e5);
+    border-color: var(--idx-accent, #4f46e5);
+}
+
+.store-pagination .page-item.disabled .page-link {
+    pointer-events: none;
+    opacity: 0.5;
+}
