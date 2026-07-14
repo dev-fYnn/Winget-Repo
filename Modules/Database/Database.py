@@ -531,23 +531,22 @@ class SQLiteDatabase:
             return ""
         return token
 
-    def create_Session_Token(self, user_id: str, token: str) -> str:
-        self.__cursor.execute("""SELECT TOKEN, TIMESTAMP
-                                      FROM tbl_USER_API
-                                     WHERE UID = ?""", (user_id,))
-        data = self.__cursor.fetchone()
-        if data:
-            old_token, ts = data
-            try:
-                ts_dt = datetime.fromisoformat(ts)
-            except:
-                ts_dt = datetime.min
+    def create_Session_Token(self, user_id: str, token: str, max_age_days: int = 7) -> str:
+        expiration_cutoff = datetime.now() - timedelta(days=max_age_days)
+        
+        # 1. Delete all expired tokens
+        self.__cursor.execute(
+            "DELETE FROM tbl_USER_API WHERE TIMESTAMP < ?", 
+            (expiration_cutoff,)
+        )
 
-            if datetime.now() - ts_dt < timedelta(hours=1):
-                return old_token
-            self.delete_Session_Token(user_id)
-        self.__cursor.execute("""INSERT INTO tbl_USER_API (UID, TOKEN, TIMESTAMP) VALUES (?, ?, ?)""", (user_id, token, datetime.now()))
-        return token
+        # 2. Insert the new session token
+        self.__cursor.execute(
+            "INSERT INTO tbl_USER_API (UID, TOKEN, TIMESTAMP) VALUES (?, ?, ?)", 
+            (user_id, token, datetime.now())
+        )
+        
+         return token
 
     def update_Session_Timestamp(self, token: str) -> bool:
         new_timestamp = datetime.now() + timedelta(hours=1)
