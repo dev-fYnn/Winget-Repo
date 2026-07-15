@@ -67,7 +67,7 @@ def generate_Installer_Manifest(package_id: str, version: str = None, channel: s
                 if version_info:
                     versions.append(version_info)
 
-    if package:
+    if package and package['PACKAGE_ID'] not in blacklist:
         for v_info in versions:
             for inst in v_info.get("Installers", []):
                 file_url = inst["InstallerUrl"]
