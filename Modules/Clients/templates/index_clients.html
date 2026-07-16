@@ -12,8 +12,8 @@
             </button>
         </form>
 
-        <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
-            Back
+        <a href="{{ url_for('ui_bp.index') }}" class="btn idx-btn btn-outline-secondary" style="font-weight: 600; margin-right: 25px;">
+            <i class="bi bi-arrow-left-circle me-1"></i>Back
         </a>
     </div>
 {% endblock %}
@@ -26,28 +26,77 @@
 
 {% block content %}
     <div class="container">
-        <form action="{{ url_for('client_bp.add_client') }}" method="POST" class="mb-4">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            <div class="input-group">
-                <input type="text" name="client_name" class="form-control" maxlength="25" required placeholder="Enter Client Name">
-                <button class="btn btn-success" type="submit">Add New Client</button>
-            </div>
-        </form>
+        <div class="card mb-4 border-0 bg-light shadow-sm">
+            <div class="card-body py-3">
+                <div class="row g-3 align-items-end">
 
-        <table class="table table-bordered table-hover">
+                    <div class="col-lg-5 col-md-12">
+                        <form action="{{ url_for('client_bp.add_client') }}" method="POST" class="m-0">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <label class="form-label text-muted small text-uppercase fw-semibold mb-2">Add New Client</label>
+                            <div class="input-group">
+                                <input type="text" name="client_name" class="form-control" maxlength="25" required placeholder="Enter client name">
+                                <button class="btn btn-success" type="submit">
+                                    <i class="bi bi-plus-lg me-1"></i>Add New Client
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="col-lg-1 d-none d-lg-flex justify-content-center align-self-stretch">
+                    </div>
+
+                    <div class="col-lg-6 col-md-12">
+                        <label class="form-label text-muted small text-uppercase fw-semibold mb-2">Search &amp; Filter</label>
+                        <div class="row g-2">
+                            <div class="col-sm-8">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="clientSearch" class="form-control" placeholder="Search...">
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <select id="statusFilter" class="form-select">
+                                    <option value="all">All</option>
+                                    <option value="enabled">Enabled</option>
+                                    <option value="disabled">Disabled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <table class="table table-bordered table-hover" id="clientsTable">
             <thead class="table-light">
                 <tr>
-                    <th>Computer Name</th>
-                    <th>IP Address</th>
-                    <th>Blacklist Groups</th>
-                    <th>Last seen</th>
-                    <th>Client</th>
+                    <th class="sortable" data-sort="text" data-col="0" style="cursor:pointer;">
+                        Computer Name <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="text" data-col="1" style="cursor:pointer;">
+                        IP Address <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="text" data-col="2" style="cursor:pointer;">
+                        Blacklist Groups <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="date" data-col="3" style="cursor:pointer;">
+                        Last seen <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="text" data-col="4" style="cursor:pointer;">
+                        Client <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </th>
                     <th style="width: 25%;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for client in clients %}
-                    <tr class="{% if client.ENABLED == 0 %}table-secondary opacity-50{% endif %}">
+                    <tr class="{% if client.ENABLED == 0 %}table-secondary opacity-50{% endif %}"
+                        data-name="{{ client.NAME|lower }}"
+                        data-ip="{{ client.IP|lower }}"
+                        data-bgroups="{% if client.B_GROUPS is not none %}{{ client.B_GROUPS|lower }}{% endif %}"
+                        data-enabled="{% if client.ENABLED == 0 %}0{% else %}1{% endif %}">
                         <td>{{ client.NAME }}</td>
                         <td>{{ client.IP }}</td>
                         <td style="max-width: 35px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ client.B_GROUPS }}">{% if client.B_GROUPS is not none %}{{ client.B_GROUPS }}{% endif %}</td>
@@ -102,6 +151,12 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <div id="noResultsRow" class="text-center text-muted py-3 d-none">
+            No clients match your search or filter criteria.
+        </div>
+
+        <div id="resultCount" class="text-muted small mb-2"></div>
     </div>
 
     <div class="modal fade" id="groupModal" tabindex="-1" aria-labelledby="groupModalLabel" aria-hidden="true">
@@ -146,10 +201,23 @@
         th, td {
             vertical-align: middle;
         }
+        th.sortable:hover {
+            background-color: rgba(0, 0, 0, 0.04);
+        }
+        th.sortable .sort-icon {
+            font-size: 0.75rem;
+            opacity: 0.4;
+            margin-left: 4px;
+        }
+        th.sortable.sort-asc .sort-icon,
+        th.sortable.sort-desc .sort-icon {
+            opacity: 1;
+        }
     </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // --- Copy Token Button ---
             document.querySelectorAll('.copy-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
                     const token = this.getAttribute('data-token');
@@ -163,6 +231,90 @@
                     });
                 });
             });
+
+            // --- Search & Filter ---
+            const table = document.getElementById('clientsTable');
+            if (!table) return;
+
+            const tbody = table.querySelector('tbody');
+            const allRows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.hasAttribute('data-name'));
+            const searchInput = document.getElementById('clientSearch');
+            const statusFilter = document.getElementById('statusFilter');
+            const resultCount = document.getElementById('resultCount');
+            const noResultsRow = document.getElementById('noResultsRow');
+
+            function applyFilters() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                const statusVal = statusFilter.value;
+                let visibleCount = 0;
+
+                allRows.forEach(function (row) {
+                    const name = row.getAttribute('data-name') || '';
+                    const ip = row.getAttribute('data-ip') || '';
+                    const bgroups = row.getAttribute('data-bgroups') || '';
+                    const enabled = row.getAttribute('data-enabled');
+
+                    let matches = true;
+
+                    if (searchTerm && !(name.includes(searchTerm) || ip.includes(searchTerm) || bgroups.includes(searchTerm))) {
+                        matches = false;
+                    }
+                    if (statusVal === 'enabled' && enabled !== '1') matches = false;
+                    if (statusVal === 'disabled' && enabled !== '0') matches = false;
+
+                    row.classList.toggle('d-none', !matches);
+                    if (matches) visibleCount++;
+                });
+
+                resultCount.textContent = visibleCount + ' of ' + allRows.length;
+                resultCount.classList.toggle('d-none', visibleCount === 0);
+                noResultsRow.classList.toggle('d-none', visibleCount !== 0 || allRows.length === 0);
+            }
+
+            searchInput.addEventListener('input', applyFilters);
+            statusFilter.addEventListener('change', applyFilters);
+
+            // --- Sorting ---
+            let currentSort = { col: null, dir: 1 };
+
+            function parseCellValue(row, colIndex, sortType) {
+                const cell = row.children[colIndex];
+                const text = cell ? cell.textContent.trim() : '';
+                if (sortType === 'date') {
+                    const t = Date.parse(text);
+                    return isNaN(t) ? 0 : t;
+                }
+                return text.toLowerCase();
+            }
+
+            document.querySelectorAll('th.sortable').forEach(function (th) {
+                th.addEventListener('click', function () {
+                    const colIndex = parseInt(th.getAttribute('data-col'), 10);
+                    const sortType = th.getAttribute('data-sort');
+
+                    if (currentSort.col === colIndex) {
+                        currentSort.dir *= -1;
+                    } else {
+                        currentSort.col = colIndex;
+                        currentSort.dir = 1;
+                    }
+
+                    document.querySelectorAll('th.sortable').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+                    th.classList.add(currentSort.dir === 1 ? 'sort-asc' : 'sort-desc');
+
+                    const sortedRows = allRows.slice().sort(function (a, b) {
+                        const valA = parseCellValue(a, colIndex, sortType);
+                        const valB = parseCellValue(b, colIndex, sortType);
+                        if (valA < valB) return -1 * currentSort.dir;
+                        if (valA > valB) return 1 * currentSort.dir;
+                        return 0;
+                    });
+
+                    sortedRows.forEach(row => tbody.appendChild(row));
+                });
+            });
+
+            applyFilters();
         });
     </script>
 {% endblock %}

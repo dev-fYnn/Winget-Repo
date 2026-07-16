@@ -532,20 +532,8 @@ class SQLiteDatabase:
         return token
 
     def create_Session_Token(self, user_id: str, token: str) -> str:
-        self.__cursor.execute("""SELECT TOKEN, TIMESTAMP
-                                      FROM tbl_USER_API
-                                     WHERE UID = ?""", (user_id,))
-        data = self.__cursor.fetchone()
-        if data:
-            old_token, ts = data
-            try:
-                ts_dt = datetime.fromisoformat(ts)
-            except:
-                ts_dt = datetime.min
-
-            if datetime.now() - ts_dt < timedelta(hours=1):
-                return old_token
-            self.delete_Session_Token(user_id)
+        expire_time = datetime.now() - timedelta(hours=1)
+        self.__cursor.execute("""DELETE FROM tbl_USER_API WHERE TIMESTAMP < ?""", (expire_time,))
         self.__cursor.execute("""INSERT INTO tbl_USER_API (UID, TOKEN, TIMESTAMP) VALUES (?, ?, ?)""", (user_id, token, datetime.now()))
         return token
 

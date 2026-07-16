@@ -3,8 +3,8 @@
 {% block header %}
     {% if loggedin %}
         <div>
-            <a href="{{ url_for('settings_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
-                Back
+            <a href="{{ url_for('settings_bp.index') }}" class="btn idx-btn btn-outline-secondary" style="font-weight: 600; margin-right: 25px;">
+                <i class="bi bi-arrow-left-circle me-1"></i>Back
             </a>
         </div>
     {% endif %}
