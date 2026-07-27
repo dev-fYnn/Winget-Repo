@@ -1,14 +1,12 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
-from uuid import uuid4
-from hashlib import sha256
 from functools import wraps
 from pathlib import Path
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import parse_version, check_Internet_Connection, process_package_logo
 from Modules.Login.Login import logged_in, authenticate
-from Modules.Store.Functions import get_All_Packages_from_DB, download_source_msix, get_package_path, download_file, get_All_InstallerInfos_from_Manifest
-from settings import PATH_FILES, PATH_LOGOS
+from Modules.Store.Functions import get_All_Packages_from_DB, download_source_msix, load_store_manifest, build_installer_overview, add_installer_version
+from settings import PATH_LOGOS
 
 store_bp = Blueprint('store_bp', __name__, template_folder='templates', static_folder='static')
 
@@ -101,14 +99,9 @@ def add_package(package_id):
     else:
         redir = "store_bp.index"
 
-    package_path, manifest_name = get_package_path(package_id, version)
-    if not package_path:
-        flash("No package found!", "error")
-        return redirect(url_for(redir))
-
-    p_infos = get_All_InstallerInfos_from_Manifest(package_path, manifest_name)
-    if not p_infos:
-        flash("No versions found!", "error")
+    p_infos, error = load_store_manifest(package_id, version)
+    if error:
+        flash(error, "error")
         return redirect(url_for(redir))
 
     with SQLiteDatabase() as db:
@@ -134,46 +127,15 @@ def add_package(package_id):
                     return redirect(url_for(redir))
 
             for i in installer_ids:
-                if i > (len(p_infos['Installers']) - 1) < i:
+                if i < 0 or i > (len(p_infos['Installers']) - 1):
                     continue
 
                 installer = p_infos['Installers'][i]
-                locale_id = db.get_Locale_ID_by_Value(p_infos.get('Locale', 'en-US'))
-                version_already_exists = not db.check_Package_Version_not_exists(package_id, version, locale_id, installer.get('Architecture', 'x64'), installer.get('InstallerType', 'msi'), p_infos.get('Scope', 'machine'))
-                if version_already_exists:
-                    flash(f"Version {i + 1} from list already exists!", "error")
-                    continue
-
-                version_uid = str(uuid4())
-                filename = f"{version_uid}.{installer['InstallerUrl'].split('.')[-1]}"
-                try:
-                    if not download_file(installer['InstallerUrl'], filename):
-                        flash("Error downloading installer!", "error")
+                success, message = add_installer_version(db, package_id, version, installer, p_infos)
+                if not success:
+                    flash(f"Installer {i + 1}: {message}", "error")
+                    if message == "Error downloading installer!":
                         break
-                except Exception as e:
-                    flash("Error downloading installer!", "error")
-                    break
-
-                file_path = Path(PATH_FILES) / filename
-                with open(file_path, 'rb') as f:
-                    file_hash = sha256(f.read()).hexdigest()
-
-                productCode, upgradeCode = "", ""
-                if 'AppsAndFeaturesEntries' in installer and len(installer['AppsAndFeaturesEntries']) > 0:
-                    productCode = installer['AppsAndFeaturesEntries'][0].get('ProductCode', installer.get('ProductCode', ''))
-                    upgradeCode = installer['AppsAndFeaturesEntries'][0].get('UpgradeCode', '')
-
-                db.add_Package_Version(package_id, version, locale_id, installer.get('Architecture', 'x64'), installer.get('InstallerType', 'msi'), filename, file_hash, installer.get('Scope', 'machine'), version_uid, installer.get('NestedInstallerType', ''), productCode, upgradeCode, installer.get('PackageFamilyName', ""), installer.get('Channel', "stable"), installer.get('UpgradeBehavior', 'install'))
-
-                if installer.get('InstallerType', '') == "zip":
-                    for i_n in installer.get('NestedInstallerFiles', []):
-                        for key, value in i_n.items():
-                            db.add_Nested_Installer(version_uid, key, value)
-
-                for switch_key in ["Silent", "SilentWithProgress", "Interactive", "InstallLocation", "Log", "Upgrade", "Custom", "Repair"]:
-                    switch_value = installer['InstallerSwitches'].get(switch_key, "")
-                    if switch_value:
-                        db.add_Package_Version_Switch(version_uid, switch_key, switch_value)
 
             if len(installer_ids) > 0:
                 flash("Successfully added package and/or versions!", "success")
@@ -181,7 +143,5 @@ def add_package(package_id):
                 flash("No versions found!", "error")
             return redirect(url_for(redir))
 
-        for p in p_infos['Installers']:
-            locale_id = db.get_Locale_ID_by_Value(p_infos.get('Locale', 'en-US'))
-            p['EXISTS'] = not db.check_Package_Version_not_exists(package_id, version, locale_id, p.get('Architecture', 'x64'), p.get('InstallerType', 'msi'), p_infos.get('Scope', 'machine'))
+        p_infos['Installers'] = build_installer_overview(db, package_id, version, p_infos)
     return render_template("index_add_store_package.html", package_id=package_id, p_infos=p_infos, version=request.args.get("version", ""), p_exists=package_exists, back=back, search=search, page=page)

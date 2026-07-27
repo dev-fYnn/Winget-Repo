@@ -7,6 +7,8 @@ import datetime
 
 from pathlib import Path
 from io import BytesIO
+from uuid import uuid4
+from hashlib import sha256
 from werkzeug.datastructures import FileStorage
 
 from Modules.Database.Database import SQLiteDatabase
@@ -137,6 +139,93 @@ def download_file(url: str, filename: str, return_filestorage: bool = False) -> 
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
             return True
+
+
+def load_store_manifest(package_id: str, version: str) -> tuple[dict | None, str | None]:
+    package_path, manifest_name = get_package_path(package_id, version)
+    if not package_path:
+        return None, "No package found in store!"
+
+    p_infos = get_All_InstallerInfos_from_Manifest(package_path, manifest_name)
+    if not p_infos or not p_infos.get('Installers'):
+        return None, "No versions found!"
+
+    return p_infos, None
+
+
+def build_installer_overview(db, package_id: str, version: str, p_infos: dict) -> list[dict]:
+    locale_id = db.get_Locale_ID_by_Value(p_infos.get('Locale', 'en-US'))
+    overview = []
+
+    for idx, installer in enumerate(p_infos['Installers']):
+        already_exists = not db.check_Package_Version_not_exists(
+            package_id, version, locale_id,
+            installer.get('Architecture', 'x64'),
+            installer.get('InstallerType', 'msi'),
+            p_infos.get('Scope', 'machine')
+        )
+        entry = dict(installer)
+        entry['INDEX'] = idx
+        entry['EXISTS'] = already_exists
+        overview.append(entry)
+    return overview
+
+
+def add_installer_version(db, package_id: str, version: str, installer: dict, p_infos: dict) -> tuple[bool, str]:
+    locale_id = db.get_Locale_ID_by_Value(p_infos.get('Locale', 'en-US'))
+
+    version_already_exists = not db.check_Package_Version_not_exists(
+        package_id, version, locale_id,
+        installer.get('Architecture', 'x64'),
+        installer.get('InstallerType', 'msi'),
+        p_infos.get('Scope', 'machine')
+    )
+    if version_already_exists:
+        return False, "Version already exists!"
+
+    version_uid = str(uuid4())
+    filename = f"{version_uid}.{installer['InstallerUrl'].split('.')[-1]}"
+
+    try:
+        if not download_file(installer['InstallerUrl'], filename):
+            return False, "Error downloading installer!"
+    except Exception:
+        return False, "Error downloading installer!"
+
+    file_path = Path(PATH_FILES) / filename
+    with open(file_path, 'rb') as f:
+        file_hash = sha256(f.read()).hexdigest()
+
+    productCode, upgradeCode = "", ""
+    if installer.get('AppsAndFeaturesEntries'):
+        productCode = installer['AppsAndFeaturesEntries'][0].get('ProductCode', installer.get('ProductCode', ''))
+        upgradeCode = installer['AppsAndFeaturesEntries'][0].get('UpgradeCode', '')
+
+    db.add_Package_Version(
+        package_id, version, locale_id,
+        installer.get('Architecture', 'x64'),
+        installer.get('InstallerType', 'msi'),
+        filename, file_hash,
+        installer.get('Scope', 'machine'),
+        version_uid,
+        installer.get('NestedInstallerType', ''),
+        productCode, upgradeCode,
+        installer.get('PackageFamilyName', ""),
+        installer.get('Channel', "stable"),
+        installer.get('UpgradeBehavior', 'install')
+    )
+
+    if installer.get('InstallerType', '') == "zip":
+        for i_n in installer.get('NestedInstallerFiles', []):
+            for key, value in i_n.items():
+                db.add_Nested_Installer(version_uid, key, value)
+
+    for switch_key in ["Silent", "SilentWithProgress", "Interactive", "InstallLocation", "Log", "Upgrade", "Custom", "Repair"]:
+        switch_value = installer.get('InstallerSwitches', {}).get(switch_key, "")
+        if switch_value:
+            db.add_Package_Version_Switch(version_uid, switch_key, switch_value)
+
+    return True, "OK"
 
 
 #Update

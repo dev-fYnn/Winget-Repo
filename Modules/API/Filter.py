@@ -182,3 +182,9 @@ class Package_Version(BaseModel):
     PACKAGE_FAMILY_NAME: str
     CHANNEL: str
     NESTED_INSTALLER_PATHS: list[dict]
+
+
+#Add Package Store Version
+class AddStorePackageVersion(BaseModel):
+    VERSION: str
+    INSTALLER_IDS: list[int]

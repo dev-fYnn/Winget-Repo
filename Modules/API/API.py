@@ -10,13 +10,13 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
 from uuid import uuid4
 
-from Modules.API.Filter import LoginResponse, ClientVersionResponse, Package, package_version_form_data, Package_Version
+from Modules.API.Filter import LoginResponse, ClientVersionResponse, Package, package_version_form_data, Package_Version, AddStorePackageVersion
 from Modules.API.api_extensions import api_limiter
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import parse_version, decode_flask_cookie, get_ip_from_hostname
 from Modules.Login.Functions import check_Credentials
 from Modules.Packages.Functions import get_package_service, add_package_service, edit_package_service, delete_package_service, delete_package_versions_service, add_package_version_service
-from Modules.Store.Functions import download_file
+from Modules.Store.Functions import download_file, check_for_new_Version, load_store_manifest, build_installer_overview, add_installer_version
 from Modules.User.Functions import user_setup_finished, check_User_Exists
 from Modules.Winget.Functions import authorize_IP_Range, authenticate_Client
 from settings import PATH_LOGOS
@@ -367,6 +367,117 @@ async def add_package_version(package_id: str, file: Optional[UploadFile] = File
             raise HTTPException(status_code=404, detail=message_or_uid)
         else:
             raise HTTPException(status_code=400, detail=message_or_uid)
+
+
+# Bearer
+@client_api_bp.get("/get_store_package_updates/{package_id}", tags=["Package Versions"], summary="Get package version updates via the store", response_model=dict)
+async def get_store_package_updates(package_id: str, token: str = Depends(verify_bearer_token)):
+    """
+    Checks the package store for available version updates of a package.
+    If a new version is available, the response also contains the list of
+    installers (with their index/ID) found in the store manifest for that
+    new version, so the IDs can be passed directly to the "add version"
+    endpoint.
+
+    **Parameters:**
+    - **package_id**: ID of the package
+
+    **Returns:**
+    - JSON object containing the available package update (current/available
+      version + installer list), or an empty object if no update is available
+    """
+    package = get_package_service(package_id)
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found!")
+
+    with SQLiteDatabase() as db:
+        settings = db.get_winget_Settings()
+
+    if settings['PACKAGE_STORE'] != "1":
+        raise HTTPException(status_code=400, detail="Package Store is deactivated!")
+
+    packages, update_status = check_for_new_Version([package])
+    if not update_status:
+        return JSONResponse(content={}, status_code=200)
+
+    package = packages[0]
+    current_version, available_version = package['NEW_VERSION'][1], package['NEW_VERSION'][2]
+
+    p_infos, error = load_store_manifest(package_id, available_version)
+    if error:
+        raise HTTPException(status_code=404, detail=error)
+
+    with SQLiteDatabase() as db:
+        overview = build_installer_overview(db, package_id, available_version, p_infos)
+
+    installers = [
+        {
+            "installer_id": entry["INDEX"],
+            "architecture": entry.get('Architecture', 'x64'),
+            "installer_type": entry.get('InstallerType', 'msi'),
+            "scope": entry.get('Scope', p_infos.get('Scope', 'machine')),
+            "already_exists": entry["EXISTS"]
+        }
+        for entry in overview
+    ]
+
+    content = {
+        "package_id": package_id,
+        "current_version": current_version,
+        "available_version": available_version,
+        "installers": installers
+    }
+    return JSONResponse(content=content, status_code=200)
+
+
+# Bearer
+@client_api_bp.post("/add_store_package/{package_id}", tags=["Package Versions"], summary="Add a new version to an existing package via the store",  response_model=list[Package_Version])
+async def add_store_package(package_id: str, body: AddStorePackageVersion, token: str = Depends(verify_bearer_token)):
+    """
+    Adds one or more new versions to an already existing package via the package store.
+
+    **Parameters:**
+    - **package_id**: ID of the package
+    - **body.VERSION**: Version to be installed from the store
+    - **body.INSTALLER_IDS**: List of installer indices from the store manifest to be added
+
+    **Returns:**
+    - JSON object containing a status message and any errors per installer
+    """
+    with SQLiteDatabase() as db:
+        settings = db.get_winget_Settings()
+        if settings['PACKAGE_STORE'] != "1":
+            raise HTTPException(status_code=400, detail="Package Store is deactivated!")
+
+        if not db.check_Package_exists(package_id):
+            raise HTTPException(status_code=404, detail="Package not found!")
+
+        if not body.INSTALLER_IDS:
+            raise HTTPException(status_code=400, detail="No installer ids given!")
+
+        p_infos, error = load_store_manifest(package_id, body.VERSION)
+        if error:
+            raise HTTPException(status_code=404, detail=error)
+
+        added = 0
+        errors = []
+
+        for i in body.INSTALLER_IDS:
+            if i < 0 or i > (len(p_infos['Installers']) - 1):
+                errors.append(f"Installer index {i} does not exist!")
+                continue
+
+            installer = p_infos['Installers'][i]
+            success, message = add_installer_version(db, package_id, body.VERSION, installer, p_infos)
+            if success:
+                added += 1
+            else:
+                errors.append(f"Installer index {i}: {message}")
+
+    if added == 0:
+        raise HTTPException(status_code=400, detail={"message": "No versions were added!", "errors": errors})
+
+    return JSONResponse(content={"message": f"{added} version(s) added successfully!", "errors": errors}, status_code=200)
 
 
 # Bearer
