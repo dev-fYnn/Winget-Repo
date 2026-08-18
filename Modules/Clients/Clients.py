@@ -1,8 +1,10 @@
+import json
+
 from flask import Blueprint, render_template, redirect, url_for, request, flash, send_file, current_app
 from uuid import uuid4
 
 from Modules.Database.Database import SQLiteDatabase
-from Modules.Functions import get_ip_from_hostname, generate_Client_INI
+from Modules.Functions import get_ip_from_hostname, generate_Client_INI, convert_old_log
 from Modules.Login.Login import logged_in, authenticate
 
 client_bp = Blueprint('client_bp', __name__, template_folder='templates', static_folder='static')
@@ -113,21 +115,61 @@ def setup_client(client_id):
     return redirect(url_for("client_bp.index"))
 
 
-@client_bp.route('/logs/<client_id>', methods=['GET'])
+@client_bp.route('/logs', methods=['GET'])
 @logged_in
 @authenticate
-def view_logs(client_id):
+def view_logs():
+    selected_client = request.args.get('client_id', 'all')
+    selected_package = request.args.get('package_id', 'all')
+
     with SQLiteDatabase() as db:
-        logs = db.get_Logs_for_Client(client_id)
-        client = db.get_Client_by_ID(client_id)
+        if selected_client and selected_client.lower() != 'all':
+            raw_logs = db.get_Logs_for_Client(selected_client)
+        else:
+            raw_logs = db.get_all_Logs()
 
-    if client_id == "EXTERN":
-        client = client_id
+        packages = db.get_All_Packages()
+        clients = db.get_All_Clients()
 
-    if not client:
-        flash("Client not found!", "error")
-        return redirect(url_for("client_bp.index"))
-    return render_template("index_clients_logs.html", logs=logs, client=client, client_id=client_id)
+    client_lookup = {c["UID"]: c["NAME"] for c in clients}
+    logs = []
+    for entry in raw_logs:
+        message_raw = entry["LOG_MESSAGE"]
+        message_data = None
+
+        try:
+            parsed = json.loads(message_raw)
+            if isinstance(parsed, dict):
+                message_data = parsed
+        except (TypeError, ValueError):
+            pass
+
+        if message_data is None:
+            converted = convert_old_log(message_raw)
+            if converted:
+                try:
+                    message_data = json.loads(converted)
+                except (TypeError, ValueError):
+                    message_data = None
+
+        if message_data is None:
+            message_data = {"Client": None, "Package": "Unknown", "Version": ""}
+
+        client_id = entry["CLIENT_ID"]
+        client_name = client_lookup.get(client_id) or message_data.get("Client") or client_id
+        if selected_package and selected_package.lower() != 'all':
+            if message_data.get("Package") != selected_package:
+                continue
+
+        logs.append({
+            "TIMESTAMP": entry["TIMESTAMP"],
+            "LOG_TYPE": entry["LOG_TYPE"],
+            "LOG_MESSAGE": message_raw,
+            "MESSAGE_DATA": message_data,
+            "CLIENT_ID": client_id,
+            "CLIENT_NAME": client_name,
+        })
+    return render_template("index_clients_logs.html", logs=logs, clients=clients, selected_client=selected_client, packages=packages, selected_package=selected_package)
 
 
 @client_bp.route('/logs/<client_id>/clear', methods=['GET'])
@@ -135,7 +177,10 @@ def view_logs(client_id):
 @authenticate
 def clear_logs(client_id):
     with SQLiteDatabase() as db:
-        db.remove_logs(client_id)
+        if client_id.lower() == "all":
+            db.remove_all_logs()
+        else:
+            db.remove_logs(client_id)
 
     flash("Successfully cleared logs!", "success")
     return redirect(url_for("client_bp.view_logs", client_id=client_id))

@@ -2,9 +2,10 @@
 
 {% block header %}
     <div>
-        <form action="{{ url_for('client_bp.clear_logs', client_id=client_id) }}" method="GET" style="display:inline;" class="me-2">
-            <button type="submit" class="btn btn-outline-danger" title="Clear logs" onclick="return confirm('Are you sure you want to clear the logs?')">
-                <i class="bi bi-trash"></i>
+        <form action="{{ url_for('client_bp.clear_logs', client_id=selected_client) }}" method="GET" style="display:inline;" class="me-2">
+            <button type="submit" class="btn btn-outline-danger" title="Clear logs"
+                    onclick="return confirm('Are you sure you want to clear {{ 'ALL' if selected_client == 'all' else 'these' }} logs?')">
+                <i class="bi bi-trash"></i> Clear
             </button>
         </form>
 
@@ -16,46 +17,65 @@
 
 {% block header_title %}
     <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
-        <h4 class="text-secondary font-weight-bold">Client Logs</h4>
+        <h4 class="text-secondary font-weight-bold">Log Manager</h4>
     </div>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="mb-4">
-        {% if client == "EXTERN" %}
-            <h5 class="text-muted">Client: {{ client }}</h5>
-        {% else %}
-            <h5 class="text-muted">Client: {{ client.NAME }} | IP: {{ client.IP }}</h5>
-        {% endif %}
-    </div>
-    <table class="table table-bordered table-hover">
-        <thead class="table-light">
-            <tr>
-                <th style="width: 20%;">Timestamp</th>
-                <th>Log Message</th>
-                <th style="width: 15%;">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for log in logs %}
-                <tr>
-                    <td>{{ log.TIMESTAMP }}</td>
-                    <td>{{ log.LOG_MESSAGE }}</td>
-                    <td>{{ log.LOG_TYPE }}</td>
-                </tr>
-            {% else %}
-                <tr>
-                    <td colspan="3" class="text-center">No Logs available.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+    <div class="container">
+        <form action="{{ url_for('client_bp.view_logs') }}" method="GET" class="d-flex align-items-center mb-3" style="gap: 10px;">
+            <label for="client_id" class="mb-0">Client:</label>
+            <select name="client_id" id="client_id" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                <option value="all" {% if selected_client == "all" %}selected{% endif %}>All clients</option>
+                {% for c in clients %}
+                    <option value="{{ c.UID }}" {% if selected_client == c.UID %}selected{% endif %}>
+                        {{ c.NAME }}
+                    </option>
+                {% endfor %}
+            </select>
 
-<style>
-    th, td {
-        vertical-align: middle;
-    }
-</style>
+            <label for="package_id" class="mb-0">Package:</label>
+            <select name="package_id" id="package_id" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                <option value="all" {% if selected_package == "all" %}selected{% endif %}>All packages</option>
+                {% for package in packages %}
+                    <option value="{{ package.PACKAGE_ID }}" {% if selected_package == package.PACKAGE_ID %}selected{% endif %}>
+                        {{ package.PACKAGE_NAME }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 20%;">Client</th>
+                    <th style="width: 20%;">Package</th>
+                    <th style="width: 15%;">Version</th>
+                    <th style="width: 15%;">Log Type</th>
+                    <th style="width: 15%;">Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td>{{ log.CLIENT_NAME }}</td>
+                        <td>{{ log.MESSAGE_DATA.Package if log.MESSAGE_DATA else "-" }}</td>
+                        <td>{{ log.MESSAGE_DATA.Version if log.MESSAGE_DATA else "-" }}</td>
+                        <td>{{ log.LOG_TYPE }}</td>
+                        <td>{{ log.TIMESTAMP }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">No Logs available.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <style>
+        th, td {
+            vertical-align: middle;
+        }
+    </style>
 {% endblock %}

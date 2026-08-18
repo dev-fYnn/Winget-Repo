@@ -12,6 +12,7 @@ import zlib
 import io
 import shutil
 import sys
+import re
 
 from datetime import datetime
 from pathlib import Path
@@ -240,3 +241,25 @@ def process_package_logo(file, filename, size=(512, 512)) -> bool:
         return True
     except Exception as e:
         return False
+
+
+def convert_old_log(old_text: str) -> str:
+    if not old_text:
+        return ""
+
+    match = re.match(r"^Client: (?P<name>.+?) downloaded the following package: (?P<package_id>.+?) - (?P<version>.+)$", old_text)
+    if match:
+        return json.dumps({
+            "Client": match.group("name"),
+            "Package": match.group("package_id"),
+            "Version": match.group("version"),
+        })
+
+    match = re.match(r"^Client: (?P<name>.+?) did something unknown!$", old_text)
+    if match:
+        return json.dumps({
+            "Client": match.group("name"),
+            "Package": "Unknown",
+            "Version": "",
+        })
+    return ""

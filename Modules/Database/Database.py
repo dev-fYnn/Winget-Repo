@@ -202,6 +202,14 @@ class SQLiteDatabase:
         self.__cursor.execute("""DELETE FROM tbl_BLACKLIST_GROUPS WHERE UID = ?""", (group_id,))
 
     ##############Logs##################
+    def get_all_Logs(self) -> list:
+        self.__cursor.execute("SELECT * FROM tbl_CLIENTS_LOGS ORDER BY TIMESTAMP DESC")
+        data = self.__cursor.fetchall()
+        data = all_to_dict(data, self.__cursor.description)
+        if data:
+            data.sort(key=lambda d: datetime.strptime(d["TIMESTAMP"], "%d.%m.%Y %H:%M:%S"), reverse=True)
+        return data
+
     def get_Logs_for_Client(self, client_id: str) -> list:
         self.__cursor.execute("SELECT * FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ? ORDER BY TIMESTAMP DESC", (client_id,))
         data = self.__cursor.fetchall()
@@ -215,6 +223,9 @@ class SQLiteDatabase:
 
     def remove_logs(self, client_id: str):
         self.__cursor.execute("""DELETE FROM tbl_CLIENTS_LOGS WHERE CLIENT_ID = ?""", (client_id,))
+
+    def remove_all_logs(self):
+        self.__cursor.execute("""DELETE FROM tbl_CLIENTS_LOGS""")
 
     #-------------------Packages--------------------
     def check_Package_exists(self, package_id: str) -> bool:

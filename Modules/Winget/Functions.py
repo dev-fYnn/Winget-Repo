@@ -1,5 +1,6 @@
 import ipaddress
 import os
+import json
 
 from flask import url_for
 from datetime import datetime
@@ -251,8 +252,8 @@ def write_log(client_ip: str, package_name: str, log_type: str):
 
         match log_type:
             case "INSTALLATION/UPDATE":
-                text = f"Client: {client['NAME']} downloaded the following package: {package['PACKAGE_ID']} - {package['VERSION']}"
+                text = json.dumps({"Client": client['NAME'], "Package": package['PACKAGE_ID'], "Version": package['VERSION']})
             case _:
-                text = f"Client: {client['NAME']} did something unknown!"
+                text = json.dumps({"Client": client['NAME'], "Package": "Unknown", "Version": ""})
 
         db.insert_Log(client['UID'], log_type, text, datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
