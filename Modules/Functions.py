@@ -20,7 +20,7 @@ from werkzeug.datastructures import headers
 from io import StringIO, BytesIO
 from settings import PATH_FILES, PATH_CERTIFICATES, PATH_PLUGINS
 from itsdangerous import base64_decode
-from PIL import Image
+from PIL import Image, ImageChops
 from Modules.Database.Upgrade import migrate_database
 
 
@@ -214,7 +214,26 @@ def decode_flask_cookie(cookie) -> dict:
         return {}
 
 
-def process_package_logo(file, filename, size=(512, 512)) -> bool:
+def _autocrop(img: Image.Image, tolerance: int = 10) -> Image.Image:
+    rgba = img.convert("RGBA")
+    alpha_bbox = rgba.split()[-1].getbbox()
+    background = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
+    diff = ImageChops.difference(rgba.convert("RGB"), background.convert("RGB"))
+    diff = ImageChops.add(diff, diff, 2.0, -tolerance)
+    white_bbox = diff.getbbox()
+
+    boxes = [b for b in (alpha_bbox, white_bbox) if b is not None]
+    if not boxes:
+        return img
+
+    left = min(b[0] for b in boxes)
+    upper = min(b[1] for b in boxes)
+    right = max(b[2] for b in boxes)
+    lower = max(b[3] for b in boxes)
+    return rgba.crop((left, upper, right, lower))
+
+
+def process_package_logo(file, filename, size=(621, 591)) -> bool:
     try:
         file_obj = getattr(file, "file", None)
         if file_obj is None:
@@ -224,6 +243,7 @@ def process_package_logo(file, filename, size=(512, 512)) -> bool:
 
         img = Image.open(io.BytesIO(file_obj.read()))
         img = img.convert("RGBA")
+        img = _autocrop(img)
         img.thumbnail(size, Image.Resampling.LANCZOS)
         canvas = Image.new("RGBA", size, (0, 0, 0, 0))
         offset = (

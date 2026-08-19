@@ -109,6 +109,10 @@ def get_All_InstallerInfos_from_Manifest(p_path: str, manifest_name: str) -> dic
                 i["Channel"] = manifest.get("Channel", 'stable')
             if i.get("UpgradeBehavior", '') == '':
                 i["UpgradeBehavior"] = manifest.get("UpgradeBehavior", 'install')
+            if i.get("InstallerLocale", '') == '':
+                i["InstallerLocale"] = manifest.get("PackageLocale", '')
+            if i.get("Scope", '') == '':
+                i["Scope"] = manifest.get("Scope", '')
 
             if i["InstallerType"].upper() == "ZIP":
                 if len(i.get("NestedInstallerFiles", [])) == 0:
@@ -116,9 +120,19 @@ def get_All_InstallerInfos_from_Manifest(p_path: str, manifest_name: str) -> dic
                 if i.get("NestedInstallerType", '') == '':
                     i["NestedInstallerType"] = manifest.get('NestedInstallerType', '')
 
+        localizations = []
+        for loc in manifest.get("Localization", []):
+            localizations.append({
+                "Locale": loc.get("PackageLocale", ""),
+                "Packagename": loc.get("PackageName", manifest.get("PackageName", "")),
+                "Description": loc.get("ShortDescription", ""),
+                "Publisher": loc.get("Publisher", manifest.get("Publisher", "")),
+            })
+
         p_infos = {"Packagename": manifest.get("PackageName", ""), "Author": manifest.get("Author", ""),
                    "Description": manifest.get("ShortDescription", ""), "Locale": manifest.get("PackageLocale", "en-US"),
-                   "Scope": manifest.get("Scope", "machine"), "Installers": installer}
+                   "Scope": manifest.get("Scope", "machine"), "Installers": installer, "Localizations": localizations,
+                   "Icons": manifest.get("Icons", [])}
         return p_infos
     return manifest
 

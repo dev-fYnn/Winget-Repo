@@ -34,6 +34,29 @@
                                 <h3>Package</h3>
                             </div>
 
+                            {% if p_infos.Localizations and p_infos.Localizations|length > 0 %}
+                                <div class="mb-3">
+                                    <label for="package_locale" class="store-package-label">Translation</label>
+                                    <select class="form-select pkg-select" id="package_locale" onchange="switchLocale(this)">
+                                        <option value="{{ p_infos.Locale }}"
+                                                data-name="{{ p_infos.Packagename }}"
+                                                data-publisher="{{ p_infos.Author }}"
+                                                data-description="{{ p_infos.Description }}"
+                                                selected>
+                                            {{ p_infos.Locale }} (Default)
+                                        </option>
+                                        {% for loc in p_infos.Localizations %}
+                                            <option value="{{ loc.Locale }}"
+                                                    data-name="{{ loc.Packagename }}"
+                                                    data-publisher="{{ loc.Publisher }}"
+                                                    data-description="{{ loc.Description }}">
+                                                {{ loc.Locale }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            {% endif %}
+
                             <div class="mb-3">
                                 <label for="package_name" class="store-package-label">Package Name</label>
                                 <input type="text" class="form-control pkg-select" id="package_name" name="package_name" placeholder="Package name" maxlength="25" value="{{ p_infos.Packagename }}" required>
@@ -48,9 +71,66 @@
                                 <small id="description_preview" class="form-text text-muted"></small>
                             </div>
                             <div class="mb-0">
-                                <label for="Logo" class="store-package-label">Package Logo</label>
-                                <input type="file" class="form-control pkg-select" id="Logo" name="Logo" accept="image/png">
+                                <label class="store-package-label">Package Logo</label>
+
+                                {% if p_infos.Icons and p_infos.Icons|length > 0 %}
+                                    <div class="d-flex flex-wrap gap-2 mb-2" id="icon_choices">
+                                        {% for icon in p_infos.Icons %}
+                                            <div class="icon-choice" style="cursor:pointer;">
+                                                <input type="radio" name="icon_choice" id="icon_{{ loop.index }}"
+                                                       value="{{ icon.IconUrl }}" class="d-none icon-radio"
+                                                       {% if loop.first %}checked{% endif %}>
+                                                <label for="icon_{{ loop.index }}" class="icon-choice-label" style="display:inline-block;border:2px solid transparent;border-radius:6px;padding:2px;">
+                                                    <img src="{{ icon.IconUrl }}" alt="{{ icon.IconResolution }}" style="width:48px;height:48px;border-radius:4px;display:block;">
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                        <div class="icon-choice" style="cursor:pointer;">
+                                            <input type="radio" name="icon_choice" id="icon_custom" value="custom" class="d-none icon-radio">
+                                            <label for="icon_custom" class="icon-choice-label d-flex align-items-center justify-content-center" style="width:52px;height:52px;border:2px dashed #aaa;border-radius:6px;">
+                                                <i class="bi bi-upload"></i>
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <input type="file" class="form-control pkg-select" id="Logo" name="Logo" accept="image/png" {% if p_infos.Icons and p_infos.Icons|length > 0 %}style="display:none;"{% endif %}>
                             </div>
+
+                            {% if p_infos.Icons and p_infos.Icons|length > 0 %}
+                                <script>
+                                    function highlightSelectedIcon() {
+                                        document.querySelectorAll('.icon-choice-label').forEach(function (label) {
+                                            const isCustom = label.getAttribute('for') === 'icon_custom';
+                                            label.style.borderColor = isCustom ? '#aaa' : 'transparent';
+                                            label.style.borderStyle = isCustom ? 'dashed' : 'solid';
+                                        });
+
+                                        const checked = document.querySelector('.icon-radio:checked');
+                                        if (checked) {
+                                            const label = document.querySelector('label[for="' + checked.id + '"]');
+                                            label.style.borderColor = 'var(--bs-primary, #0d6efd)';
+                                            label.style.borderStyle = 'solid';
+                                        }
+                                    }
+
+                                    document.querySelectorAll('.icon-radio').forEach(function (radio) {
+                                        radio.addEventListener('change', function () {
+                                            const logoInput = document.getElementById('Logo');
+                                            if (this.value === 'custom') {
+                                                logoInput.style.display = 'block';
+                                                logoInput.required = false;
+                                            } else {
+                                                logoInput.style.display = 'none';
+                                                logoInput.value = '';
+                                            }
+                                            highlightSelectedIcon();
+                                        });
+                                    });
+
+                                    highlightSelectedIcon();
+                                </script>
+                            {% endif %}
                         </div>
                     </div>
                     <script>
@@ -59,6 +139,14 @@
                         });
 
                         retrieve_url('package_description', 'description_preview');
+
+                        function switchLocale(select) {
+                            const opt = select.options[select.selectedIndex];
+                            document.getElementById('package_name').value = opt.dataset.name || '';
+                            document.getElementById('package_publisher').value = opt.dataset.publisher || '';
+                            document.getElementById('package_description').value = opt.dataset.description || '';
+                            retrieve_url('package_description', 'description_preview');
+                        }
                     </script>
                 {% endif %}
 
@@ -84,9 +172,9 @@
                                 <tbody>
                                     {% for inst in p_infos.Installers %}
                                         <tr class="{% if not inst.EXISTS %}installer-row-selectable{% endif %}">
-                                            <td>{{ p_infos.Locale }}</td>
+                                            <td>{{ inst.InstallerLocale }}</td>
                                             <td>{{ inst.Architecture }}</td>
-                                            <td>{{ p_infos.Scope }}</td>
+                                            <td>{{ inst.Scope }}</td>
                                             <td>{{ inst.InstallerType }}</td>
                                             <td>{{ inst.NestedInstallerType }}</td>
                                             <td class="text-center">

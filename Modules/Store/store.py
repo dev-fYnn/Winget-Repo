@@ -1,3 +1,6 @@
+import io
+import requests
+
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from functools import wraps
 from pathlib import Path
@@ -116,10 +119,24 @@ def add_package(package_id):
                 return redirect(url_for(redir))
 
             if not package_exists:
-                file = request.files.get('Logo')
-                logo_filename = f"{package_id}.png" if file else "dummy.png"
-                if file:
-                    process_package_logo(file, Path(PATH_LOGOS) / logo_filename)
+                icon_choice = data.get("icon_choice", "custom")
+                logo_filename = f"{package_id}.png"
+
+                if icon_choice and icon_choice != "custom":
+                    try:
+                        r = requests.get(icon_choice, timeout=10)
+                        r.raise_for_status()
+                        icon_bytes = io.BytesIO(r.content)
+                        process_package_logo(icon_bytes, Path(PATH_LOGOS) / logo_filename)
+                    except Exception as e:
+                        flash("Icon from manifest could not be loaded!","error")
+                        logo_filename = "dummy.png"
+                else:
+                    file = request.files.get('Logo')
+                    if file:
+                        process_package_logo(file, Path(PATH_LOGOS) / logo_filename)
+                    else:
+                        logo_filename = "dummy.png"
 
                 db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:150], logo_filename)
                 if len(installer_ids) == 0:
