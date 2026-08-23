@@ -138,7 +138,7 @@ def add_package(package_id):
                     else:
                         logo_filename = "dummy.png"
 
-                db.add_Package(package_id, data.get("package_name", "")[:25], data.get("package_publisher", "")[:25], data.get("package_description", "")[:150], logo_filename)
+                db.add_Package(package_id, data.get("package_name", "")[:50], data.get("package_publisher", "")[:50], data.get("package_description", "")[:200], logo_filename)
                 if len(installer_ids) == 0:
                     flash("Successfully added package. No versions found!", "success")
                     return redirect(url_for(redir))
