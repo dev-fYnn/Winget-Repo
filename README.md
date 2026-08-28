@@ -8,6 +8,8 @@ Winget-Repo is a private repository for the Windows Package Manager (Winget), de
 
 **Don't want to host it yourself?** Try our [Cloud Version](https://cloud.winget-repo.io) for hassle-free deployment.
 
+Already using Winget-Repo? [Leave us a review](https://love.winget-repo.io) ⭐
+
 # 🌟 Current Features
 - **Easy-to-use Web Interface** for managing packages and package versions 🌐
 - **Search, List, Show, Install and Upgrade Packages** via Winget 🔍📦
@@ -126,3 +128,4 @@ If you have any questions, suggestions, or issues, feel free to reach out via em
 
 And if you enjoy using Winget-Repo, we'd be grateful for a star ⭐ on our repository! Thank you for your support! 🙏
 
+Already using Winget-Repo? We'd love to hear about your experience — [leave us a review](https://love.winget-repo.io) ⭐
