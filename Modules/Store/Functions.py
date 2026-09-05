@@ -168,15 +168,15 @@ def load_store_manifest(package_id: str, version: str) -> tuple[dict | None, str
 
 
 def build_installer_overview(db, package_id: str, version: str, p_infos: dict) -> list[dict]:
-    locale_id = db.get_Locale_ID_by_Value(p_infos.get('Locale', 'en-US'))
     overview = []
 
     for idx, installer in enumerate(p_infos['Installers']):
         already_exists = not db.check_Package_Version_not_exists(
-            package_id, version, locale_id,
+            package_id, version,
+            db.get_Locale_ID_by_Value(installer.get('InstallerLocale', 'en-US')),
             installer.get('Architecture', 'x64'),
             installer.get('InstallerType', 'msi'),
-            p_infos.get('Scope', 'machine')
+            installer.get('Scope', '')
         )
         entry = dict(installer)
         entry['INDEX'] = idx
@@ -185,14 +185,14 @@ def build_installer_overview(db, package_id: str, version: str, p_infos: dict) -
     return overview
 
 
-def add_installer_version(db, package_id: str, version: str, installer: dict, p_infos: dict) -> tuple[bool, str]:
-    locale_id = db.get_Locale_ID_by_Value(p_infos.get('Locale', 'en-US'))
+def add_installer_version(db, package_id: str, version: str, installer: dict) -> tuple[bool, str]:
+    locale_id = db.get_Locale_ID_by_Value(installer.get('InstallerLocale', 'en-US'))
 
     version_already_exists = not db.check_Package_Version_not_exists(
         package_id, version, locale_id,
         installer.get('Architecture', 'x64'),
         installer.get('InstallerType', 'msi'),
-        p_infos.get('Scope', 'machine')
+        installer.get('Scope', 'machine')
     )
     if version_already_exists:
         return False, "Version already exists!"

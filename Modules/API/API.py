@@ -468,7 +468,7 @@ async def add_store_package(package_id: str, body: AddStorePackageVersion, token
                 continue
 
             installer = p_infos['Installers'][i]
-            success, message = add_installer_version(db, package_id, body.VERSION, installer, p_infos)
+            success, message = add_installer_version(db, package_id, body.VERSION, installer)
             if success:
                 added += 1
             else:

@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 from uuid import uuid4
 from hashlib import sha256
+from itertools import groupby
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Files.Functions import delete_File
@@ -126,6 +127,8 @@ def add_package_version_service(package_id: str, data: dict, file=None):
                 min_version = pkg_dep.get("MinimumVersion", "").strip() or None
                 if identifier:
                     db.add_Package_Version_Dependency(version_uid, "PackageDependencies", identifier, min_version)
+
+            delete_overflow_package_versions(package_id, db)
             return status, version_uid
         else:
             return False, "Package/Font version already exists or file missing"
@@ -139,6 +142,20 @@ def delete_package_versions_service(version_ids: list):
                 delete_File(url['INSTALLER_URL'])
                 db.delete_Package_Version(vid)
     return True
+
+
+def delete_overflow_package_versions(package_id: str, db):
+    current_settings = db.get_winget_Settings()
+    keep_setting = current_settings.get('ONLY_KEEP_CERTAIN_VERSIONS', '0')
+    if str(keep_setting).isdigit() and int(keep_setting) > 0:
+        db.commit()
+        keep_count = int(keep_setting)
+        current_versions = get_package_versions_service(package_id)
+        grouped = [list(g) for _, g in groupby(current_versions, key=lambda x: x['VERSION'])]
+
+        if len(grouped) > keep_count:
+            versions_to_delete = [v['UID'] for group in grouped[keep_count:] for v in group]
+            delete_package_versions_service(versions_to_delete)
 
 
 # ------------------------------

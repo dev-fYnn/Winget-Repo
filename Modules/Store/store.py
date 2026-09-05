@@ -8,6 +8,7 @@ from pathlib import Path
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import parse_version, check_Internet_Connection, process_package_logo
 from Modules.Login.Login import logged_in, authenticate
+from Modules.Packages.Functions import delete_overflow_package_versions
 from Modules.Store.Functions import get_All_Packages_from_DB, download_source_msix, load_store_manifest, build_installer_overview, add_installer_version
 from settings import PATH_LOGOS
 
@@ -148,13 +149,14 @@ def add_package(package_id):
                     continue
 
                 installer = p_infos['Installers'][i]
-                success, message = add_installer_version(db, package_id, version, installer, p_infos)
+                success, message = add_installer_version(db, package_id, version, installer)
                 if not success:
                     flash(f"Installer {i + 1}: {message}", "error")
                     if message == "Error downloading installer!":
                         break
 
             if len(installer_ids) > 0:
+                delete_overflow_package_versions(package_id, db)
                 flash("Successfully added package and/or versions!", "success")
             else:
                 flash("No versions found!", "error")

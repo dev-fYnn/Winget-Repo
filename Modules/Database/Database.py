@@ -24,6 +24,9 @@ class SQLiteDatabase:
         finally:
             self.__conn.close()
 
+    def commit(self):
+        self.__conn.commit()
+
     #----------------Settings--------------------
     ##############Fields##################
     def get_Fields_by_Section(self, section: str, lang: str) -> dict:
