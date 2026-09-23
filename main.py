@@ -11,6 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 
 from Modules.API.API import client_api_bp, APICheckerMiddleware
 from Modules.API.api_extensions import api_limiter
+from Modules.API.docs import configure_offline_docs
 from Modules.Config import Config
 from Modules.DevMode.Functions import generate_dev_certificate
 from Modules.Functions import start_up_check
@@ -36,7 +37,7 @@ app = Flask(__name__)
 csrf.init_app(app)
 limiter.init_app(app)
 
-app.__version__ = "2.8.8"
+app.__version__ = "2.9.0"
 app.config.from_object(Config)
 app.config['SERVERNAME'] = settings['SERVERNAME']
 app.config['INDEXED_DB_ACTIV'] = settings.get('INDEXED_DB_ACTIV', "0")
@@ -55,7 +56,8 @@ app.register_blueprint(store_bp, url_prefix='/ui/store')
 app.register_blueprint(winget_routes, url_prefix='/api')
 
 
-client_api = FastAPI(title="Winget-Repo REST-API")
+client_api = FastAPI(title="Winget-Repo REST-API", docs_url=None, redoc_url=None)
+configure_offline_docs(client_api)
 app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
     '/client/api': ASGIMiddleware(client_api)
 })

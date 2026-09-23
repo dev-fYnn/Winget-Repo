@@ -265,9 +265,9 @@ class SQLiteDatabase:
 
     def get_All_Packages(self, disabled: bool = True) -> list:
         if disabled:
-            self.__cursor.execute("""SELECT * FROM tbl_PACKAGES ORDER BY PACKAGE_ID""")
+            self.__cursor.execute("""SELECT * FROM tbl_PACKAGES ORDER BY PACKAGE_NAME""")
         else:
-            self.__cursor.execute("""SELECT * FROM tbl_PACKAGES WHERE PACKAGE_ACTIVE = 1 ORDER BY PACKAGE_ID""")
+            self.__cursor.execute("""SELECT * FROM tbl_PACKAGES WHERE PACKAGE_ACTIVE = 1 ORDER BY PACKAGE_NAME""")
         data = self.__cursor.fetchall()
         return all_to_dict(data, self.__cursor.description)
 
