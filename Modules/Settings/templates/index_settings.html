@@ -32,6 +32,11 @@
                                 <span class="fw-medium">
                                     {% if setting in texts %}{{ texts[setting] }}{% else %}{{ setting }}{% endif %}
                                 </span>
+                                {% if settings[setting]['TOOLTIP']|length > 0 %}
+                                    <button type="button" title="{{ settings[setting]['TOOLTIP'] }}" class="btn btn-link text-muted p-0 ms-1 align-baseline" data-bs-toggle="tooltip" data-bs-placement="top" aria-label="About automatic package updates">
+                                        <i class="bi bi-info-circle" aria-hidden="true"></i>
+                                    </button>
+                                {% endif %}
                                 {% if setting == "USE_PROXY" %}
                                     <span class="badge text-bg-warning ms-2 fw-normal" style="font-size: 0.7rem;" title="Requires a restart to take effect.">
                                         <i class="bi bi-arrow-clockwise me-1"></i>Restart required
@@ -228,6 +233,9 @@
 {% block scripts %}
     <script>
         (function () {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {
+                bootstrap.Tooltip.getOrCreateInstance(element);
+            });
             const indexedDbCheckbox = document.getElementById('checkbox_INDEXED_DB_ACTIV');
             if (indexedDbCheckbox) {
                 const indexedDbModal = new bootstrap.Modal(

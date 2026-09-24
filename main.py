@@ -21,6 +21,7 @@ from Modules.Login.Login import login_bp
 from Modules.Plugins.Plugin_Manager import load_plugins
 from Modules.Settings.Settings import settings_bp
 from Modules.Store.store import store_bp
+from Modules.Store.AutoUpdate import start_auto_updates
 from Modules.UI.UI import ui_bp
 from Modules.User.User import user_bp
 from Modules.Winget.Functions import get_winget_Settings
@@ -132,4 +133,5 @@ if __name__ == '__main__':
             sys.exit(1)
         run_kwargs["ssl_context"] = (CERT_FILE, KEY_FILE)
 
+    start_auto_updates(app)
     app.run(**run_kwargs)

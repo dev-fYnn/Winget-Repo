@@ -197,6 +197,10 @@ def add_installer_version(db, package_id: str, version: str, installer: dict) ->
     if version_already_exists:
         return False, "Version already exists!"
 
+    expected_hash = installer.get('InstallerSha256', '')
+    if not isinstance(expected_hash, str) or len(expected_hash) != 64:
+        return False, "Missing or invalid installer SHA256!"
+
     version_uid = str(uuid4())
     filename = f"{version_uid}.{installer['InstallerUrl'].split('.')[-1]}"
 
@@ -209,6 +213,9 @@ def add_installer_version(db, package_id: str, version: str, installer: dict) ->
     file_path = Path(PATH_FILES) / filename
     with open(file_path, 'rb') as f:
         file_hash = sha256(f.read()).hexdigest()
+    if file_hash.lower() != expected_hash.lower():
+        file_path.unlink(missing_ok=True)
+        return False, "Installer SHA256 mismatch!"
 
     productCode, upgradeCode = "", ""
     if installer.get('AppsAndFeaturesEntries'):

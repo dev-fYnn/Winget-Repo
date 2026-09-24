@@ -253,6 +253,27 @@
                             </button>
                         </form>
                     </div>
+                    {% if store == '1' and auto_update_enabled %}
+                        <div class="store-update-summary">
+                            <div class="store-update-heading">
+                                <span class="store-update-title"><i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>Automatic updates</span>
+                                <span class="store-update-status">{{ auto_update.get('status', '') }}</span>
+                            </div>
+                            <div class="store-update-counts" aria-label="Package update totals">
+                                <span class="store-update-count updated"><strong>{{ auto_update.summary.updated }}</strong> updated</span>
+                                <span class="store-update-count"><strong>{{ auto_update.summary.current }}</strong> up to date</span>
+                                <span class="store-update-count skipped"><strong>{{ auto_update.summary.skipped }}</strong> skipped</span>
+                                <span class="store-update-count {% if auto_update.summary.failed %}failed{% endif %}"><strong>{{ auto_update.summary.failed }}</strong> failed</span>
+                                {% if auto_update.summary.pending %}
+                                    <span class="store-update-count"><strong>{{ auto_update.summary.pending }}</strong> pending</span>
+                                {% endif %}
+                            </div>
+                            <div class="store-update-times">
+                                <span>Started (UTC): {{ auto_update['started'] }}</span>
+                                <span>Finished (UTC): {{ auto_update.get('finished') or 'Not finished' }}</span>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

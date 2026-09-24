@@ -26,6 +26,7 @@ Already using Winget-Repo? [Leave us a review](https://love.winget-repo.io) ⭐
 - **Pre-Indexed Repository**: Full support for the pre-indexed source type, just like the official Microsoft Community Repository [Documentation](https://docs.winget-repo.io/local/Pre-Indexed) 📁
 - **Fonts**: Deploy Fonts (currently not working in the WinGet CLI when used with REST sources [Issue](https://github.com/microsoft/winget-cli/issues/6099)) 📑
 - **Plugin Support**: Extend Winget-Repo’s functionality with custom plugins [Documentation](https://docs.winget-repo.io/local/Plugins) 🧩
+- **Automatic Package Updates**: Enable the package store and let Winget-Repo keep your packages up to date automatically. 😎
 
 # 🔌 Plugins
 - **MCP Server**: [View](https://store.winget-repo.io/)

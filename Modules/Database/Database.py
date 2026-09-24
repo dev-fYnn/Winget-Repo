@@ -59,9 +59,9 @@ class SQLiteDatabase:
         return {}
 
     def get_Settings_for_View(self) -> dict:
-        self.__cursor.execute("""SELECT SETTING_NAME, VALUE, TYPE, MAX_LENGTH, INTERNET FROM tbl_SETTINGS WHERE SHOW = 1""")
+        self.__cursor.execute("""SELECT SETTING_NAME, VALUE, TYPE, MAX_LENGTH, INTERNET, TOOLTIP FROM tbl_SETTINGS WHERE SHOW = 1""")
         data = self.__cursor.fetchall()
-        return {d[0]: {"VALUE": d[1], "TYPE": d[2], "MAX_LENGTH": d[3], "INTERNET": d[4]} for d in data}
+        return {d[0]: {"VALUE": d[1], "TYPE": d[2], "MAX_LENGTH": d[3], "INTERNET": d[4], "TOOLTIP": d[5]} for d in data}
 
     def add_wingetrepo_Setting(self, name: str, value: str, settings_type: str, show: bool) -> bool:
         self.__cursor.execute("""INSERT OR IGNORE INTO tbl_SETTINGS (SETTING_NAME, VALUE, TYPE, SHOW) 

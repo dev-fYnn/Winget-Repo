@@ -285,6 +285,37 @@ option.inactive {
 .plugin-badge-beta { background: #fef3c7; color: #b45309; }
 .plugin-badge-hot  { background: #ffe4e6; color: #e11d48; }
 
+.store-update-summary {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--idx-border);
+}
+.store-update-heading, .store-update-counts, .store-update-times {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+}
+.store-update-heading { justify-content: space-between; }
+.store-update-title { font-size: 0.85rem; font-weight: 600; color: var(--idx-text); }
+.store-update-status { font-size: 0.75rem; color: var(--idx-muted); overflow-wrap: anywhere; }
+.store-update-counts { margin: 0.7rem 0; gap: 0.5rem; }
+.store-update-count {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 7px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.78rem;
+}
+.store-update-count strong { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.store-update-count.updated { background: #ecfdf5; color: #047857; }
+.store-update-count.skipped { background: #fffbeb; color: #92400e; }
+.store-update-count.failed { background: #fef2f2; color: #b91c1c; }
+.store-update-times { font-size: 0.75rem; color: var(--idx-muted); }
+
 .idx-divider {
     height: 1px;
     background: linear-gradient(to right, transparent, var(--idx-border) 20%, var(--idx-border) 80%, transparent);
