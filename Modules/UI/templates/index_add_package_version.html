@@ -2,71 +2,97 @@
 
 {% block header %}
     <div>
-        <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
-            Back
+        <a href="{{ url_for('ui_bp.index') }}" class="btn idx-btn btn-outline-secondary" style="font-weight: 600; margin-right: 25px;">
+            <i class="bi bi-arrow-left-circle me-1"></i>Back
         </a>
     </div>
 {% endblock %}
 
+{% block header_title %}
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+        <h4 class="text-secondary fw-bold">Add Package Version</h4>
+    </div>
+{% endblock %}
+
 {% block content %}
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card shadow-sm">
-                    <div class="card-header text-center">
-                        <h4>Add Package Version</h4>
+    <div class="container mt-4 mb-5" style="max-width: 1140px;">
+        <form method="POST" action="{{ url_for('ui_bp.add_package_version', p_type=p_type) }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="row g-4">
+                <section class="col-12" aria-labelledby="package-heading">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h2 class="h5 mb-2" id="package-heading">Package &amp; Version</h2>
+                            <p class="text-muted small mb-4">Choose a package, optionally copy existing settings, and enter the new version.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="package_id" class="form-label">Choose a Package</label>
+                                    <select name="package_id" id="package_id" class="form-control" required>
+                                        {% for p in packages %}
+                                            <option value="{{ p['PACKAGE_ID'] }}">{{ p['PACKAGE_NAME'] }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="version_template" class="form-label">Copy settings from version (Optional)</label>
+                                    <select id="version_template" class="form-control" disabled data-url="{{ url_for('ui_bp.add_package_version', p_type=p_type) }}">
+                                        <option value="">Loading versions...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="package_version" class="form-label">Package Version</label>
+                                    <input type="text" class="form-control" id="package_version" name="package_version" placeholder="Package version" maxlength="25" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="channel" class="form-label">Channel</label>
+                                    <input type="text" class="form-control" id="channel" name="channel" placeholder="Installer Channel: stable, beta, ..." value="stable" required>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <form method="POST" action="{{ url_for('ui_bp.add_package_version', p_type=p_type) }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
-                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                </section>
+                <section class="col-lg-6" aria-labelledby="source-heading">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h2 class="h5 mb-2" id="source-heading">Installer Source</h2>
+                            <p class="text-muted small mb-4">Upload the installer or provide a download URL.</p>
                             <div class="mb-3">
-                                <label for="package_id" class="form-label">Choose a Package</label>
-                                <select name="package_id" id="package_id" class="form-control form-control" required>
-                                    {% for p in packages %}
-                                        <option value="{{ p['PACKAGE_ID'] }}">{{ p['PACKAGE_NAME'] }}</option>
-                                    {% endfor %}
-                                </select>
+                                <label for="file" class="form-label">Package File</label>
+                                <input type="file" class="form-control" id="file" name="file">
+                                <div class="form-text text-muted">Either upload a file <strong>or</strong> provide a URL.</div>
                             </div>
-
                             <div class="mb-3">
-                                <label for="package_version" class="form-label">Package Version</label>
-                                <input type="text" class="form-control" id="package_version" name="package_version" placeholder="Package version" maxlength="25" required>
+                                <label for="installer_url" class="form-label">Installer URL (Internet required)</label>
+                                <input type="url" class="form-control" id="installer_url" name="installer_url" placeholder="https://example.com/installer.exe">
                             </div>
-
-                            <div class="mb-3">
-                                <label for="package_local" class="form-label">Locale</label>
-                                <select name="package_local" id="package_local" class="form-control" required>
-                                    {% for l in locales %}
-                                        <option value="{{ l['LOCALE_ID'] }}">{{ l['LOCALE'] }}</option>
-                                    {% endfor %}
-                                </select>
+                        </div>
+                    </div>
+                </section>
+                <section class="col-lg-6" aria-labelledby="installer-heading">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h2 class="h5 mb-2" id="installer-heading">Installer Details</h2>
+                            <p class="text-muted small mb-4">Set the target platform, file type, and installer identifiers.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="package_local" class="form-label">Locale</label>
+                                    <select name="package_local" id="package_local" class="form-control" required>
+                                        {% for l in locales %}
+                                            <option value="{{ l['LOCALE_ID'] }}">{{ l['LOCALE'] }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="file_architect" class="form-label">Architecture</label>
+                                    <select name="file_architect" id="file_architect" class="form-control" required>
+                                        <option value="x64">x64</option>
+                                        <option value="x86">x86</option>
+                                        <option value="arm">arm</option>
+                                        <option value="arm64">arm64</option>
+                                    </select>
+                                </div>
                             </div>
-
-                            <div class="mb-3">
-                                <label for="file_nested_path" class="form-label">Channel</label>
-                                <input type="text" class="form-control" id="channel" name="channel" placeholder="Installer Channel: stable, beta, ..." value="stable" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="file_architect" class="form-label">Architecture</label>
-                                <select name="file_architect" id="file_architect" class="form-control" required>
-                                    <option value="x64">x64</option>
-                                    <option value="x86">x86</option>
-                                    <option value="arm">arm</option>
-                                    <option value="arm64">arm64</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="upgrades" class="form-label">Upgrade Behavior</label>
-                                <select name="upgrades" id="upgrades" class="form-control" required>
-                                    <option value="install">install</option>
-                                    <option value="uninstallPrevious">uninstallPrevious</option>
-                                    <option value="deny">deny</option>
-                                </select>
-                            </div>
-
-                            <div class="row mb-3">
+                            <div class="row g-3 mb-3 mt-1">
                                 <div class="col-md-6" id="fileTypeCol">
                                     <label for="file_type" class="form-label">File Type</label>
                                     <select name="file_type" id="file_type" class="form-control" required>
@@ -99,127 +125,152 @@
                                     </select>
                                 </div>
                             </div>
-
                             <div class="mb-3" id="nestedPathGroup">
                                 <label for="file_nested_path" class="form-label">Nested File Path (in ZIP)</label>
                                 <input type="text" class="form-control" id="file_nested_path" name="file_nested_path" placeholder="Nested File Path">
                             </div>
-
                             <div class="mb-3" id="productCodeGroup">
-                                <label for="file_nested_path" class="form-label">ProductCode (Optional)</label>
+                                <label for="productcode" class="form-label">ProductCode (Optional)</label>
                                 <input type="text" class="form-control" id="productcode" name="productcode" placeholder="Installer ProductCode">
                             </div>
-
                             <div class="mb-3" id="upgradeCodeGroup">
-                                <label for="file_nested_path" class="form-label">UpgradeCode (Optional)</label>
+                                <label for="upgradecode" class="form-label">UpgradeCode (Optional)</label>
                                 <input type="text" class="form-control" id="upgradecode" name="upgradecode" placeholder="Installer UpgradeCode">
                             </div>
-
                             <div class="mb-3" id="packageFamilyNameGroup">
-                                <label for="file_nested_path" class="form-label">Package Family Name (Optional)</label>
+                                <label for="package_family_name" class="form-label">Package Family Name (Optional)</label>
                                 <input type="text" class="form-control" id="package_family_name" name="package_family_name" placeholder="Package Family Name">
                             </div>
-
-                            <div class="mb-3">
-                                <label for="file" class="form-label">Package File</label>
-                                <input type="file" class="form-control" id="file" name="file">
-                                <div class="form-text text-muted">Either upload a file <strong>or</strong> provide a URL.</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="installer_url" class="form-label">Installer URL (Internet required)</label>
-                                <input type="url" class="form-control" id="installer_url" name="installer_url" placeholder="https://example.com/installer.exe">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="file_scope" class="form-label">Scope (Optional)</label>
-                                <select name="file_scope" id="file_scope" class="form-control">
-                                    <option value=""></option>
-                                    <option value="machine" selected>Machine</option>
-                                    <option value="user">User</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Switch Options (Optional)</label>
-                                <div class="d-flex flex-column">
-                                    <input type="text" class="form-control mb-2" name="switch_Silent" placeholder="Silent">
-                                    <input type="text" class="form-control mb-2" name="switch_SilentWithProgress" placeholder="Silent with progress">
-                                    <input type="text" class="form-control mb-2" name="switch_Interactive" placeholder="Interactive">
-                                    <input type="text" class="form-control mb-2" name="switch_InstallLocation" placeholder="Install Location">
-                                    <input type="text" class="form-control mb-2" name="switch_Log" placeholder="Log">
-                                    <input type="text" class="form-control mb-2" name="switch_Upgrade" placeholder="Upgrade">
-                                    <input type="text" class="form-control mb-2" name="switch_Custom" placeholder="Custom">
-                                    <input type="text" class="form-control mb-2" name="switch_Repair" placeholder="Repair">
-                                </div>
-                            </div>
-
-                            <h6 class="mb-3">Dependencies (Optional)</h6>
-
-                            <div class="mb-3">
-                                <label class="form-label">Windows Features</label>
-                                <div id="windowsFeaturesList">
-                                    <div class="input-group mb-2">
-                                        <input type="text" class="form-control" name="dep_windows_features" placeholder="z.B. IIS-WebServer">
-                                        <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addEntry('windowsFeaturesList', 'dep_windows_features', 'z.B. NetFx3')">+ Add Feature</button>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Windows Libraries</label>
-                                <div id="windowsLibrariesList">
-                                    <div class="input-group mb-2">
-                                        <input type="text" class="form-control" name="dep_windows_libraries" placeholder="z.B. VC++ Redistributable">
-                                        <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addEntry('windowsLibrariesList', 'dep_windows_libraries', 'z.B. VC++ Redistributable')">+ Add Library</button>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Package Dependencies</label>
-                                <div id="packageDependenciesList">
-                                    <div class="card p-2 mb-2 bg-light dep-pkg-entry">
-                                        <div class="mb-2">
-                                            <input type="text" class="form-control" name="dep_pkg_identifier" placeholder="Package Identifier (z.B. Microsoft.VCRedist.2015+.x64)">
-                                        </div>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" name="dep_pkg_min_version" placeholder="Minimum Version (Optional)">
-                                            <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this, '.dep-pkg-entry')">✕</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addPackageDependency()">+ Add Package Dependency</button>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">External Dependencies</label>
-                                <div id="externalDependenciesList">
-                                    <div class="input-group mb-2">
-                                        <input type="text" class="form-control" name="dep_external" placeholder="z.B. Hardware-Driver XY">
-                                        <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addEntry('externalDependenciesList', 'dep_external', 'z.B. Hardware-Driver XY')">+ Add External Dependency</button>
-                            </div>
-                            <hr>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary" id="submit_form">Add Package Version</button>
-                            </div>
-                        </form>
+                        </div>
                     </div>
-                </div>
+                </section>
+                <section class="col-12" aria-labelledby="installation-heading">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h2 class="h5 mb-2" id="installation-heading">Installation Options</h2>
+                            <p class="text-muted small mb-4">Configure installation scope, upgrade behavior, and optional switches.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="upgrades" class="form-label">Upgrade Behavior</label>
+                                    <select name="upgrades" id="upgrades" class="form-control" required>
+                                        <option value="install">install</option>
+                                        <option value="uninstallPrevious">uninstallPrevious</option>
+                                        <option value="deny">deny</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="file_scope" class="form-label">Scope (Optional)</label>
+                                    <select name="file_scope" id="file_scope" class="form-control">
+                                        <option value=""></option>
+                                        <option value="machine" selected>Machine</option>
+                                        <option value="user">User</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <h3 class="h6 mt-4 mb-3">Switch Options (Optional)</h3>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="switch_Silent" class="form-label">Silent</label>
+                                    <input type="text" class="form-control" id="switch_Silent" name="switch_Silent" placeholder="Silent">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="switch_SilentWithProgress" class="form-label">Silent with progress</label>
+                                    <input type="text" class="form-control" id="switch_SilentWithProgress" name="switch_SilentWithProgress" placeholder="Silent with progress">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="switch_Interactive" class="form-label">Interactive</label>
+                                    <input type="text" class="form-control" id="switch_Interactive" name="switch_Interactive" placeholder="Interactive">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="switch_InstallLocation" class="form-label">Install Location</label>
+                                    <input type="text" class="form-control" id="switch_InstallLocation" name="switch_InstallLocation" placeholder="Install Location">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="switch_Log" class="form-label">Log</label>
+                                    <input type="text" class="form-control" id="switch_Log" name="switch_Log" placeholder="Log">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="switch_Upgrade" class="form-label">Upgrade</label>
+                                    <input type="text" class="form-control" id="switch_Upgrade" name="switch_Upgrade" placeholder="Upgrade">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="switch_Custom" class="form-label">Custom</label>
+                                    <input type="text" class="form-control" id="switch_Custom" name="switch_Custom" placeholder="Custom">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="switch_Repair" class="form-label">Repair</label>
+                                    <input type="text" class="form-control" id="switch_Repair" name="switch_Repair" placeholder="Repair">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section class="col-12" aria-labelledby="dependencies-heading">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h2 class="h5 mb-2" id="dependencies-heading">Dependencies</h2>
+                            <p class="text-muted small mb-4">Optional components and packages required by this version.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Windows Features</label>
+                                    <div id="windowsFeaturesList">
+                                        <div class="input-group mb-2">
+                                            <input type="text" class="form-control" name="dep_windows_features" placeholder="z.B. IIS-WebServer">
+                                            <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addEntry('windowsFeaturesList', 'dep_windows_features', 'z.B. NetFx3')">+ Add Feature</button>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Windows Libraries</label>
+                                    <div id="windowsLibrariesList">
+                                        <div class="input-group mb-2">
+                                            <input type="text" class="form-control" name="dep_windows_libraries" placeholder="z.B. VC++ Redistributable">
+                                            <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addEntry('windowsLibrariesList', 'dep_windows_libraries', 'z.B. VC++ Redistributable')">+ Add Library</button>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Package Dependencies</label>
+                                    <div id="packageDependenciesList">
+                                        <div class="card p-2 mb-2 bg-light dep-pkg-entry">
+                                            <div class="mb-2">
+                                                <input type="text" class="form-control" name="dep_pkg_identifier" placeholder="Package Identifier (z.B. Microsoft.VCRedist.2015+.x64)">
+                                            </div>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" name="dep_pkg_min_version" placeholder="Minimum Version (Optional)">
+                                                <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this, '.dep-pkg-entry')">✕</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addPackageDependency()">+ Add Package Dependency</button>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">External Dependencies</label>
+                                    <div id="externalDependenciesList">
+                                        <div class="input-group mb-2">
+                                            <input type="text" class="form-control" name="dep_external" placeholder="z.B. Hardware-Driver XY">
+                                            <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addEntry('externalDependenciesList', 'dep_external', 'z.B. Hardware-Driver XY')">+ Add External Dependency</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
-        </div>
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-primary px-4" id="submit_form">Add Package Version</button>
+            </div>
+        </form>
     </div>
     <script>
         const packages = document.getElementById("package_id");
         const savedPackage = sessionStorage.getItem("selected_package");
 
-        if (savedPackage) {
+        if (savedPackage && Array.from(packages.options).some(option => option.value === savedPackage)) {
             packages.value = savedPackage;
         }
 
@@ -312,6 +363,7 @@
                 <button type="button" class="btn btn-outline-danger" onclick="removeEntry(this)">✕</button>
             `;
             list.appendChild(div);
+            return div;
         }
 
         function addPackageDependency() {
@@ -328,6 +380,7 @@
                 </div>
             `;
             list.appendChild(div);
+            return div;
         }
 
         function removeEntry(btn, selector) {
@@ -347,4 +400,5 @@
             fileInput.disabled = !!this.value.trim();
         });
     </script>
+    <script src="{{ url_for('static', filename='js/version_templates.js') }}"></script>
 {% endblock %}

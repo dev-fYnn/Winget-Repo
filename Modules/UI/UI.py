@@ -199,6 +199,17 @@ def add_package_version(p_type):
             flash("Error. No Data found!", "error")
         return redirect(url_for("ui_bp.index"))
     else:
+        if request.args.get("format") == "version_templates":
+            versions = get_package_versions_service(request.args.get("package_id", ""))
+            return {"versions": [
+                {key: value for key, value in version.items()
+                 if key not in ("INSTALLER_URL", "INSTALLER_SHA256")}
+                for version in versions
+                if ((version.get("INSTALLER_TYPE") or "").lower() == "font"
+                    or ((version.get("INSTALLER_TYPE") or "").lower() == "zip"
+                        and (version.get("INSTALLER_NESTED_TYPE") or "").lower() == "font"))
+                == (p_type == "font")
+            ]}
         packages, locales = get_all_packages_and_locales_service()
         if len(packages) == 0:
             flash("No packages found!", "error")

@@ -2,38 +2,78 @@
 
 {% block header %}
     <div>
-        <a href="{{ url_for('ui_bp.index') }}" class="btn btn-secondary" style="margin-right: 25px;">
-            Back
+        <a href="{{ url_for('ui_bp.index') }}" class="btn idx-btn btn-outline-secondary" style="font-weight: 600; margin-right: 25px;">
+            <i class="bi bi-arrow-left-circle me-1"></i>Back
         </a>
     </div>
 {% endblock %}
 
+{% block header_title %}
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); margin-top: 15px;">
+        <h4 class="text-secondary fw-bold">Add Font Version</h4>
+    </div>
+{% endblock %}
+
 {% block content %}
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card shadow-sm">
-                    <div class="card-header text-center">
-                        <h4>Add Font Version</h4>
+    <div class="container mt-4 mb-5" style="max-width: 1140px;">
+        <form method="POST" action="{{ url_for('ui_bp.add_package_version', p_type=p_type) }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="row g-4">
+                <section class="col-12" aria-labelledby="package-heading">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h2 class="h5 mb-2" id="package-heading">Font &amp; Version</h2>
+                            <p class="text-muted small mb-4">Choose a package, optionally copy existing settings, and enter the new font version.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="package_id" class="form-label">Choose a Package</label>
+                                    <select name="package_id" id="package_id" class="form-control" required>
+                                        {% for p in packages %}
+                                            <option value="{{ p['PACKAGE_ID'] }}">{{ p['PACKAGE_NAME'] }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="version_template" class="form-label">Copy settings from version (Optional)</label>
+                                    <select id="version_template" class="form-control" disabled data-url="{{ url_for('ui_bp.add_package_version', p_type=p_type) }}">
+                                        <option value="">Loading versions...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="package_version" class="form-label">Package Version</label>
+                                    <input type="text" class="form-control" id="package_version" name="package_version" placeholder="Package version" maxlength="25" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="channel" class="form-label">Channel</label>
+                                    <input type="text" class="form-control" id="channel" name="channel" placeholder="Font Channel: stable, beta, ..." value="stable" required>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <form method="POST" action="{{ url_for('ui_bp.add_package_version', p_type=p_type) }}" enctype="multipart/form-data" onsubmit="button_Loading('submit_form');">
-                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-
+                </section>
+                <section class="col-lg-6" aria-labelledby="source-heading">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h2 class="h5 mb-2" id="source-heading">Font Source</h2>
+                            <p class="text-muted small mb-4">Upload a font file or ZIP archive, or provide a download URL.</p>
                             <div class="mb-3">
-                                <label for="package_id" class="form-label">Choose a Package</label>
-                                <select name="package_id" id="package_id" class="form-control" required>
-                                    {% for p in packages %}
-                                        <option value="{{ p['PACKAGE_ID'] }}">{{ p['PACKAGE_NAME'] }}</option>
-                                    {% endfor %}
-                                </select>
+                                <label for="file" class="form-label" id="file_label">Font File (TTF / OTF)</label>
+                                <input type="file" class="form-control" id="file" name="file" accept=".ttf,.otf" required>
+                                <div class="form-text text-muted">Either upload a file <strong>or</strong> provide a URL.</div>
                             </div>
 
                             <div class="mb-3">
-                                <label for="package_version" class="form-label">Package Version</label>
-                                <input type="text" class="form-control" id="package_version" name="package_version" placeholder="Package version" maxlength="25" required>
+                                <label for="installer_url" class="form-label">Font URL (Internet required)</label>
+                                <input type="url" class="form-control" id="installer_url" name="installer_url" placeholder="https://example.com/font.zip">
                             </div>
-
+                        </div>
+                    </div>
+                </section>
+                <section class="col-lg-6" aria-labelledby="font-heading">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h2 class="h5 mb-2" id="font-heading">Font Details</h2>
+                            <p class="text-muted small mb-4">Set the locale, file type, and font file paths within ZIP archives.</p>
                             <div class="mb-3">
                                 <label for="package_local" class="form-label">Locale</label>
                                 <select name="package_local" id="package_local" class="form-control" required>
@@ -42,12 +82,6 @@
                                     {% endfor %}
                                 </select>
                             </div>
-
-                            <div class="mb-3">
-                                <label for="channel" class="form-label">Channel</label>
-                                <input type="text" class="form-control" id="channel" name="channel" placeholder="Font Channel: stable, beta, ..." value="stable" required>
-                            </div>
-
                             <div class="mb-3">
                                 <label for="file_type" class="form-label">File Type</label>
                                 <select name="file_type" id="file_type" class="form-control" required>
@@ -78,32 +112,22 @@
                                     <small class="text-muted">Specify the path to each font file within the ZIP archive.</small>
                                 </div>
                             </div>
-
-                            <div class="mb-3">
-                                <label for="file" class="form-label" id="file_label">Font File (TTF / OTF)</label>
-                                <input type="file" class="form-control" id="file" name="file" accept=".ttf,.otf" required>
-                                <div class="form-text text-muted">Either upload a file <strong>or</strong> provide a URL.</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="installer_url" class="form-label">Font URL (Internet required)</label>
-                                <input type="url" class="form-control" id="installer_url" name="installer_url" placeholder="https://example.com/font.zip">
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary" id="submit_form">Add Font Version</button>
-                            </div>
-                        </form>
+                        </div>
                     </div>
-                </div>
+                </section>
             </div>
-        </div>
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-primary px-4" id="submit_form">Add Font Version</button>
+            </div>
+        </form>
     </div>
 
     <script>
         const packagesSelect = document.getElementById("package_id");
         const savedPackage = sessionStorage.getItem("selected_package");
-        if (savedPackage) packagesSelect.value = savedPackage;
+        if (savedPackage && Array.from(packagesSelect.options).some(option => option.value === savedPackage)) {
+            packagesSelect.value = savedPackage;
+        }
         packagesSelect.addEventListener("change", () => sessionStorage.setItem("selected_package", packagesSelect.value));
 
         const fileTypeSelect = document.getElementById('file_type');
@@ -137,6 +161,18 @@
             });
         }
 
+        function setNestedPaths(paths) {
+            const template = container.querySelector('.path-entry').cloneNode(true);
+            container.replaceChildren();
+            for (const path of paths.length ? paths : ['']) {
+                const entry = template.cloneNode(true);
+                entry.querySelector('input').value = path;
+                container.appendChild(entry);
+            }
+            updateRemoveButtons();
+            updateFileType();
+        }
+
         addBtn.addEventListener('click', () => {
             const newEntry = container.querySelector('.path-entry').cloneNode(true);
             const input = newEntry.querySelector('input');
@@ -164,4 +200,5 @@
             fileInput.disabled = !!this.value.trim();
         });
     </script>
+    <script src="{{ url_for('static', filename='js/version_templates.js') }}"></script>
 {% endblock %}
