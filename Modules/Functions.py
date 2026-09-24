@@ -241,19 +241,16 @@ def process_package_logo(file, filename, size=(621, 591)) -> bool:
         if file_obj is None:
             file_obj = file
 
-        img = Image.open(io.BytesIO(file_obj.read()))
-        img = img.convert("RGBA")
-        img = _autocrop(img)
+        with Image.open(io.BytesIO(file_obj.read())) as source:
+            if source.format == "ICO":
+                source.size = max(source.info["sizes"], key=lambda dimensions: dimensions[0] * dimensions[1])
+                img = source.convert("RGBA")
+            else:
+                img = _autocrop(source.convert("RGBA"))
         img.thumbnail(size, Image.Resampling.LANCZOS)
-        canvas = Image.new("RGBA", size, (0, 0, 0, 0))
-        offset = (
-            (size[0] - img.size[0]) // 2,
-            (size[1] - img.size[1]) // 2
-        )
-        canvas.paste(img, offset)
 
         output_buffer = io.BytesIO()
-        canvas.save(output_buffer, format="PNG", optimize=True)
+        img.save(output_buffer, format="PNG", optimize=True)
         final_content = output_buffer.getvalue()
 
         with open(filename, "wb") as out_file:
