@@ -229,7 +229,7 @@ async def add_package(package_id: str = Form(...), package_name: str = Form(...)
 
 # Bearer
 @client_api_bp.patch("/edit_package/{package_id}", tags=["Packages"], summary="Edit an existing package", response_model=dict)
-async def edit_package(package_id: str, package_name: str = Form(...), package_publisher: str = Form(...), package_description: str = Form(...), Logo: Optional[UploadFile] = File(None), token: str = Depends(verify_bearer_token)):
+async def edit_package(package_id: str, package_name: str = Form(...), package_publisher: str = Form(...), package_description: str = Form(...), Logo: Optional[UploadFile] = File(None), reset_logo: bool = Form(False), token: str = Depends(verify_bearer_token)):
     """
     Edits the details of an existing package including name, publisher, description, and logo.
 
@@ -239,6 +239,7 @@ async def edit_package(package_id: str, package_name: str = Form(...), package_p
     - **package_publisher**: Updated publisher
     - **package_description**: Updated description
     - **Logo**: Updated logo file
+    - **reset_logo**: Set to `true` to reset the logo. Takes precedence over **Logo**.
 
     **Returns:**
     - JSON message confirming package update
@@ -246,7 +247,8 @@ async def edit_package(package_id: str, package_name: str = Form(...), package_p
     data = {
         "package_name": package_name,
         "package_publisher": package_publisher,
-        "package_description": package_description
+        "package_description": package_description,
+        "reset_logo": "1" if reset_logo else "0"
     }
 
     package = get_package_service(package_id)

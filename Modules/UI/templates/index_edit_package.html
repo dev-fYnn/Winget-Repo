@@ -19,7 +19,7 @@
                 <div class="card shadow-sm">
                     <div class="card-header d-flex align-items-center justify-content-center position-relative">
                         <div class="position-absolute start-0 ms-3 d-flex align-items-center">
-                            <img src="{{ url_for('ui_bp.get_package_logo', logo_name=logo) }}" alt="Package Logo" class="package-logo">
+                            <img src="{{ url_for('ui_bp.get_package_logo', logo_name=logo) }}" alt="Package Logo" class="package-logo" id="package_logo_preview">
                         </div>
                         <h4 class="mb-0 mx-auto">Edit Package</h4>
                     </div>
@@ -42,16 +42,20 @@
                             <div class="mb-3">
                                 <label for="file" class="form-label">Package Logo</label>
                                 <input type="file" class="form-control" id="file" name="Logo" accept="image/png">
+                                <input type="hidden" id="reset_logo" name="reset_logo" value="0">
                             </div>
-                            <div class="mb-3">
+                            <div class="mb-3 d-flex align-items-center gap-2">
                                 <button type="button"
                                         onclick="switch_btn(this);"
-                                        class="btn {{ 'btn-success' if active else 'btn-danger' }}"
+                                        class="btn btn-sm {{ 'btn-success' if active else 'btn-danger' }}"
                                         data-active="{{ 'true' if active else 'false' }}">
                                     <i class="bi {{ 'bi-check-circle' if active else 'bi-x-circle' }}"></i>
                                     {{ 'Enabled' if active else 'Disabled' }}
                                 </button>
                                 <input type="hidden" name="package_active" id="package_active" value="{{ '1' if active else '0' }}">
+                                <button type="button" id="reset_logo_btn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Reset logo
+                                </button>
                             </div>
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">Save Package</button>
@@ -81,6 +85,22 @@
         }
     </style>
     <script>
+        const logoPreview = document.getElementById('package_logo_preview');
+        const logoFile = document.getElementById('file');
+        const resetLogo = document.getElementById('reset_logo');
+
+        document.getElementById('reset_logo_btn').addEventListener('click', function () {
+            logoFile.value = '';
+            resetLogo.value = '1';
+            logoPreview.src = {{ url_for('ui_bp.get_package_logo', logo_name='dummy.png') | tojson }};
+        });
+
+        logoFile.addEventListener('change', function () {
+            if (this.files.length > 0) {
+                resetLogo.value = '0';
+            }
+        });
+
         function sure(){
             const isConfirmed = confirm("Are you sure you want to continue?");
 

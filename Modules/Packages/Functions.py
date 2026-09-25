@@ -37,7 +37,9 @@ def edit_package_service(package_id: str, data: dict, file=None):
             return False, "Package not found"
 
         package = db.get_Package_by_ID(package_id)
-        if file:
+        if data.get("reset_logo") == "1":
+            logo_path = "dummy.png"
+        elif file:
             logo_path = f"{package_id}.png"
             dest_path = Path(PATH_LOGOS) / logo_path
             process_package_logo(file, dest_path)

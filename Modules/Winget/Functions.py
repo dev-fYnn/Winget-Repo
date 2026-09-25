@@ -108,15 +108,16 @@ def _build_version_info(version_group: list, package: dict, db: SQLiteDatabase) 
         if not os.path.exists(os.path.join(PATH_LOGOS, p_logo)):
             p_logo = "dummy.png"
 
-        with open(os.path.join(PATH_LOGOS, p_logo), 'rb') as f:
-            logo_hash = sha256(f.read()).hexdigest()
-        icon.append({
-            "IconUrl": p_logo,
-            "IconFileType": "png",
-            "IconResolution": "custom",
-            "IconTheme": "default",
-            "IconSha256": logo_hash
-        })
+        if p_logo.lower() != "dummy.png":
+            with open(os.path.join(PATH_LOGOS, p_logo), 'rb') as f:
+                logo_hash = sha256(f.read()).hexdigest()
+            icon.append({
+                "IconUrl": p_logo,
+                "IconFileType": "png",
+                "IconResolution": "custom",
+                "IconTheme": "default",
+                "IconSha256": logo_hash
+            })
 
     return {
         "PackageVersion": first_installer.get('VERSION', '0.0.0.0'),
