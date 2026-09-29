@@ -45,6 +45,7 @@ app.config['INDEXED_DB_ACTIV'] = settings.get('INDEXED_DB_ACTIV', "0")
 app.config['SESSION_COOKIE_NAME'] = app.config['SERVERNAME']
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['active_downloads'] = {}
+app.config['IS_DOCKER'] = '/docker' in sys.argv[1:]
 app.jinja_env.add_extension('jinja2.ext.do')
 
 app.register_blueprint(login_bp, url_prefix='/')

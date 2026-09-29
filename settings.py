@@ -29,3 +29,8 @@ PATH_SIGNING_TOOL = "DEFAULT"
 
 # Plugins
 PATH_PLUGINS = os.path.join(PATH_CONFIG, "Plugins")
+
+# Repository
+RELEASE_API_URL = "https://api.github.com/repos/dev-fYnn/Winget-Repo/releases/latest"
+RELEASES_URL = "https://github.com/dev-fYnn/Winget-Repo/releases"
+CONTAINER_URL = "https://github.com/dev-fYnn/Winget-Repo/pkgs/container/winget-repo"

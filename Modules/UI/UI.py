@@ -7,6 +7,7 @@ from Modules.Packages.Functions import add_package_service, get_package_service,
 from Modules.PreIndexed.Creator import update_pre_indexed_source, generate_indexed_db_package
 from Modules.Store.Functions import check_for_new_Version, update_store_db, download_file
 from Modules.Store.AutoUpdate import auto_update_summary
+from Modules.UI.AppUpdates import get_update
 from settings import PATH_FILES, PATH_LOGOS
 
 ui_bp = Blueprint('ui_bp', __name__, template_folder='templates', static_folder='static')
@@ -61,7 +62,7 @@ def index():
 
         plugins = current_app.config.get('ACTIV_PLUGINS', []).copy()
         plugins.append({"name": "REST-API", "description": "Makes the Winget-Repo available through a REST API.", "icon": "server", "color": "blue", "endpoint": "/client/api/docs"})
-        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, dev_mode=current_app.config.get('dev_mode', False), pre_indexed_used=pre_indexed_used, pre_indexed_date=pre_indexed_date, plugins=plugins, auto_update=auto_update_summary(), auto_update_enabled=settings.get('AUTO_UPDATE_PACKAGES', '0') == '1')
+        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, dev_mode=current_app.config.get('dev_mode', False), pre_indexed_used=pre_indexed_used, pre_indexed_date=pre_indexed_date, plugins=plugins, auto_update=auto_update_summary(), auto_update_enabled=settings.get('AUTO_UPDATE_PACKAGES', '0') == '1', app_update=get_update(current_app.__version__, current_app.config.get('IS_DOCKER', False)))
     return redirect(url_for("ui_bp.index"))
 
 

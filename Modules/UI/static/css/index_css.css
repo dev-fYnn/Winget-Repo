@@ -19,6 +19,60 @@ body {
     background-color: var(--idx-bg) !important;
 }
 
+.app-update-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.38rem 0.65rem 0.38rem 0.4rem;
+    border: 1px solid #a7e8ca;
+    border-radius: 10px;
+    background: #effcf5;
+    color: #087650;
+    font-size: 0.78rem;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.app-update-link:hover,
+.app-update-link:focus-visible {
+    background: #dcf8e9;
+    border-color: #52c696;
+    box-shadow: 0 3px 10px rgba(8, 118, 80, 0.12);
+    color: #075c40;
+    transform: translateY(-1px);
+}
+
+.app-update-link:focus-visible {
+    outline: 2px solid #087650;
+    outline-offset: 2px;
+}
+
+.app-update-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: #0e9f6e;
+    color: #fff;
+    font-size: 0.75rem;
+}
+
+.app-update-external {
+    margin-left: 0.1rem;
+    font-size: 0.7rem;
+}
+
+@media (max-width: 767px) {
+    .app-update-label,
+    .app-update-external {
+        display: none;
+    }
+}
+
 .idx-section-label {
     display: flex;
     align-items: center;
