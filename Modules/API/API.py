@@ -140,7 +140,7 @@ async def client_version(request: Request, auth_token: Optional[str] = Form(None
                 client_ip = request.client.host
                 if not authenticate_Client(auth_token, client_ip, settings, client_value):
                     raise HTTPException(status_code=401, detail="Invalid Auth-Token")
-    return JSONResponse(content={"Version": "2.5.0.0"}, status_code=200)
+    return JSONResponse(content={"Version": "2.9.0.0"}, status_code=200)
 
 
 # Bearer oder Auth-Token – Packages
