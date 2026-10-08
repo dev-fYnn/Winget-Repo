@@ -82,6 +82,29 @@ def download_source_msix(update: bool = False) -> bool:
     return False
 
 
+def inherit_store_correlation(manifest: dict, installer: dict) -> dict:
+    """Apply manifest defaults to a Store installer without overriding local fields."""
+    for field in ('ProductCode', 'UpgradeCode', 'PackageFamilyName'):
+        if field not in installer and manifest.get(field):
+            installer[field] = manifest[field]
+    if 'AppsAndFeaturesEntries' not in installer and manifest.get('AppsAndFeaturesEntries'):
+        installer['AppsAndFeaturesEntries'] = [
+            dict(entry) for entry in manifest['AppsAndFeaturesEntries']
+        ]
+    return installer
+
+
+def extract_store_correlation(installer: dict) -> tuple[str, str]:
+    """Use AppsAndFeatures product identity with installer-level fallback."""
+    product = installer.get('ProductCode', '') or ''
+    upgrade = installer.get('UpgradeCode', '') or ''
+    entries = installer.get('AppsAndFeaturesEntries') or []
+    if entries:
+        product = entries[0].get('ProductCode') or product
+        upgrade = entries[0].get('UpgradeCode') or upgrade
+    return product, upgrade
+
+
 def get_All_InstallerInfos_from_Manifest(p_path: str, manifest_name: str) -> dict:
     manifest = {}
     m_path = os.path.join(PATH_WINGET_REPOSITORY, "Manifests", manifest_name)
@@ -101,6 +124,7 @@ def get_All_InstallerInfos_from_Manifest(p_path: str, manifest_name: str) -> dic
     if manifest:
         installer = manifest.get("Installers", [])
         for i in installer:
+            inherit_store_correlation(manifest, i)
             if i.get("InstallerType", '') == '':
                 i["InstallerType"] = manifest.get("InstallerType", '')
             if i.get("InstallerSwitches", '') == '':
@@ -217,10 +241,7 @@ def add_installer_version(db, package_id: str, version: str, installer: dict) ->
         file_path.unlink(missing_ok=True)
         return False, "Installer SHA256 mismatch!"
 
-    productCode, upgradeCode = "", ""
-    if installer.get('AppsAndFeaturesEntries'):
-        productCode = installer['AppsAndFeaturesEntries'][0].get('ProductCode', installer.get('ProductCode', ''))
-        upgradeCode = installer['AppsAndFeaturesEntries'][0].get('UpgradeCode', '')
+    productCode, upgradeCode = extract_store_correlation(installer)
 
     db.add_Package_Version(
         package_id, version, locale_id,
