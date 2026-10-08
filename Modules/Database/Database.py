@@ -1,4 +1,5 @@
 import sqlite3
+import re
 
 from datetime import datetime, timedelta
 from itertools import groupby
@@ -239,29 +240,68 @@ class SQLiteDatabase:
         return False
 
     def search_packages(self, search_text: str, search_type: str, search_field: str):
-        search_text = search_text.strip()
-        query = f"""SELECT * FROM tbl_PACKAGES
-                    WHERE PACKAGE_ACTIVE = 1
-                        AND """
+        """Search the package catalog using WinGet REST correlation fields."""
+        search_text = (search_text or "").strip()
+        if not search_text:
+            return []
 
-        if search_field == "PackageName":
-            query += "PACKAGE_NAME"
+        # WinGet sends Exact / CaseInsensitive / StartsWith / Substring, while
+        # older callers may supply snake_case values.
+        match_type = (search_type or "Substring").lower().replace("_", "")
+
+        if search_field == "NormalizedPackageNameAndPublisher":
+            # The WinGet REST request only supplies the normalized package
+            # name as KeyWord (no publisher field). Match complete normalized
+            # names to avoid collisions with partial / unrelated names.
+            def normalize(value):
+                return re.sub(r"[^a-z0-9]", "", (value or "").lower())
+
+            needle = normalize(search_text)
+            if not needle:
+                return []
+            self.__cursor.execute(
+                "SELECT * FROM tbl_PACKAGES WHERE PACKAGE_ACTIVE = 1"
+            )
+            packages = all_to_dict(self.__cursor.fetchall(), self.__cursor.description)
+            if match_type in ("exact", "caseinsensitive"):
+                return [p for p in packages if normalize(p["PACKAGE_NAME"]) == needle]
+            if match_type == "startswith":
+                return [p for p in packages if normalize(p["PACKAGE_NAME"]).startswith(needle)]
+            return [p for p in packages if needle in normalize(p["PACKAGE_NAME"])]
+
+        columns = {
+            "PackageIdentifier": "P.PACKAGE_ID",
+            "PackageName": "P.PACKAGE_NAME",
+            "ProductCode": "PV.PRODUCTCODE",
+            "PackageFamilyName": "PV.PACKAGE_FAMILY_NAME",
+        }
+        column = columns.get(search_field)
+        if column is None:
+            return []
+
+        from_clause = "tbl_PACKAGES AS P"
+        if search_field in ("ProductCode", "PackageFamilyName"):
+            from_clause += (
+                " JOIN tbl_PACKAGES_VERSIONS AS PV"
+                " ON PV.PACKAGE_ID = P.PACKAGE_ID"
+            )
+
+        # Identifier values are case-insensitive (WinGet sends lowercase
+        # product codes and package family names). Use parameterized SQL.
+        if match_type in ("exact", "caseinsensitive"):
+            predicate = f"{column} = ? COLLATE NOCASE"
+        elif match_type == "startswith":
+            predicate = f"SUBSTR(LOWER({column}), 1, LENGTH(?)) = LOWER(?)"
         else:
-            query += "PACKAGE_ID"
+            predicate = f"INSTR(LOWER({column}), LOWER(?)) > 0"
 
-        if search_type == 'exact':
-            query += " = ?"
-            params = (search_text,)
-        elif search_type == 'case_insensitive':
-            query += " LIKE ? COLLATE NOCASE"
-            params = (f'%{search_text}%',)
-        else:
-            query += " LIKE ?"
-            params = (f'%{search_text}%',)
-
-        self.__cursor.execute(query, params)
-        data = self.__cursor.fetchall()
-        return all_to_dict(data, self.__cursor.description)
+        sql = (
+            f"SELECT DISTINCT P.* FROM {from_clause} "
+            f"WHERE P.PACKAGE_ACTIVE = 1 AND {predicate}"
+        )
+        args = (search_text, search_text) if match_type == "startswith" else (search_text,)
+        self.__cursor.execute(sql, args)
+        return all_to_dict(self.__cursor.fetchall(), self.__cursor.description)
 
     def get_All_Packages(self, disabled: bool = True) -> list:
         if disabled:
