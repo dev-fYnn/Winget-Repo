@@ -66,6 +66,7 @@ app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
 client_api.add_middleware(APICheckerMiddleware)
 client_api.include_router(client_api_bp)
 client_api.state.limiter = api_limiter
+client_api.state.DOWNLOAD_KEY = app.config["DOWNLOAD_KEY"]
 client_api.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 

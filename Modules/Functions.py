@@ -20,8 +20,9 @@ from pathlib import Path
 from werkzeug.datastructures import headers
 from io import StringIO, BytesIO
 from settings import PATH_FILES, PATH_CERTIFICATES, PATH_PLUGINS, URL_WINGET_REPOSITORY
-from itsdangerous import base64_decode
+from itsdangerous import base64_decode, URLSafeTimedSerializer
 from PIL import Image, ImageChops
+
 from Modules.Database.Upgrade import migrate_database
 
 
@@ -62,6 +63,10 @@ def split_sql_data(data: list | dict, seperator: str = ",") -> list | dict:
     if isinstance(data, dict):
         return split_item(data)
     return [split_item(item) for item in data]
+
+
+def get_serializer(secret_key: str) -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(secret_key)
 
 
 def get_ip_from_hostname(hostname: str, suffix: str, dns_server: str) -> str:

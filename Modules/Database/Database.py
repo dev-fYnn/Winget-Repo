@@ -1,3 +1,4 @@
+import re
 import sqlite3
 
 from datetime import datetime, timedelta
@@ -45,16 +46,6 @@ class SQLiteDatabase:
             if 'INDEXED_DB_VERSION' not in data.keys():
                 data["INDEXED_DB_VERSION"] = "2026.4.2.1"
                 self.add_wingetrepo_Setting("INDEXED_DB_VERSION", data["INDEXED_DB_VERSION"], "TEXT", False)
-
-            if 'SECRET_KEY' in data.keys():
-                self.remove_wingetrepo_Setting('SECRET_KEY')
-                data.pop('SECRET_KEY')
-            if 'DOWNLOAD_KEY' in data.keys():
-                self.remove_wingetrepo_Setting('DOWNLOAD_KEY')
-                data.pop('DOWNLOAD_KEY')
-            if 'ENCRYPTION_KEY' in data.keys():
-                self.remove_wingetrepo_Setting('ENCRYPTION_KEY')
-                data.pop('ENCRYPTION_KEY')
             return data
         return {}
 
@@ -239,25 +230,40 @@ class SQLiteDatabase:
         return False
 
     def search_packages(self, search_text: str, search_type: str, search_field: str):
-        search_text = search_text.strip()
-        query = f"""SELECT * FROM tbl_PACKAGES
-                    WHERE PACKAGE_ACTIVE = 1
-                        AND """
+        text = (search_text or "").strip()
+        match_type = (search_type or "").replace("_", "").replace(" ", "").lower()
 
-        if search_field == "PackageName":
-            query += "PACKAGE_NAME"
-        else:
-            query += "PACKAGE_ID"
+        self.__conn.create_function("NORM", 1, lambda s: re.sub(r"[^a-z0-9]", "", (s or "").lower()), deterministic=True)
 
-        if search_type == 'exact':
-            query += " = ?"
-            params = (search_text,)
-        elif search_type == 'case_insensitive':
-            query += " LIKE ? COLLATE NOCASE"
-            params = (f'%{search_text}%',)
+        query = "SELECT DISTINCT P.* FROM tbl_PACKAGES AS P WHERE P.PACKAGE_ACTIVE = 1 AND "
+        if search_field in ("ProductCode", "PackageFamilyName"):
+            column = "PRODUCTCODE" if search_field == "ProductCode" else "PACKAGE_FAMILY_NAME"
+            query += f"""EXISTS (SELECT 1 FROM tbl_PACKAGES_VERSIONS AS PV
+                                 WHERE PV.PACKAGE_ID = P.PACKAGE_ID
+                                   AND TRIM(CASE WHEN INSTR(PV.{column}, ',') > 0
+                                                 THEN SUBSTR(PV.{column}, 1, INSTR(PV.{column}, ',') - 1)
+                                                 ELSE PV.{column} END) = ? COLLATE NOCASE)"""
+            params = (text,)
+        elif search_field == "NormalizedPackageNameAndPublisher":
+            query += """(NORM(P.PACKAGE_NAME) = NORM(?)
+                             OR NORM(P.PACKAGE_NAME) || NORM(P.PACKAGE_PUBLISHER) = NORM(?))"""
+            params = (text, text)
         else:
-            query += " LIKE ?"
-            params = (f'%{search_text}%',)
+            column = "P.PACKAGE_NAME" if search_field == "PackageName" else "P.PACKAGE_ID"
+            escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+            if match_type == "exact":
+                query += f"{column} = ?"
+                params = (text,)
+            elif match_type == "caseinsensitive":
+                query += f"{column} = ? COLLATE NOCASE"
+                params = (text,)
+            elif match_type == "startswith":
+                query += f"{column} LIKE ? ESCAPE '\\'"
+                params = (f"{escaped}%",)
+            else:
+                query += f"{column} LIKE ? ESCAPE '\\'"
+                params = (f"%{escaped}%",)
 
         self.__cursor.execute(query, params)
         data = self.__cursor.fetchall()
@@ -465,6 +471,10 @@ class SQLiteDatabase:
         return False
 
     def update_Permission(self, group_id: str, permission_name: str, state: int):
+        self.__cursor.execute("PRAGMA table_info(tbl_USER_RIGHTS)")
+        allowed = {r[1] for r in self.__cursor.fetchall()} - {"ID", "NAME"}
+        if permission_name not in allowed:
+            return
         self.__cursor.execute(f"""UPDATE tbl_USER_RIGHTS SET "{permission_name}" = ? WHERE ID = ?""", (state, group_id))
 
     def delete_Group(self, group_id: str):

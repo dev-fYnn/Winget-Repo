@@ -2,12 +2,11 @@ import json
 import os
 
 from flask import Blueprint, jsonify, request, send_from_directory, current_app, redirect, Response, send_file
-from itsdangerous import URLSafeTimedSerializer
 from datetime import timedelta, datetime
 from functools import wraps
 
 from Modules.PreIndexed.Manifests import rest_response_to_manifests
-from Modules.Functions import get_Auth_Token_from_Header
+from Modules.Functions import get_Auth_Token_from_Header, get_serializer
 from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client, write_log, authorize_IP_Range
 from main_extensions import csrf
 from settings import PATH_FILES, URL_PACKAGE_DOWNLOAD, PATH_LOGOS, PATH_CERTIFICATES
@@ -43,12 +42,6 @@ def check_authentication(f):
     return decorated_function
 
 
-def get_serializer():
-    return URLSafeTimedSerializer(
-        current_app.config['DOWNLOAD_KEY']
-    )
-
-
 @winget_routes.route('/information', methods=["GET"])
 @check_authentication
 def information():
@@ -81,7 +74,7 @@ def get_package_manifest(package_id):
     client_auth_token = get_Auth_Token_from_Header(request.headers)
     version = request.args.get("Version")
     channel = request.args.get("Channel")
-    result = generate_Installer_Manifest(package_id, version, channel, client_auth_token, get_serializer())
+    result = generate_Installer_Manifest(package_id, version, channel, client_auth_token, get_serializer(current_app.config["DOWNLOAD_KEY"]))
     return jsonify(result)
 
 
@@ -89,6 +82,14 @@ def get_package_manifest(package_id):
 @csrf.exempt
 @check_authentication
 def manifestSearch():
+    def run_match(entry: dict, client_auth_token: str) -> list:
+        rm = entry['RequestMatch']
+        return generate_search_Manifest(
+            str(rm.get('KeyWord', '')),
+            str(rm.get('MatchType', 'CaseInsensitive')),
+            entry.get('PackageMatchField', 'PackageIdentifier'),
+            client_auth_token)
+
     client_auth_token = get_Auth_Token_from_Header(request.headers)
     result = {"Data": []}
 
@@ -100,24 +101,35 @@ def manifestSearch():
     if data is None:
         return jsonify(result), 400
 
-    if 'Query' in data:
-        result['Data'].extend(generate_search_Manifest(data['Query'].get('KeyWord', ''), data['Query'].get('MatchType', 'Substring'), "PackageName", client_auth_token))
-    else:
-        key = ""
+    query = data.get('Query')
+    if isinstance(query, dict):
+        keyword = str(query.get('KeyWord', ''))
+        match_type = str(query.get('MatchType', 'Substring'))
+        found = {}
+        for field in ("PackageName", "PackageIdentifier"):
+            for p in generate_search_Manifest(keyword, match_type, field, client_auth_token):
+                found.setdefault(p['PackageIdentifier'], p)
+        result['Data'] = list(found.values())
+        return jsonify(result)
 
-        if 'Inclusions' in data:
-            key = 'Inclusions'
-        elif 'Filters' in data:
-            key = 'Filters'
+    inclusions = filter_entries_by_package_match_field(data.get('Inclusions') or [])
+    filters = filter_entries_by_package_match_field(data.get('Filters') or [])
 
-        if key != "":
-            temp = []
-            for d in filter_entries_by_package_match_field(data[key]):
-                dum = generate_search_Manifest(d['RequestMatch'].get('KeyWord', ''), d['RequestMatch'].get('MatchType', 'CaseInsensitive'), d.get('PackageMatchField', 'PackageIdentifier'), client_auth_token)
-                for du in dum:
-                    if du['PackageIdentifier'] not in [t['PackageIdentifier'] for t in temp]:
-                        temp.append(du)
-            result['Data'] = temp
+    found = {}
+    if inclusions:
+        for entry in inclusions:
+            for p in run_match(entry, client_auth_token):
+                found.setdefault(p['PackageIdentifier'], p)
+    elif filters:
+        for p in run_match(filters[0], client_auth_token):
+            found.setdefault(p['PackageIdentifier'], p)
+        filters = filters[1:]
+
+    for entry in filters:
+        ids = {p['PackageIdentifier'] for p in run_match(entry, client_auth_token)}
+        found = {k: v for k, v in found.items() if k in ids}
+
+    result['Data'] = list(found.values())
     return jsonify(result)
 
 
@@ -149,7 +161,7 @@ def indexed_manifest(package_id, version, channel, hash):
 @winget_routes.route('/download/<package_name>', methods=['GET'])
 def download(package_name):
     try:
-        serializer = get_serializer()
+        serializer = get_serializer(current_app.config["DOWNLOAD_KEY"])
         package_name = serializer.loads(package_name, max_age=3600)
     except:
         if not os.path.exists(os.path.join(PATH_FILES, package_name)) or current_app.config['INDEXED_DB_ACTIV'] != "1":
@@ -175,7 +187,7 @@ def download(package_name):
 @winget_routes.route('/logo/<logo_name>', methods=['GET'])
 def get_package_logo(logo_name):
     try:
-        serializer = get_serializer()
+        serializer = get_serializer(current_app.config["DOWNLOAD_KEY"])
         logo_name = serializer.loads(logo_name, max_age=600)
     except:
         if not os.path.exists(os.path.join(PATH_LOGOS, logo_name)) or current_app.config['INDEXED_DB_ACTIV'] != "1":

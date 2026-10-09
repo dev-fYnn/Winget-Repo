@@ -1,4 +1,3 @@
-import base64
 import secrets
 
 from fastapi import APIRouter, Form, HTTPException, Depends, Request, UploadFile, File
@@ -13,7 +12,7 @@ from uuid import uuid4
 from Modules.API.Filter import LoginResponse, ClientVersionResponse, Package, package_version_form_data, Package_Version, AddStorePackageVersion
 from Modules.API.api_extensions import api_limiter
 from Modules.Database.Database import SQLiteDatabase
-from Modules.Functions import parse_version, decode_flask_cookie, get_ip_from_hostname
+from Modules.Functions import parse_version, decode_flask_cookie, get_ip_from_hostname, get_serializer
 from Modules.Login.Functions import check_Credentials
 from Modules.Packages.Functions import get_package_service, add_package_service, edit_package_service, delete_package_service, delete_package_versions_service, add_package_version_service
 from Modules.Store.Functions import download_file, check_for_new_Version, load_store_manifest, build_installer_overview, add_installer_version
@@ -140,7 +139,7 @@ async def client_version(request: Request, auth_token: Optional[str] = Form(None
                 client_ip = request.client.host
                 if not authenticate_Client(auth_token, client_ip, settings, client_value):
                     raise HTTPException(status_code=401, detail="Invalid Auth-Token")
-    return JSONResponse(content={"Version": "2.9.0.0"}, status_code=200)
+    return JSONResponse(content={"Version": "2.9.0.1"}, status_code=200)
 
 
 # Bearer oder Auth-Token – Packages
@@ -174,6 +173,8 @@ async def get_packages(request: Request, include_disabled: bool=False, auth_toke
                 if not authenticate_Client(auth_token, client_ip, settings, client_value):
                     raise HTTPException(status_code=401, detail="Invalid Auth-Token")
 
+        serializer = get_serializer(request.app.state.DOWNLOAD_KEY)
+        logo_base = f"{request.url.scheme}://{request.url.netloc}/api/logo"
         data = db.get_All_Packages(include_disabled)
         for d in data:
             versions = db.get_All_Versions_from_Package(d["PACKAGE_ID"])
@@ -184,9 +185,9 @@ async def get_packages(request: Request, include_disabled: bool=False, auth_toke
             logo_name = d.get("PACKAGE_LOGO", "dummy.png")
             logo_path = Path(PATH_LOGOS) / logo_name
 
-            if logo_path.exists():
-                encoded_logo = base64.b64encode(logo_path.read_bytes()).decode("utf-8")
-                d["PACKAGE_LOGO"] = f"data:image/png;base64,{encoded_logo}"
+            if logo_path.exists() and logo_name != "dummy.png":
+                token = serializer.dumps(logo_name)
+                d["PACKAGE_LOGO"] = f"{logo_base}/{token}"
             else:
                 d["PACKAGE_LOGO"] = ""
         if auth_token:

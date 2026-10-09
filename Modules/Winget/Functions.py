@@ -182,8 +182,13 @@ def _build_installer_entry(installer_data: dict, db: SQLiteDatabase) -> dict:
 
 
 def filter_entries_by_package_match_field(data: list[dict]):
-    filtered_data = [entry for entry in data if 'PackageMatchField' in entry and entry['PackageMatchField'] in ["PackageName", "NormalizedPackageNameAndPublisher", "PackageIdentifier"]]
-    return filtered_data
+    allowed = {"PackageName", "NormalizedPackageNameAndPublisher", "PackageIdentifier", "ProductCode", "PackageFamilyName"}
+    if not isinstance(data, list):
+        return []
+    return [entry for entry in data
+            if isinstance(entry, dict)
+            and entry.get('PackageMatchField') in allowed
+            and isinstance(entry.get('RequestMatch'), dict)]
 
 
 def get_winget_Settings() -> dict:
