@@ -137,6 +137,25 @@
                                 <label for="upgradecode" class="form-label">UpgradeCode (Optional)</label>
                                 <input type="text" class="form-control" id="upgradecode" name="upgradecode" placeholder="Installer UpgradeCode">
                             </div>
+                            <div class="mb-3" id="arpInstallerTypeGroup">
+                                <label for="arp_installer_type" class="form-label">ARP Installer Type (Optional)</label>
+                                <select
+                                    class="form-control"
+                                    id="arp_installer_type"
+                                    name="arp_installer_type">
+                                    <option value=""></option>
+                                    <option value="exe">EXE</option>
+                                    <option value="msi">MSI</option>
+                                    <option value="msix">MSIX</option>
+                                    <option value="appx">APPX</option>
+                                    <option value="inno">INNO</option>
+                                    <option value="nullsoft">NULLSOFT</option>
+                                    <option value="wix">WIX</option>
+                                    <option value="burn">BURN</option>
+                                    <option value="portable">PORTABLE</option>
+                                </select>
+                                <div class="form-text">Installer type used for the Apps &amp; Features (ARP) entry.</div>
+                            </div>
                             <div class="mb-3" id="packageFamilyNameGroup">
                                 <label for="package_family_name" class="form-label">Package Family Name (Optional)</label>
                                 <input type="text" class="form-control" id="package_family_name" name="package_family_name" placeholder="Package Family Name">
@@ -290,6 +309,7 @@
 
             const productCodeGroup = document.getElementById("productCodeGroup");
             const upgradeCodeGroup = document.getElementById("upgradeCodeGroup");
+            const arpInstallerTypeGroup = document.getElementById("arpInstallerTypeGroup");
             const packageFamilyNameGroup = document.getElementById("packageFamilyNameGroup");
 
             const isZip = fileType === "ZIP";
@@ -310,12 +330,14 @@
 
             let showProductCode = false;
             let showUpgradeCode = false;
+            let showArpInstallerType = false;
             let showPackageFamilyName = false;
 
             switch (effectiveType) {
                 case "MSI":
                     showProductCode = true;
                     showUpgradeCode = true;
+                    showArpInstallerType = true;
                     break;
 
                 case "MSIX":
@@ -329,11 +351,13 @@
                 case "BURN":
                     showProductCode = true;
                     showUpgradeCode = true;
+                    showArpInstallerType = true;
                     break;
 
                 case "WIX":
                     showProductCode = true;
                     showUpgradeCode = true;
+                    showArpInstallerType = true;
                     break;
 
                 case "ZIP":
@@ -345,6 +369,7 @@
 
             productCodeGroup.style.display = showProductCode ? "block" : "none";
             upgradeCodeGroup.style.display = showUpgradeCode ? "block" : "none";
+            arpInstallerTypeGroup.style.display = showArpInstallerType ? "block" : "none";
             packageFamilyNameGroup.style.display = showPackageFamilyName ? "block" : "none";
         }
 

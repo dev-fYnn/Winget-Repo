@@ -2,7 +2,7 @@ import sqlite3
 
 from datetime import datetime, timedelta
 from itertools import groupby
-from Modules.Functions import all_to_dict, row_to_dict, parse_version
+from Modules.Functions import all_to_dict, row_to_dict, parse_version, split_sql_data
 from settings import PATH_DATABASE
 
 
@@ -304,6 +304,7 @@ class SQLiteDatabase:
             self.__cursor.execute(sql_versions, tuple(params))
             data_versions = self.__cursor.fetchall()
             versions = all_to_dict(data_versions, self.__cursor.description)
+            versions = split_sql_data(versions)
 
             if versions:
                 if version is None:
@@ -349,12 +350,14 @@ class SQLiteDatabase:
                                 WHERE PV.PACKAGE_ID = ?
                                 ORDER BY PV.VERSION DESC""", (package_id,))
         data = self.__cursor.fetchall()
-        return all_to_dict(data, self.__cursor.description)
+        data = all_to_dict(data, self.__cursor.description)
+        return split_sql_data(data)
 
     def get_specfic_Versions_from_Package(self, uid: str) -> dict:
         self.__cursor.execute("""SELECT * FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (uid,))
         data = self.__cursor.fetchone()
-        return row_to_dict(data, self.__cursor.description)
+        data = row_to_dict(data, self.__cursor.description)
+        return split_sql_data(data)
 
     def add_Package_Version(self, package_id: str, package_version: str, package_local: int, file_architecture: str, file_type: str, file_download: str, file_sha: str, file_scope: str, uid: str, nested_type: str = "", productcode: str = "", upgradecode: str = "", package_family_name: str = "", channel: str = "stable", upgrades: str = "install") -> bool:
         self.__cursor.execute("""INSERT OR IGNORE INTO tbl_PACKAGES_VERSIONS (PACKAGE_ID, VERSION, LOCALE_ID, ARCHITECTURE, INSTALLER_TYPE, INSTALLER_NESTED_TYPE, INSTALLER_URL, INSTALLER_SHA256, INSTALLER_SCOPE, UID, PRODUCTCODE, UPGRADECODE, PACKAGE_FAMILY_NAME, CHANNEL, UPGRADEBEHAVIOR)

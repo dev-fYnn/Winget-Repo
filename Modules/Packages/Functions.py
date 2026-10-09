@@ -99,7 +99,16 @@ def add_package_version_service(package_id: str, data: dict, file=None):
             if not str(p_locale).isnumeric():
                 p_locale = db.get_Locale_ID_by_Value(p_locale)
 
-            status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], p_locale, data.get("file_architect", ""), file_type, filename, readable_hash, data.get("file_scope", ""), version_uid, data.get('file_type_nested', '').lower(), data.get('productcode', ""), data.get('upgradecode', ""), data.get('package_family_name', ""), data.get('channel', "stable").lower(), data.get('upgrades', "install"))
+            product_code = data.get('productcode', '').strip()
+            upgrade_code = data.get('upgradecode', '').strip()
+            arp_installer_type = data.get('arp_installer_type', '').strip()
+            if arp_installer_type:
+                if upgrade_code:
+                    upgrade_code = f"{upgrade_code},{arp_installer_type}"
+                elif product_code:
+                    product_code = f"{product_code},{arp_installer_type}"
+
+            status = db.add_Package_Version(package_id, data.get("package_version", "")[:25], p_locale, data.get("file_architect", ""), file_type, filename, readable_hash, data.get("file_scope", ""), version_uid, data.get('file_type_nested', '').lower(), product_code, upgrade_code, data.get('package_family_name', ""), data.get('channel', "stable").lower(), data.get('upgrades', "install"))
 
             if isinstance(data.get('file_nested_path'), list):
                 if status and file_type == "zip":

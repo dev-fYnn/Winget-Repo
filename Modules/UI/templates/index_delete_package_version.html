@@ -171,6 +171,9 @@
                                                 <div class="row g-2 mb-3">
                                                     {{ box('Type', v['INSTALLER_TYPE']) }}
                                                     {{ box('Nested', v['INSTALLER_NESTED_TYPE']) }}
+                                                    {% if v['ARP_INSTALLER_TYPE'] %}
+                                                        {{ box('ARP Installer Type', v['ARP_INSTALLER_TYPE']) }}
+                                                    {% endif %}
                                                 </div>
                                                 <div class="small-box mb-3">
                                                     <div class="text-muted small">SHA256</div>

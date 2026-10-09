@@ -155,15 +155,22 @@ def _build_installer_entry(installer_data: dict, db: SQLiteDatabase) -> dict:
         installer["PackageFamilyName"] = package_family_name
 
     product_code = installer_data.get('PRODUCTCODE', '')
+    upgrade_code = installer_data.get('UPGRADECODE', '')
+    arp_installer_type = installer_data.get('ARP_INSTALLER_TYPE', '')
+
     if product_code:
         installer["ProductCode"] = product_code
 
-        upgrade_code = installer_data.get('UPGRADECODE', '')
-        if upgrade_code:
-            installer["AppsAndFeaturesEntries"] = [{
-                "ProductCode": product_code,
-                "UpgradeCode": upgrade_code,
-            }]
+    if upgrade_code:
+        entry = {"UpgradeCode": upgrade_code}
+        if arp_installer_type:
+            entry["InstallerType"] = arp_installer_type
+        installer["AppsAndFeaturesEntries"] = [entry]
+    elif product_code and arp_installer_type:
+        installer["AppsAndFeaturesEntries"] = [{
+            "ProductCode": product_code,
+            "InstallerType": arp_installer_type
+        }]
 
     if installer_data['INSTALLER_TYPE'] == "zip":
         installer["NestedInstallerType"] = installer_data['INSTALLER_NESTED_TYPE']

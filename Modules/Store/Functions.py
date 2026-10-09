@@ -4,6 +4,7 @@ import zipfile
 import yaml
 import requests
 import datetime
+import copy
 
 from pathlib import Path
 from io import BytesIO
@@ -99,20 +100,58 @@ def get_All_InstallerInfos_from_Manifest(p_path: str, manifest_name: str) -> dic
                 yaml.dump(manifest, f, default_flow_style=False, allow_unicode=True)
 
     if manifest:
+        installer_inherit = {
+            "InstallerType": ("InstallerType", ''),
+            "InstallerSwitches": ("InstallerSwitches", {}),
+            "Channel": ("Channel", 'stable'),
+            "UpgradeBehavior": ("UpgradeBehavior", 'install'),
+            "InstallerLocale": ("PackageLocale", ''),
+            "Scope": ("Scope", ''),
+            "ProductCode": ("ProductCode", None),
+            "UpgradeCode": ("UpgradeCode", None),
+            "PackageFamilyName": ("PackageFamilyName", None),
+            "AppsAndFeaturesEntries": ("AppsAndFeaturesEntries", None),
+        }
+
+        is_empty = lambda v: v is None or v == '' or v == [] or v == {}
         installer = manifest.get("Installers", [])
         for i in installer:
-            if i.get("InstallerType", '') == '':
-                i["InstallerType"] = manifest.get("InstallerType", '')
-            if i.get("InstallerSwitches", '') == '':
-                i["InstallerSwitches"] = manifest.get("InstallerSwitches", {})
-            if i.get("Channel", '') == '':
-                i["Channel"] = manifest.get("Channel", 'stable')
-            if i.get("UpgradeBehavior", '') == '':
-                i["UpgradeBehavior"] = manifest.get("UpgradeBehavior", 'install')
-            if i.get("InstallerLocale", '') == '':
-                i["InstallerLocale"] = manifest.get("PackageLocale", '')
-            if i.get("Scope", '') == '':
-                i["Scope"] = manifest.get("Scope", '')
+            for key, (root_key, default) in installer_inherit.items():
+                if is_empty(i.get(key)):
+                    value = manifest.get(root_key)
+                    if is_empty(value):
+                        value = default
+                    if value is not None:
+                        i[key] = copy.deepcopy(value)
+
+            for key in ("ProductCode", "UpgradeCode"):
+                if is_empty(i.get(key)):
+                    for entry in i.get("AppsAndFeaturesEntries") or []:
+                        if isinstance(entry, dict) and not is_empty(entry.get(key)):
+                            i[key] = entry[key]
+                            break
+
+            arp_type = ''
+            arp_targets = []
+            for entry in i.get("AppsAndFeaturesEntries") or []:
+                if isinstance(entry, dict) and not is_empty(entry.get("InstallerType")):
+                    arp_type = str(entry["InstallerType"]).strip().lower()
+                    break
+
+            if arp_type:
+                if not is_empty(i.get("UpgradeCode")):
+                    arp_targets = ["UpgradeCode"]
+                elif not is_empty(i.get("ProductCode")):
+                    arp_targets = ["ProductCode"]
+
+            for entry in i.get("AppsAndFeaturesEntries") or []:
+                if isinstance(entry, dict):
+                    for key in ("ProductCode", "UpgradeCode"):
+                        if is_empty(entry.get(key)) and not is_empty(i.get(key)):
+                            entry[key] = i[key]
+
+            for key in arp_targets:
+                i[key] = f"{i[key]},{arp_type}"
 
             if i["InstallerType"].upper() == "ZIP":
                 if len(i.get("NestedInstallerFiles", [])) == 0:
@@ -217,11 +256,6 @@ def add_installer_version(db, package_id: str, version: str, installer: dict) ->
         file_path.unlink(missing_ok=True)
         return False, "Installer SHA256 mismatch!"
 
-    productCode, upgradeCode = "", ""
-    if installer.get('AppsAndFeaturesEntries'):
-        productCode = installer['AppsAndFeaturesEntries'][0].get('ProductCode', installer.get('ProductCode', ''))
-        upgradeCode = installer['AppsAndFeaturesEntries'][0].get('UpgradeCode', '')
-
     db.add_Package_Version(
         package_id, version, locale_id,
         installer.get('Architecture', 'x64'),
@@ -230,7 +264,8 @@ def add_installer_version(db, package_id: str, version: str, installer: dict) ->
         installer.get('Scope', 'machine'),
         version_uid,
         installer.get('NestedInstallerType', ''),
-        productCode, upgradeCode,
+        installer.get('ProductCode', ''),
+        installer.get('UpgradeCode', ''),
         installer.get('PackageFamilyName', ""),
         installer.get('Channel', "stable"),
         installer.get('UpgradeBehavior', 'install')

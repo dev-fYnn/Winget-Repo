@@ -3,7 +3,6 @@ import configparser
 import json
 import os
 import random
-import socket
 import sqlite3
 import string
 import dns.resolver
@@ -13,12 +12,14 @@ import io
 import shutil
 import sys
 import re
+import urllib.request
+import urllib.error
 
 from datetime import datetime
 from pathlib import Path
 from werkzeug.datastructures import headers
 from io import StringIO, BytesIO
-from settings import PATH_FILES, PATH_CERTIFICATES, PATH_PLUGINS
+from settings import PATH_FILES, PATH_CERTIFICATES, PATH_PLUGINS, URL_WINGET_REPOSITORY
 from itsdangerous import base64_decode
 from PIL import Image, ImageChops
 from Modules.Database.Upgrade import migrate_database
@@ -39,6 +40,28 @@ def row_to_dict(row: tuple, header_data: tuple) -> dict:
         return {desc[0]: val for desc, val in zip(header_data, row)}
     else:
         return {}
+
+
+def split_sql_data(data: list | dict, seperator: str = ",") -> list | dict:
+    def split_item(item: dict) -> dict:
+        arp_installer_type = ''
+        if seperator in item.get('PRODUCTCODE', ''):
+            productcode, arp_installer_type = item['PRODUCTCODE'].split(seperator, 1)
+            item['PRODUCTCODE'] = productcode.strip()
+            arp_installer_type = arp_installer_type.strip()
+
+        if seperator in item.get('UPGRADECODE', ''):
+            upgradecode, upgrade_arp_type = item['UPGRADECODE'].split(seperator, 1)
+            item['UPGRADECODE'] = upgradecode.strip()
+            if upgrade_arp_type.strip():
+                arp_installer_type = upgrade_arp_type.strip()
+
+        item['ARP_INSTALLER_TYPE'] = arp_installer_type
+        return item
+
+    if isinstance(data, dict):
+        return split_item(data)
+    return [split_item(item) for item in data]
 
 
 def get_ip_from_hostname(hostname: str, suffix: str, dns_server: str) -> str:
@@ -86,10 +109,12 @@ def is_ip_address(text: str) -> bool:
 
 def check_Internet_Connection() -> bool:
     try:
-        socket.setdefaulttimeout(3)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
+        req = urllib.request.Request(URL_WINGET_REPOSITORY, method="HEAD")
+        urllib.request.urlopen(req, timeout=3)
         return True
-    except socket.error:
+    except urllib.error.HTTPError:
+        return True
+    except (urllib.error.URLError, OSError):
         return False
 
 

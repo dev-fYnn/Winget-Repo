@@ -86,6 +86,7 @@ async def package_version_form_data(
     file_nested_path: Annotated[Optional[list[str]], Form()] = [],
     productcode: Annotated[Optional[str], Form()] = "",
     upgradecode: Annotated[Optional[str], Form()] = "",
+    arp_installer_type: Annotated[Optional[str], Form()] = "",
     package_family_name: Annotated[Optional[str], Form()] = "",
     switch_Silent: Annotated[Optional[str], Form()] = "",
     switch_SilentWithProgress: Annotated[Optional[str], Form()] = "",
@@ -113,6 +114,7 @@ async def package_version_form_data(
         "file_nested_path": file_nested_path,
         "productcode": productcode,
         "upgradecode": upgradecode,
+        "arp_installer_type": arp_installer_type,
         "package_family_name": package_family_name,
         "installer_url": installer_url or "",
     }
