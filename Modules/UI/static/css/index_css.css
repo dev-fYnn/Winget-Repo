@@ -402,3 +402,72 @@ option.inactive {
 @media (min-width: 1400px) {
     .plugin-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 }
+
+.pkg-dropdown .pkg-select {
+    cursor: pointer;
+    min-height: 44px;
+}
+.pkg-dropdown .pkg-select::after {
+    margin-left: auto;
+}
+.pkg-option-content {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+}
+.pkg-logo-wrap {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.pkg-logo-wrap .package-logo {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.pkg-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.pkg-dropdown-menu {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid var(--idx-border) !important;
+    border-radius: 12px;
+    padding: 0.35rem;
+}
+.pkg-option {
+    border-radius: 8px;
+    padding: 0.45rem 0.65rem;
+    color: var(--idx-text);
+}
+.pkg-option:hover,
+.pkg-option:focus {
+    background: var(--idx-accent-light);
+    color: var(--idx-text);
+}
+.pkg-option.selected {
+    background: var(--idx-accent-light);
+    font-weight: 600;
+}
+.pkg-option.inactive .pkg-name,
+.pkg-option.inactive .package-logo {
+    color: var(--idx-muted);
+    font-style: italic;
+    opacity: 0.6;
+}
+
+.pkg-dropdown .pkg-select.inactive {
+    background: #f3f4f6 !important;
+}
+.pkg-dropdown .pkg-select.inactive .pkg-name,
+.pkg-dropdown .pkg-select.inactive .package-logo {
+    color: var(--idx-muted);
+    font-style: italic;
+    opacity: 0.6;
+}

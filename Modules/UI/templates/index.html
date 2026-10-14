@@ -102,14 +102,32 @@
                                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                 <div class="mb-3">
                                     <label id="pkg-label" class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--idx-text); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Select Package</label>
-                                    <select name="selected_package" id="selected_package" class="form-control pkg-select" required>
-                                        {% for p in packages %}
-                                            <option value="{{ p['PACKAGE_ID'] }}"
-                                                {% if p['PACKAGE_ACTIVE'] == 0 %} class="inactive" {% endif %}>
-                                                {{ p['PACKAGE_NAME'] }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
+                                    <input type="hidden" name="selected_package" id="selected_package">
+
+                                    <div class="dropdown pkg-dropdown">
+                                        <button type="button" id="pkg-dropdown-btn" class="pkg-select dropdown-toggle w-100 d-flex align-items-center text-start" data-bs-toggle="dropdown" aria-expanded="false" aria-labelledby="pkg-label" {% if packages|length == 0 %}disabled{% endif %}>
+                                            <span id="pkg-current" class="pkg-option-content"></span>
+                                        </button>
+
+                                        <ul class="dropdown-menu w-100 pkg-dropdown-menu shadow border-0">
+                                            {% for p in packages %}
+                                                <li>
+                                                    <button type="button" class="dropdown-item pkg-option{% if p['PACKAGE_ACTIVE'] == 0 %} inactive{% endif %}" data-value="{{ p['PACKAGE_ID'] }}">
+                                                        <span class="pkg-option-content">
+                                                            <span class="pkg-logo-wrap">
+                                                                {% if p['PACKAGE_LOGO'] %}
+                                                                    <img src="{{ url_for('ui_bp.get_package_logo', logo_name=p['PACKAGE_LOGO']) }}" alt="" class="package-logo" loading="lazy" onerror="this.style.display='none'">
+                                                                {% else %}
+                                                                    <i class="bi bi-box-seam text-muted"></i>
+                                                                {% endif %}
+                                                            </span>
+                                                            <span class="pkg-name">{{ p['PACKAGE_NAME'] }}</span>
+                                                        </span>
+                                                    </button>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="d-flex gap-2">
                                     {% if packages|length > 0 %}
@@ -320,15 +338,24 @@
     </div>
 
     <script>
-        const pkgSelect  = document.getElementById("selected_package");
-        const savedPkg   = sessionStorage.getItem("selected_package");
-        if (pkgSelect) {
-            let found = [...pkgSelect.options].some(o => o.value === savedPkg);
-            pkgSelect.value = (savedPkg && found) ? savedPkg : (pkgSelect.options[0]?.value ?? "");
-            sessionStorage.setItem("selected_package", pkgSelect.value);
-            pkgSelect.addEventListener("change", () => {
-                sessionStorage.setItem("selected_package", pkgSelect.value);
-            });
+        const pkgInput   = document.getElementById("selected_package");
+        const pkgCurrent = document.getElementById("pkg-current");
+        const pkgOptions = [...document.querySelectorAll(".pkg-option")];
+        const pkgToggle = document.getElementById("pkg-dropdown-btn");
+
+        function selectPackage(value) {
+            const opt = pkgOptions.find(o => o.dataset.value === String(value)) || pkgOptions[0];
+            if (!opt) return;
+            pkgInput.value = opt.dataset.value;
+            pkgCurrent.innerHTML = opt.querySelector(".pkg-option-content").innerHTML;
+            pkgOptions.forEach(o => o.classList.toggle("selected", o === opt));
+            pkgToggle.classList.toggle("inactive", opt.classList.contains("inactive"));
+            sessionStorage.setItem("selected_package", opt.dataset.value);
+        }
+
+        if (pkgInput) {
+            selectPackage(sessionStorage.getItem("selected_package"));
+            pkgOptions.forEach(o => o.addEventListener("click", () => selectPackage(o.dataset.value)));
         }
 
         function showLoader(form) {
