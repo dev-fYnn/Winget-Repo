@@ -38,7 +38,7 @@ app = Flask(__name__)
 csrf.init_app(app)
 limiter.init_app(app)
 
-app.__version__ = "2.9.1"
+app.__version__ = "2.9.2"
 app.config.from_object(Config)
 app.config['SERVERNAME'] = settings['SERVERNAME']
 app.config['INDEXED_DB_ACTIV'] = settings.get('INDEXED_DB_ACTIV', "0")
