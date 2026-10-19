@@ -19,7 +19,7 @@
             background:var(--bs-tertiary-bg);
             box-shadow:0 2px 8px rgba(0,0,0,.05)
         }
-        .version-row:has(input:checked){
+        .version-row:has(input[name="version_select"]:checked){
             background:var(--bs-primary-bg-subtle);
             border-color:var(--bs-primary)
         }
@@ -129,6 +129,10 @@
                                             <a href="{{ url_for('ui_bp.serve_files', package_name=v['INSTALLER_URL']) }}" class="btn btn-outline-secondary btn-sm" download>
                                                 <i class="bi bi-download"></i>
                                             </a>
+                                            <div class="form-check form-switch mb-0" title="Activate or deactivate this version">
+                                                <input class="form-check-input version-active-toggle" type="checkbox" id="active-{{ v['UID'] }}" data-version-id="{{ v['UID'] }}" {% if v['ACTIVE'] %}checked{% endif %}>
+                                                <label class="visually-hidden" for="active-{{ v['UID'] }}">Version active</label>
+                                            </div>
                                             <input type="checkbox" class="form-check-input" name="version_select" value="{{ v['UID'] }}">
                                         </div>
                                     </div>
@@ -291,10 +295,30 @@
         </div>
     </div>
     <script>
+        document.querySelectorAll('.version-active-toggle').forEach(toggle => {
+            toggle.addEventListener('change', async () => {
+                toggle.disabled = true;
+                try {
+                    const response = await fetch("{{ url_for('ui_bp.edit_package_version', package_id=package_id) }}", {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'X-CSRFToken': "{{ csrf_token() }}"},
+                        body: JSON.stringify({version_id: toggle.dataset.versionId, active: toggle.checked})
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result.success) throw new Error('Update failed');
+                } catch (error) {
+                    toggle.checked = !toggle.checked;
+                    alert('Missing Permissions!');
+                } finally {
+                    toggle.disabled = false;
+                }
+            });
+        });
+
         document.querySelectorAll('.version-row').forEach(row=>{
             row.onclick=e=>{
                 if(e.target.closest('button,a,input')) return;
-                const cb=row.querySelector('input');
+                const cb=row.querySelector('input[name="version_select"]');
                 cb.checked=!cb.checked;
             }
         });

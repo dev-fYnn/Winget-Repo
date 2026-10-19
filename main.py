@@ -108,9 +108,11 @@ def global_settings():
     }
 
 
-if __name__ == '__main__':
-    load_plugins(app, client_api)
+load_plugins(app, client_api)
+start_auto_updates(app)
 
+
+if __name__ == '__main__':
     run_kwargs = {"threaded": True}
     ssl_env = os.environ.get('USE_SSL')
     use_ssl = False
@@ -134,6 +136,4 @@ if __name__ == '__main__':
             print("Error while starting the development server! Please check the certificates!")
             sys.exit(1)
         run_kwargs["ssl_context"] = (CERT_FILE, KEY_FILE)
-
-    start_auto_updates(app)
     app.run(**run_kwargs)

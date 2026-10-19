@@ -240,6 +240,7 @@ class SQLiteDatabase:
             column = "PRODUCTCODE" if search_field == "ProductCode" else "PACKAGE_FAMILY_NAME"
             query += f"""EXISTS (SELECT 1 FROM tbl_PACKAGES_VERSIONS AS PV
                                  WHERE PV.PACKAGE_ID = P.PACKAGE_ID
+                                   AND PV.ACTIVE = 1
                                    AND TRIM(CASE WHEN INSTR(PV.{column}, ',') > 0
                                                  THEN SUBSTR(PV.{column}, 1, INSTR(PV.{column}, ',') - 1)
                                                  ELSE PV.{column} END) = ? COLLATE NOCASE)"""
@@ -294,7 +295,8 @@ class SQLiteDatabase:
             sql_versions = """SELECT PL.LOCALE, PV.VERSION, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, PV.INSTALLER_NESTED_TYPE, PV.PRODUCTCODE, PV.UPGRADECODE, PV.PACKAGE_FAMILY_NAME, PV.CHANNEL, PV.UPGRADEBEHAVIOR
                                     FROM tbl_PACKAGES_VERSIONS AS PV
                                     INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
-                                WHERE PV.PACKAGE_ID = ?"""
+                                WHERE PV.PACKAGE_ID = ?
+                                    AND PV.ACTIVE = 1"""
 
             params = [package_id]
             if version is not None:
@@ -350,10 +352,14 @@ class SQLiteDatabase:
             return True
         return False
 
-    def get_All_Versions_from_Package(self, package_id: str) -> list:
-        self.__cursor.execute("""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, IFNULL(PV.INSTALLER_NESTED_TYPE, '') AS INSTALLER_NESTED_TYPE, IFNULL(PV.PRODUCTCODE, '') AS PRODUCTCODE, IFNULL(PV.UPGRADECODE, '') AS UPGRADECODE, IFNULL(PV.PACKAGE_FAMILY_NAME, '') AS PACKAGE_FAMILY_NAME, IFNULL(PV.CHANNEL, 'stable') AS CHANNEL, IFNULL(PV.UPGRADEBEHAVIOR, 'install') AS UPGRADEBEHAVIOR FROM tbl_PACKAGES_VERSIONS AS PV
+    def get_All_Versions_from_Package(self, package_id: str, only_active: bool = False) -> list:
+        only_active_str = ""
+        if only_active:
+            only_active_str = "AND PV.ACTIVE = 1 "
+
+        self.__cursor.execute(f"""SELECT PV.PACKAGE_ID, PV.VERSION, PL.LOCALE AS LOCALE, PV.ARCHITECTURE, PV.INSTALLER_TYPE, PV.INSTALLER_URL, PV.INSTALLER_SHA256, PV.INSTALLER_SCOPE, PV.UID, IFNULL(PV.INSTALLER_NESTED_TYPE, '') AS INSTALLER_NESTED_TYPE, IFNULL(PV.PRODUCTCODE, '') AS PRODUCTCODE, IFNULL(PV.UPGRADECODE, '') AS UPGRADECODE, IFNULL(PV.PACKAGE_FAMILY_NAME, '') AS PACKAGE_FAMILY_NAME, IFNULL(PV.CHANNEL, 'stable') AS CHANNEL, IFNULL(PV.UPGRADEBEHAVIOR, 'install') AS UPGRADEBEHAVIOR, PV.ACTIVE FROM tbl_PACKAGES_VERSIONS AS PV
                                     INNER JOIN tbl_PACKAGES_LOCALE AS PL ON PV.LOCALE_ID = PL.LOCALE_ID
-                                WHERE PV.PACKAGE_ID = ?
+                                WHERE PV.PACKAGE_ID = ? {only_active_str}
                                 ORDER BY PV.VERSION DESC""", (package_id,))
         data = self.__cursor.fetchall()
         data = all_to_dict(data, self.__cursor.description)
@@ -373,6 +379,9 @@ class SQLiteDatabase:
         if self.__cursor.lastrowid > 0:
             return True
         return False
+
+    def toggle_Package_Version(self, version_uid: str, active: bool):
+        self.__cursor.execute("""UPDATE tbl_PACKAGES_VERSIONS SET ACTIVE = ? WHERE UID = ?""", (int(active), version_uid))
 
     def delete_Package_Version(self, version_uid: str):
         self.__cursor.execute("""DELETE FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (version_uid,))

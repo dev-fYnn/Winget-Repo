@@ -224,7 +224,7 @@ class WingetIndexBuilder:
             print(f"[WingetIndexBuilder] Verarbeite {len(packages)} Pakete ...")
 
             for pkg in packages:
-                versions_rows = src_db.get_All_Versions_from_Package(pkg['PACKAGE_ID'])
+                versions_rows = src_db.get_All_Versions_from_Package(pkg['PACKAGE_ID'], True)
                 if not versions_rows:
                     print(f"  [SKIP] {pkg['PACKAGE_ID']} - keine Versionen")
                     continue

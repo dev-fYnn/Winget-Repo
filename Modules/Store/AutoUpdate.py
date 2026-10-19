@@ -54,19 +54,33 @@ def variant(row, manifest=False):
 def auto_update_summary():
     state = read_state()
     summary = dict(updated=0, skipped=0, current=0, failed=0, pending=0)
-    for result in state.get('results', {}).values():
+    details = {key: [] for key in summary}
+
+    try:
+        with SQLiteDatabase() as db:
+            names = {p['PACKAGE_ID']: p['PACKAGE_NAME'] for p in db.get_All_Packages()}
+    except Exception:
+        names = {}
+
+    for package_id, result in state.get('results', {}).items():
         added = re.search(r': (\d+) installer\(s\) added;', result)
         if result.startswith('Error:'):
-            summary['failed'] += 1
+            key = 'failed'
         elif result.startswith('Skipped:'):
-            summary['skipped'] += 1
+            key = 'skipped'
         elif result == 'Up to date.' or (added and int(added[1]) == 0):
-            summary['current'] += 1
+            key = 'current'
         elif added:
-            summary['updated'] += 1
+            key = 'updated'
         else:
-            summary['pending'] += 1
-    display = dict(state, summary=summary)
+            key = 'pending'
+        summary[key] += 1
+        details[key].append(dict(id=package_id, name=names.get(package_id, package_id), message=result))
+
+    for entries in details.values():
+        entries.sort(key=lambda e: e['name'].lower())
+
+    display = dict(state, summary=summary, details=details)
     for field in ('started', 'finished'):
         if display.get(field):
             try:

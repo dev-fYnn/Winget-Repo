@@ -23,7 +23,7 @@ def generate_search_Manifest(search_text: str, match_typ: str, match_field: str,
         for p in packages:
             versions = []
 
-            for d in db.get_All_Versions_from_Package(p['PACKAGE_ID']):
+            for d in db.get_All_Versions_from_Package(p['PACKAGE_ID'], True):
                 version_info = {
                     "PackageVersion": d['VERSION'],
                     #"Channel": d['CHANNEL'],

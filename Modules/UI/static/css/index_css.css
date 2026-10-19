@@ -101,7 +101,7 @@ body {
     box-shadow: var(--idx-shadow);
     padding: 1.6rem;
     transition: box-shadow 0.25s ease, transform 0.25s ease;
-    animation: cardFadeIn 0.4s ease both;
+    animation: cardFadeIn 0.4s ease backwards;
 }
 .idx-card:hover {
     box-shadow: var(--idx-shadow-hover);
@@ -339,6 +339,7 @@ option.inactive {
 .plugin-badge-beta { background: #fef3c7; color: #b45309; }
 .plugin-badge-hot  { background: #ffe4e6; color: #e11d48; }
 
+/* Automatic updates summary */
 .store-update-summary {
     margin-top: 1.2rem;
     padding-top: 1rem;
@@ -369,6 +370,70 @@ option.inactive {
 .store-update-count.skipped { background: #fffbeb; color: #92400e; }
 .store-update-count.failed { background: #fef2f2; color: #b91c1c; }
 .store-update-times { font-size: 0.75rem; color: var(--idx-muted); }
+
+/* Clickable counters (buttons) */
+button.store-update-count {
+    border: 1px solid transparent;
+    font-family: inherit;
+    cursor: pointer;
+    transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
+}
+button.store-update-count:hover:not(:disabled) {
+    border-color: currentColor;
+    transform: translateY(-1px);
+}
+button.store-update-count:focus-visible {
+    outline: 2px solid var(--idx-accent);
+    outline-offset: 2px;
+}
+button.store-update-count.active {
+    border-color: currentColor;
+    box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.12);
+}
+button.store-update-count:disabled {
+    cursor: default;
+    opacity: 0.7;
+}
+
+/* Detail list per category */
+.store-update-detail {
+    margin-top: 0.4rem;
+    padding: 0.75rem 0.9rem;
+    background: #f8faff;
+    border: 1px solid var(--idx-border);
+    border-radius: 10px;
+}
+.store-update-detail-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--idx-muted);
+    margin-bottom: 0.5rem;
+}
+.store-update-detail-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 240px;
+    overflow-y: auto;
+}
+.store-update-detail-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    padding: 0.35rem 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--idx-border);
+}
+.store-update-detail-list li:last-child { border-bottom: none; }
+.store-update-detail-msg {
+    font-size: 0.75rem;
+    color: var(--idx-muted);
+    overflow-wrap: anywhere;
+}
 
 .idx-divider {
     height: 1px;
@@ -403,6 +468,7 @@ option.inactive {
     .plugin-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 }
 
+/* Package dropdown */
 .pkg-dropdown .pkg-select {
     cursor: pointer;
     min-height: 44px;

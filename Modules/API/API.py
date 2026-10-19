@@ -177,7 +177,7 @@ async def get_packages(request: Request, include_disabled: bool=False, auth_toke
         logo_base = f"{request.url.scheme}://{request.url.netloc}/api/logo"
         data = db.get_All_Packages(include_disabled)
         for d in data:
-            versions = db.get_All_Versions_from_Package(d["PACKAGE_ID"])
+            versions = db.get_All_Versions_from_Package(d["PACKAGE_ID"], not include_disabled)
             version_dummy = sorted(((v["VERSION"], v["UID"]) for v in versions), key=lambda x: parse_version(x[0]), reverse=True)
             d["VERSIONS"] = [item[0] for item in version_dummy]
             d["VERSIONS_UID"] = [item[1] for item in version_dummy]

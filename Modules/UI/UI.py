@@ -3,7 +3,7 @@ from flask import Blueprint, request, flash, redirect, url_for, render_template,
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Login.Functions import check_Rights
 from Modules.Login.Login import logged_in, authenticate
-from Modules.Packages.Functions import add_package_service, get_package_service, edit_package_service, delete_package_service, add_package_version_service, get_all_packages_and_locales_service, delete_package_versions_service, get_package_versions_service
+from Modules.Packages.Functions import add_package_service, get_package_service, edit_package_service, delete_package_service, add_package_version_service, get_all_packages_and_locales_service, delete_package_versions_service, get_package_versions_service, edit_package_version_service
 from Modules.PreIndexed.Creator import update_pre_indexed_source, generate_indexed_db_package
 from Modules.Store.Functions import check_for_new_Version, update_store_db, download_file
 from Modules.Store.AutoUpdate import auto_update_summary
@@ -62,7 +62,8 @@ def index():
 
         plugins = current_app.config.get('ACTIV_PLUGINS', []).copy()
         plugins.append({"name": "REST-API", "description": "Makes the Winget-Repo available through a REST API.", "icon": "server", "color": "blue", "endpoint": "/client/api/docs"})
-        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, dev_mode=current_app.config.get('dev_mode', False), pre_indexed_used=pre_indexed_used, pre_indexed_date=pre_indexed_date, plugins=plugins, auto_update=auto_update_summary(), auto_update_enabled=settings.get('AUTO_UPDATE_PACKAGES', '0') == '1', app_update=get_update(current_app.__version__, current_app.config.get('IS_DOCKER', False)))
+        au_categories = [('updated', 'updated', 'updated'), ('current', 'up to date', ''), ('skipped', 'skipped', 'skipped'), ('failed', 'failed', 'failed'), ('pending', 'pending', '')]
+        return render_template("index.html", packages=packages, username=session.get('logged_in_username', ''), user_mng_btn=user_mng_btn, group_mng_btn=group_mng_btn, client_mng_btn=client_mng_btn, settings_btn=settings_btn, store=settings.get('PACKAGE_STORE', "0"), update_status=update_status, dev_mode=current_app.config.get('dev_mode', False), pre_indexed_used=pre_indexed_used, pre_indexed_date=pre_indexed_date, plugins=plugins, auto_update=auto_update_summary(), auto_update_enabled=settings.get('AUTO_UPDATE_PACKAGES', '0') == '1', app_update=get_update(current_app.__version__, current_app.config.get('IS_DOCKER', False)), au_categories=au_categories)
     return redirect(url_for("ui_bp.index"))
 
 
@@ -220,6 +221,19 @@ def add_package_version(p_type):
         if p_type == "font":
             return render_template("index_add_font_version.html", locales=locales, packages=packages, p_type=p_type)
         return render_template("index_add_package_version.html", locales=locales, packages=packages, p_type=p_type)
+
+
+@ui_bp.route('/edit_package_version/<package_id>', methods=['POST'])
+@logged_in
+@authenticate
+def edit_package_version(package_id):
+    data = request.get_json(silent=True) or request.form
+    version_id = data.get('version_id', '')
+    if not version_id or not any(v['UID'] == version_id for v in get_package_versions_service(package_id)):
+        return {"success": False, "message": "Version not found"}, 404
+
+    edit_package_version_service(version_id, data)
+    return {"success": True}
 
 
 @ui_bp.route('/delete_package_version/<package_id>', methods=['GET', 'POST'])

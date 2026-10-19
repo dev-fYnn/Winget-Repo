@@ -145,6 +145,18 @@ def add_package_version_service(package_id: str, data: dict, file=None):
             return False, "Package/Font version already exists or file missing"
 
 
+def edit_package_version_service(version_id: str, data: dict):
+    active_value = data.get('active')
+    if isinstance(active_value, str):
+        active_value = active_value.lower() in ('1', 'true', 'on')
+    else:
+        active_value = bool(active_value)
+
+    with SQLiteDatabase() as db:
+        db.toggle_Package_Version(version_id, active_value)
+    return True
+
+
 def delete_package_versions_service(version_ids: list):
     with SQLiteDatabase() as db:
         for vid in version_ids:

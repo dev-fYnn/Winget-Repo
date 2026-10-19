@@ -286,15 +286,38 @@
                                 <span class="store-update-title"><i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>Automatic updates</span>
                                 <span class="store-update-status">{{ auto_update.get('status', '') }}</span>
                             </div>
+
                             <div class="store-update-counts" aria-label="Package update totals">
-                                <span class="store-update-count updated"><strong>{{ auto_update.summary.updated }}</strong> updated</span>
-                                <span class="store-update-count"><strong>{{ auto_update.summary.current }}</strong> up to date</span>
-                                <span class="store-update-count skipped"><strong>{{ auto_update.summary.skipped }}</strong> skipped</span>
-                                <span class="store-update-count {% if auto_update.summary.failed %}failed{% endif %}"><strong>{{ auto_update.summary.failed }}</strong> failed</span>
-                                {% if auto_update.summary.pending %}
-                                    <span class="store-update-count"><strong>{{ auto_update.summary.pending }}</strong> pending</span>
-                                {% endif %}
+                                {% for key, label, css in au_categories %}
+                                    {% set count = auto_update.summary[key] %}
+                                    {% if key != 'pending' or count %}
+                                        <button type="button"
+                                                class="store-update-count {% if key != 'failed' or count %}{{ css }}{% endif %}"
+                                                data-update-toggle="{{ key }}"
+                                                aria-expanded="false"
+                                                aria-controls="update-detail-{{ key }}"
+                                                {% if not count %}disabled{% endif %}>
+                                            <strong>{{ count }}</strong> {{ label }}
+                                        </button>
+                                    {% endif %}
+                                {% endfor %}
                             </div>
+                            {% for key, label, css in au_categories %}
+                                {% if auto_update.summary[key] %}
+                                    <div class="store-update-detail d-none" id="update-detail-{{ key }}">
+                                        <div class="store-update-detail-title">Packages ({{ auto_update.summary[key] }})</div>
+                                        <ul class="store-update-detail-list">
+                                            {% for entry in auto_update.details[key] %}
+                                                <li>
+                                                    <strong>{{ entry.name }}</strong>
+                                                    <span class="store-update-detail-msg">{{ entry.message }}</span>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+
                             <div class="store-update-times">
                                 <span>Started (UTC): {{ auto_update['started'] }}</span>
                                 <span>Finished (UTC): {{ auto_update.get('finished') or 'Not finished' }}</span>
@@ -366,5 +389,26 @@
             if (icon)    icon.classList.add("d-none");
             if (btn)     btn.disabled = true;
         }
+
+        document.querySelectorAll("[data-update-toggle]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const key = btn.dataset.updateToggle;
+                const panel = document.getElementById("update-detail-" + key);
+                if (!panel) return;
+                const open = panel.classList.contains("d-none");
+
+                document.querySelectorAll(".store-update-detail").forEach(p => p.classList.add("d-none"));
+                document.querySelectorAll("[data-update-toggle]").forEach(b => {
+                    b.classList.remove("active");
+                    b.setAttribute("aria-expanded", "false");
+                });
+
+                if (open) {
+                    panel.classList.remove("d-none");
+                    btn.classList.add("active");
+                    btn.setAttribute("aria-expanded", "true");
+                }
+            });
+        });
     </script>
 {% endblock %}
