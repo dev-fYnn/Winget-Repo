@@ -46,12 +46,12 @@ def row_to_dict(row: tuple, header_data: tuple) -> dict:
 def split_sql_data(data: list | dict, seperator: str = ",") -> list | dict:
     def split_item(item: dict) -> dict:
         arp_installer_type = ''
-        if seperator in item.get('PRODUCTCODE', ''):
+        if seperator in (item.get('PRODUCTCODE') or ''):
             productcode, arp_installer_type = item['PRODUCTCODE'].split(seperator, 1)
             item['PRODUCTCODE'] = productcode.strip()
             arp_installer_type = arp_installer_type.strip()
 
-        if seperator in item.get('UPGRADECODE', ''):
+        if seperator in (item.get('UPGRADECODE') or ''):
             upgradecode, upgrade_arp_type = item['UPGRADECODE'].split(seperator, 1)
             item['UPGRADECODE'] = upgradecode.strip()
             if upgrade_arp_type.strip():
