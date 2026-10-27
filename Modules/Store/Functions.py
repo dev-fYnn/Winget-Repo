@@ -6,11 +6,12 @@ import requests
 import datetime
 import copy
 
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from io import BytesIO
 from uuid import uuid4
 from hashlib import sha256
 from werkzeug.datastructures import FileStorage
+from urllib.parse import urlparse, unquote
 
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Database.Store_DB import StoreDB
@@ -194,6 +195,20 @@ def download_file(url: str, filename: str, return_filestorage: bool = False) -> 
             return True
 
 
+def determine_extension(installer_url: str, installer_type: str) -> str:
+    known_extensions = {"exe", "msi", "msix", "appx", "msixbundle", "appxbundle", "zip", "7z", "apk"}
+    installer_type_ext = {
+        "msi": "msi", "wix": "msi", "msix": "msix", "appx": "appx", "zip": "zip",
+        "exe": "exe", "burn": "exe", "inno": "exe", "nullsoft": "exe", "portable": "exe",
+    }
+
+    path = unquote(urlparse(installer_url).path)
+    ext = PurePosixPath(path).suffix.lstrip(".").lower()
+    if ext in known_extensions:
+        return ext
+    return installer_type_ext.get(installer_type.lower(), "bin")
+
+
 def load_store_manifest(package_id: str, version: str) -> tuple[dict | None, str | None]:
     package_path, manifest_name = get_package_path(package_id, version)
     if not package_path:
@@ -241,7 +256,8 @@ def add_installer_version(db, package_id: str, version: str, installer: dict) ->
         return False, "Missing or invalid installer SHA256!"
 
     version_uid = str(uuid4())
-    filename = f"{version_uid}.{installer['InstallerUrl'].split('.')[-1]}"
+    ext = determine_extension(installer['InstallerUrl'], installer.get("InstallerType", ""))
+    filename = f"{version_uid}.{ext}"
 
     try:
         if not download_file(installer['InstallerUrl'], filename):

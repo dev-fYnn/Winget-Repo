@@ -15,7 +15,7 @@ from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import parse_version, decode_flask_cookie, get_ip_from_hostname, get_serializer
 from Modules.Login.Functions import check_Credentials
 from Modules.Packages.Functions import get_package_service, add_package_service, edit_package_service, delete_package_service, delete_package_versions_service, add_package_version_service
-from Modules.Store.Functions import download_file, check_for_new_Version, load_store_manifest, build_installer_overview, add_installer_version
+from Modules.Store.Functions import download_file, check_for_new_Version, load_store_manifest, build_installer_overview, add_installer_version, determine_extension
 from Modules.User.Functions import user_setup_finished, check_User_Exists
 from Modules.Winget.Functions import authorize_IP_Range, authenticate_Client
 from settings import PATH_LOGOS
@@ -343,7 +343,8 @@ async def add_package_version(package_id: str, file: Optional[UploadFile] = File
         raise HTTPException(status_code=400, detail="Either a file or an URL must be provided!")
 
     if not has_file and has_url:
-        filename = installer_url.split("/")[-1].split("?")[0]
+        ext = determine_extension(installer_url, data.get("file_type", ""))
+        filename = f"dummy.{ext}"
         try:
             file = download_file(installer_url, filename, return_filestorage=True)
             if not file:

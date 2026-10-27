@@ -5,7 +5,7 @@ from Modules.Login.Functions import check_Rights
 from Modules.Login.Login import logged_in, authenticate
 from Modules.Packages.Functions import add_package_service, get_package_service, edit_package_service, delete_package_service, add_package_version_service, get_all_packages_and_locales_service, delete_package_versions_service, get_package_versions_service, edit_package_version_service
 from Modules.PreIndexed.Creator import update_pre_indexed_source, generate_indexed_db_package
-from Modules.Store.Functions import check_for_new_Version, update_store_db, download_file
+from Modules.Store.Functions import check_for_new_Version, update_store_db, download_file, determine_extension
 from Modules.Store.AutoUpdate import auto_update_summary
 from Modules.UI.AppUpdates import get_update
 from settings import PATH_FILES, PATH_LOGOS
@@ -158,7 +158,8 @@ def add_package_version(p_type):
             return redirect(url_for("ui_bp.index"))
 
         if not has_file and has_url:
-            filename = installer_url.split("/")[-1].split("?")[0]
+            ext = determine_extension(installer_url, data.get("file_type", ""))
+            filename = f"dummy.{ext}"
             try:
                 file = download_file(installer_url, filename, return_filestorage=True)
                 if not file:
