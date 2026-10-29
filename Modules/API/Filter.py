@@ -73,6 +73,11 @@ class Upgrades(str, Enum):
     deny = "deny"
 
 
+class ClientInstallationOption(str, Enum):
+    UPDATE = "UPDATE"
+    INSTALL = "INSTALL"
+
+
 async def package_version_form_data(
     package_version: Annotated[str, Form(max_length=25)],
     file_architect: Annotated[Architecture, Form()],

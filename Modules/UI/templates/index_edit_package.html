@@ -40,6 +40,22 @@
                                 <small id="description_preview" class="form-text text-muted"></small>
                             </div>
                             <div class="mb-3">
+                                <label for="client_installation_option" class="form-label">Winget-Repo Client behavior</label>
+                                <select name="client_installation_option" id="client_installation_option" class="form-control" required>
+                                    <option value="UPDATE" {% if package_installation_option == 'UPDATE' %}selected{% endif %}>
+                                        Update only (if already installed)
+                                    </option>
+                                    <option value="INSTALL" {% if package_installation_option == 'INSTALL' %}selected{% endif %}>
+                                        Install and update
+                                    </option>
+                                </select>
+                                <div class="form-text">
+                                    Defines how the package is handled on clients.
+                                    Only supported by
+                                    <a href="https://github.com/dev-fYnn/Winget-Repo-Client" target="_blank" rel="noopener">Winget-Repo Client</a>.
+                                </div>
+                            </div>
+                            <div class="mb-3">
                                 <label for="file" class="form-label">Package Logo</label>
                                 <input type="file" class="form-control" id="file" name="Logo" accept="image/png">
                                 <input type="hidden" id="reset_logo" name="reset_logo" value="0">

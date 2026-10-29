@@ -27,7 +27,7 @@ def add_package_service(data: dict, file=None):
         logo_path = "dummy.png"
 
     with SQLiteDatabase() as db:
-        status = db.add_Package(package_id, data.get("package_name", "")[:50], data.get("package_publisher", "")[:50], data.get("package_description", "")[:200], logo_path)
+        status = db.add_Package(package_id, data.get("package_name", "")[:50], data.get("package_publisher", "")[:50], data.get("package_description", "")[:200], logo_path, package_installation_option=data.get('client_installation_option', "UPDATE").upper())
     return status, package_id
 
 
@@ -46,7 +46,7 @@ def edit_package_service(package_id: str, data: dict, file=None):
         else:
             logo_path = package['PACKAGE_LOGO']
 
-        status = db.add_Package(package_id, data.get("package_name", package['PACKAGE_NAME'])[:50], data.get("package_publisher", package['PACKAGE_PUBLISHER'])[:50], data.get("package_description", package['PACKAGE_DESCRIPTION'])[:200], logo_path, int(data.get("package_active", package['PACKAGE_ACTIVE'])))
+        status = db.add_Package(package_id, data.get("package_name", package['PACKAGE_NAME'])[:50], data.get("package_publisher", package['PACKAGE_PUBLISHER'])[:50], data.get("package_description", package['PACKAGE_DESCRIPTION'])[:200], logo_path, int(data.get("package_active", package['PACKAGE_ACTIVE'])), data.get('client_installation_option', "UPDATE").upper())
     return status, package_id
 
 

@@ -328,10 +328,10 @@ class SQLiteDatabase:
                 package['VERSIONS'] = []
         return package
 
-    def add_Package(self, package_id: str, package_name: str, package_publisher: str, package_description: str, package_logo: str, package_active: int = 1) -> bool:
-        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES (PACKAGE_ID, PACKAGE_NAME, PACKAGE_PUBLISHER, PACKAGE_DESCRIPTION, PACKAGE_LOGO, PACKAGE_ACTIVE) 
-                                    VALUES (?, ?, ?, ?, ?, ?)""",
-                              (package_id, package_name, package_publisher, package_description, package_logo, package_active))
+    def add_Package(self, package_id: str, package_name: str, package_publisher: str, package_description: str, package_logo: str, package_active: int = 1, package_installation_option: str = "UPDATE") -> bool:
+        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES (PACKAGE_ID, PACKAGE_NAME, PACKAGE_PUBLISHER, PACKAGE_DESCRIPTION, PACKAGE_LOGO, PACKAGE_ACTIVE, PACKAGE_INSTALLATION_OPTION) 
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                              (package_id, package_name, package_publisher, package_description, package_logo, package_active, package_installation_option))
 
         if self.__cursor.lastrowid > 0:
             return True

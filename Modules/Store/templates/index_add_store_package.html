@@ -70,6 +70,18 @@
                                 <input type="text" class="form-control pkg-select" id="package_description" name="package_description" placeholder="Description" maxlength="200" value="{{ p_infos.Description }}" required>
                                 <small id="description_preview" class="form-text text-muted"></small>
                             </div>
+                            <div class="mb-3">
+                                <label for="client_installation_option" class="form-label">Winget-Repo Client behavior</label>
+                                <select name="client_installation_option" id="client_installation_option" class="form-control" required>
+                                    <option value="update">Update only (if already installed)</option>
+                                    <option value="install">Install and update</option>
+                                </select>
+                                <div class="form-text">
+                                    Defines how the package is handled on clients.
+                                    Only supported by
+                                    <a href="https://github.com/dev-fYnn/Winget-Repo-Client" target="_blank" rel="noopener">Winget-Repo Client</a>.
+                                </div>
+                            </div>
                             <div class="mb-0">
                                 <label class="store-package-label">Package Logo</label>
 

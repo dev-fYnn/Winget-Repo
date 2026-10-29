@@ -121,7 +121,7 @@ def edit_package(package_id):
         else:
             flash("Changes couldn't be saved. Try again!", "error")
         return redirect(url_for("ui_bp.index"))
-    return render_template("index_edit_package.html", package_id=package_id, name=package['PACKAGE_NAME'], publisher=package['PACKAGE_PUBLISHER'], description=package['PACKAGE_DESCRIPTION'], logo=package['PACKAGE_LOGO'], active=package['PACKAGE_ACTIVE'])
+    return render_template("index_edit_package.html", package_id=package_id, name=package['PACKAGE_NAME'], publisher=package['PACKAGE_PUBLISHER'], description=package['PACKAGE_DESCRIPTION'], logo=package['PACKAGE_LOGO'], active=package['PACKAGE_ACTIVE'], package_installation_option=package['PACKAGE_INSTALLATION_OPTION'])
 
 
 @ui_bp.route('/delete_package/<package_id>', methods=['POST'])

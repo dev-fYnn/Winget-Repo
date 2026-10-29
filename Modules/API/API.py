@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
 from uuid import uuid4
 
-from Modules.API.Filter import LoginResponse, ClientVersionResponse, Package, package_version_form_data, Package_Version, AddStorePackageVersion
+from Modules.API.Filter import LoginResponse, ClientVersionResponse, Package, package_version_form_data, Package_Version, AddStorePackageVersion, ClientInstallationOption
 from Modules.API.api_extensions import api_limiter
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Functions import parse_version, decode_flask_cookie, get_ip_from_hostname, get_serializer
@@ -147,7 +147,7 @@ async def client_version(request: Request, auth_token: Optional[str] = Form(None
 async def get_packages(request: Request, include_disabled: bool=False, auth_token: Optional[str] = Form(None), client: Optional[int] = Form(None), token_auth: Optional[HTTPAuthorizationCredentials] = Depends(oauth2_scheme)):
     """
     Returns a complete list of all available packages including metadata,
-    available versions, and Base64-encoded package logos.
+    available versions, and package logo urls.
 
     If client authentication is enabled, client-specific blacklist rules apply
     and certain packages may be filtered out based on the authentication token.
@@ -198,22 +198,22 @@ async def get_packages(request: Request, include_disabled: bool=False, auth_toke
 
 # Bearer
 @client_api_bp.post("/add_package", tags=["Packages"], summary="Add a new package", response_model=list[Package])
-async def add_package(package_id: str = Form(...), package_name: str = Form(...), package_publisher: str = Form(...), package_description: str = Form(...), Logo: Optional[UploadFile] = File(None), token: str = Depends(verify_bearer_token)):
+async def add_package(package_id: str = Form(...), package_name: str = Form(...), package_publisher: str = Form(...), package_description: str = Form(...), client_installation_option: ClientInstallationOption = Form(ClientInstallationOption.INSTALL), Logo: Optional[UploadFile] = File(None), token: str = Depends(verify_bearer_token)):
     """
-    Returns a complete list of all available packages including metadata,
-    available versions, and Base64-encoded package logos.
-
-    If client authentication is enabled, client-specific blacklist rules apply
-    and certain packages may be filtered out based on the authentication token.
+    Adds a new package.
 
     **Parameters:**
-    - **auth**: Authentication token (Bearer or Client Auth-Token)
-    - **include_disabled**: If `True`, disabled packages will also be included
+    - **package_id**: Unique ID of the package
+    - **package_name**: Name of the package
+    - **package_publisher**: Publisher of the package
+    - **package_description**: Description of the package
+    - **client_installation_option**: `UPDATE` (only update if already installed) or `INSTALL` (install and update). Only supported by the Winget-Repo Client.
+    - **Logo**: Optional logo file
 
     **Returns:**
-    - JSON list of package objects containing full metadata
+    - JSON message confirming package creation
     """
-    data = {"package_id": package_id, "package_name": package_name, "package_publisher": package_publisher, "package_description": package_description}
+    data = {"package_id": package_id, "package_name": package_name, "package_publisher": package_publisher, "package_description": package_description, "client_installation_option": client_installation_option.value}
     package = get_package_service(data.get("package_id", ''))
     if package:
         raise HTTPException(status_code=401, detail="Package ID already available!")
@@ -230,15 +230,16 @@ async def add_package(package_id: str = Form(...), package_name: str = Form(...)
 
 # Bearer
 @client_api_bp.patch("/edit_package/{package_id}", tags=["Packages"], summary="Edit an existing package", response_model=dict)
-async def edit_package(package_id: str, package_name: str = Form(...), package_publisher: str = Form(...), package_description: str = Form(...), Logo: Optional[UploadFile] = File(None), reset_logo: bool = Form(False), token: str = Depends(verify_bearer_token)):
+async def edit_package(package_id: str, package_name: str = Form(...), package_publisher: str = Form(...), package_description: str = Form(...), client_installation_option: Optional[ClientInstallationOption] = Form(None), Logo: Optional[UploadFile] = File(None), reset_logo: bool = Form(False), token: str = Depends(verify_bearer_token)):
     """
-    Edits the details of an existing package including name, publisher, description, and logo.
+    Edits the details of an existing package including name, publisher, description, installation option and logo.
 
     **Parameters:**
     - **package_id**: ID of the package to edit
     - **package_name**: Updated name
     - **package_publisher**: Updated publisher
     - **package_description**: Updated description
+    - **client_installation_option**: Updated option (`UPDATE` or `INSTALL`). If omitted, the current value is kept.
     - **Logo**: Updated logo file
     - **reset_logo**: Set to `true` to reset the logo. Takes precedence over **Logo**.
 
@@ -251,6 +252,8 @@ async def edit_package(package_id: str, package_name: str = Form(...), package_p
         "package_description": package_description,
         "reset_logo": "1" if reset_logo else "0"
     }
+    if client_installation_option is not None:
+        data["client_installation_option"] = client_installation_option.value
 
     package = get_package_service(package_id)
     if not package:
