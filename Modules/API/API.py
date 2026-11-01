@@ -175,12 +175,18 @@ async def get_packages(request: Request, include_disabled: bool=False, auth_toke
 
         serializer = get_serializer(request.app.state.DOWNLOAD_KEY)
         logo_base = f"{request.url.scheme}://{request.url.netloc}/api/logo"
+        config_base = f"{request.url.scheme}://{request.url.netloc}/api/download"
         data = db.get_All_Packages(include_disabled)
         for d in data:
             versions = db.get_All_Versions_from_Package(d["PACKAGE_ID"], not include_disabled)
             version_dummy = sorted(((v["VERSION"], v["UID"]) for v in versions), key=lambda x: parse_version(x[0]), reverse=True)
-            d["VERSIONS"] = [item[0] for item in version_dummy]
+            d["VERSIONS"] = list(dict.fromkeys(item[0] for item in version_dummy))
             d["VERSIONS_UID"] = [item[1] for item in version_dummy]
+
+            first_uid = {}
+            for ver, uid in version_dummy:
+                first_uid.setdefault(ver, uid)
+            d["WINGET_CONFIGS"] = {ver: f"{config_base}/{serializer.dumps(uid)}/config" for ver, uid in first_uid.items() if db.get_Package_Version_Config(uid)}
 
             logo_name = d.get("PACKAGE_LOGO", "dummy.png")
             logo_path = Path(PATH_LOGOS) / logo_name

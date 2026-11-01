@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, request, send_from_directory, current_app,
 from datetime import timedelta, datetime
 from functools import wraps
 
+from Modules.Database.Database import SQLiteDatabase
 from Modules.PreIndexed.Manifests import rest_response_to_manifests
 from Modules.Functions import get_Auth_Token_from_Header, get_serializer
 from Modules.Winget.Functions import generate_search_Manifest, generate_Installer_Manifest, get_winget_Settings, filter_entries_by_package_match_field, authenticate_Client, write_log, authorize_IP_Range
@@ -182,6 +183,19 @@ def download(package_name):
             dummy_url += "/"
         dummy_url += package_name
         return redirect(dummy_url, code=302)
+
+
+@winget_routes.route('/download/<version_uid>/config', methods=['GET'])
+def download_config(version_uid):
+    try:
+        serializer = get_serializer(current_app.config["DOWNLOAD_KEY"])
+        version_uid = serializer.loads(version_uid, max_age=3600)
+    except:
+        return "Link expired!", 403
+
+    with SQLiteDatabase() as db:
+        yaml = db.get_Package_Version_Config(version_uid)
+    return yaml
 
 
 @winget_routes.route('/logo/<logo_name>', methods=['GET'])

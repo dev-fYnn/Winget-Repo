@@ -82,6 +82,12 @@ def generate_Installer_Manifest(package_id: str, version: str = None, channel: s
                     logo_url = serializer.dumps(logo_url)
                 icon["IconUrl"] = url_for("winget_routes.get_package_logo", logo_name=logo_url, _external=True)
 
+            for doc in v_info.get("DefaultLocale", {}).get("Documentations", []):
+                config_token = doc["DocumentUrl"]
+                if use_serializer and serializer:
+                    config_token = serializer.dumps(config_token)
+                doc["DocumentUrl"] = url_for("winget_routes.download_config", version_uid=config_token, _external=True)
+
         r_data = {
             "Data": {
                 "PackageIdentifier": package['PACKAGE_ID'],
@@ -119,16 +125,25 @@ def _build_version_info(version_group: list, package: dict, db: SQLiteDatabase) 
                 "IconSha256": logo_hash
             })
 
+    default_locale = {
+        "PackageLocale": first_installer.get('LOCALE', 'en-US'),
+        "Publisher": package.get('PACKAGE_PUBLISHER', ''),
+        "PackageName": package.get('PACKAGE_NAME', ''),
+        "ShortDescription": package.get('PACKAGE_DESCRIPTION', ''),
+        "Icons": icon
+    }
+
+    config_uid = next((i['UID'] for i in version_group if db.get_Package_Version_Config(i['UID'])), None)
+    if config_uid:
+        default_locale["Documentations"] = [{
+            "DocumentLabel": "WinGet Configuration",
+            "DocumentUrl": config_uid
+        }]
+
     return {
         "PackageVersion": first_installer.get('VERSION', '0.0.0.0'),
         # "Channel": first_installer.get('CHANNEL', 'stable')
-        "DefaultLocale": {
-            "PackageLocale": first_installer.get('LOCALE', 'en-US'),
-            "Publisher": package.get('PACKAGE_PUBLISHER', ''),
-            "PackageName": package.get('PACKAGE_NAME', ''),
-            "ShortDescription": package.get('PACKAGE_DESCRIPTION', ''),
-            "Icons": icon
-        },
+        "DefaultLocale": default_locale,
         "Installers": installers
     }
 

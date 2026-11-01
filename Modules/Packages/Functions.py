@@ -1,4 +1,5 @@
 import shutil
+import yaml
 
 from pathlib import Path
 from uuid import uuid4
@@ -145,15 +146,43 @@ def add_package_version_service(package_id: str, data: dict, file=None):
             return False, "Package/Font version already exists or file missing"
 
 
-def edit_package_version_service(version_id: str, data: dict):
-    active_value = data.get('active')
-    if isinstance(active_value, str):
-        active_value = active_value.lower() in ('1', 'true', 'on')
-    else:
-        active_value = bool(active_value)
-
+def get_package_version_config_service(version_id: str) -> str:
     with SQLiteDatabase() as db:
-        db.toggle_Package_Version(version_id, active_value)
+        return db.get_Package_Version_Config(version_id) or ""
+
+
+def edit_package_version_service(version_id: str, data: dict):
+    with SQLiteDatabase() as db:
+        if 'active' in data:
+            active_value = data.get('active')
+            if isinstance(active_value, str):
+                active_value = active_value.lower() in ('1', 'true', 'on')
+            else:
+                active_value = bool(active_value)
+            db.toggle_Package_Version(version_id, active_value)
+
+        if 'yaml' in data:
+            text = (data.get('yaml') or '').replace('\r\n', '\n')
+            if text.strip():
+                try:
+                    parsed = yaml.safe_load(text)
+                except yaml.YAMLError as e:
+                    raise ValueError(f"Invalid YAML: {e}")
+
+                if not isinstance(parsed, dict):
+                    raise ValueError("Configuration must be a YAML mapping")
+
+                props = parsed.get('properties')
+                if not isinstance(props, dict) or not isinstance(props.get('resources'), list):
+                    raise ValueError("Missing 'properties.resources' (not a WinGet configuration)")
+            else:
+                text = ''
+
+            package_version = db.get_specfic_Versions_from_Package(version_id)
+            if not package_version:
+                raise ValueError("Package Version not found")
+
+            db.add_Package_Version_Config(package_version['PACKAGE_ID'], package_version['VERSION'], text)
     return True
 
 

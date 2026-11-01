@@ -384,10 +384,19 @@ class SQLiteDatabase:
         self.__cursor.execute("""UPDATE tbl_PACKAGES_VERSIONS SET ACTIVE = ? WHERE UID = ?""", (int(active), version_uid))
 
     def delete_Package_Version(self, version_uid: str):
-        self.__cursor.execute("""DELETE FROM tbl_PACKAGES_VERSIONS WHERE UID = ?""", (version_uid,))
-        self.__cursor.execute("""DELETE FROM tbl_PACKAGES_SWITCHES WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
-        self.__cursor.execute("""DELETE FROM tbl_PACKAGES_NESTED WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
-        self.__cursor.execute("""DELETE FROM tbl_PACKAGES_DEPENDENCIES WHERE PACKAGE_VERSION_UID = ?""", (version_uid,))
+        self.__cursor.execute("SELECT PACKAGE_ID, VERSION FROM tbl_PACKAGES_VERSIONS WHERE UID = ?", (version_uid,))
+        row = self.__cursor.fetchone()
+
+        self.__cursor.execute("DELETE FROM tbl_PACKAGES_VERSIONS WHERE UID = ?", (version_uid,))
+        self.__cursor.execute("DELETE FROM tbl_PACKAGES_SWITCHES WHERE PACKAGE_VERSION_UID = ?", (version_uid,))
+        self.__cursor.execute("DELETE FROM tbl_PACKAGES_NESTED WHERE PACKAGE_VERSION_UID = ?", (version_uid,))
+        self.__cursor.execute("DELETE FROM tbl_PACKAGES_DEPENDENCIES WHERE PACKAGE_VERSION_UID = ?", (version_uid,))
+
+        if row:
+            package_id, version = row[0], row[1]
+            self.__cursor.execute("SELECT 1 FROM tbl_PACKAGES_VERSIONS WHERE PACKAGE_ID = ? AND VERSION = ? LIMIT 1", (package_id, version))
+            if self.__cursor.fetchone() is None:
+                self.__cursor.execute("DELETE FROM tbl_PACKAGES_CONFIGS WHERE PACKAGE_ID = ? AND VERSION = ?", (package_id, version))
 
     ####################Nested Installer######################
     def get_Nested_Installer(self, package_version_uid: str) -> list[dict]:
@@ -455,6 +464,22 @@ class SQLiteDatabase:
         if data is None:
             return 1
         return data[0]
+
+    ####################Configs######################
+    def get_Package_Version_Config(self, version_uid: str) -> str:
+        package_version = self.get_specfic_Versions_from_Package(version_uid)
+        if not package_version:
+            return ""
+
+        self.__cursor.execute("SELECT YAML FROM tbl_PACKAGES_CONFIGS WHERE PACKAGE_ID = ? AND VERSION = ?", (package_version['PACKAGE_ID'], package_version['VERSION']))
+        data = self.__cursor.fetchone()
+        return row_to_dict(data, self.__cursor.description).get("YAML", "")
+
+    def add_Package_Version_Config(self, package_id: str, version: str, yaml: str) -> int:
+        self.__cursor.execute("""INSERT OR REPLACE INTO tbl_PACKAGES_CONFIGS (PACKAGE_ID, VERSION, YAML) VALUES (?, ?, ?)""", (package_id, version, yaml))
+        if self.__cursor.lastrowid > 0:
+            return True
+        return False
 
 
     #------------------Permissions-------------------

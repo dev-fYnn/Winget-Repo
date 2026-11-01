@@ -3,7 +3,7 @@ from flask import Blueprint, request, flash, redirect, url_for, render_template,
 from Modules.Database.Database import SQLiteDatabase
 from Modules.Login.Functions import check_Rights
 from Modules.Login.Login import logged_in, authenticate
-from Modules.Packages.Functions import add_package_service, get_package_service, edit_package_service, delete_package_service, add_package_version_service, get_all_packages_and_locales_service, delete_package_versions_service, get_package_versions_service, edit_package_version_service
+from Modules.Packages.Functions import add_package_service, get_package_service, edit_package_service, delete_package_service, add_package_version_service, get_all_packages_and_locales_service, delete_package_versions_service, get_package_versions_service, edit_package_version_service, get_package_version_config_service
 from Modules.PreIndexed.Creator import update_pre_indexed_source, generate_indexed_db_package
 from Modules.Store.Functions import check_for_new_Version, update_store_db, download_file, determine_extension
 from Modules.Store.AutoUpdate import auto_update_summary
@@ -233,7 +233,13 @@ def edit_package_version(package_id):
     if not version_id or not any(v['UID'] == version_id for v in get_package_versions_service(package_id)):
         return {"success": False, "message": "Version not found"}, 404
 
-    edit_package_version_service(version_id, data)
+    if data.get('action') == 'get_config':
+        return {"success": True, "yaml": get_package_version_config_service(version_id)}
+
+    try:
+        edit_package_version_service(version_id, data)
+    except ValueError as e:
+        return {"success": False, "message": str(e)}, 400
     return {"success": True}
 
 

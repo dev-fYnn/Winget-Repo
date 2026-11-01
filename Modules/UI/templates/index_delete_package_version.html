@@ -72,6 +72,14 @@
             height:1.2em;
             cursor:pointer
         }
+        .config-editor{
+            font-family:var(--bs-font-monospace);
+            font-size:.82rem;
+            min-height:420px;
+            white-space:pre;
+            overflow:auto;
+            tab-size:2
+        }
     </style>
     <div class="container mt-5">
         <div class="row justify-content-center">
@@ -126,6 +134,9 @@
                                         </div>
                                         <div class="v-actions">
                                             <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#m{{ v['UID'] }}">Details</button>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#configModal" data-version-id="{{ v['UID'] }}" data-version-label="{{ v['VERSION'] }}" title="WinGet Configuration (YAML) used by Winget-Repo Client">
+                                                <i class="bi bi-file-earmark-code"></i> Config
+                                            </button>
                                             <a href="{{ url_for('ui_bp.serve_files', package_name=v['INSTALLER_URL']) }}" class="btn btn-outline-secondary btn-sm" download>
                                                 <i class="bi bi-download"></i>
                                             </a>
@@ -286,6 +297,31 @@
                                     </div>
                                 </div>
                             {% endfor %}
+
+                            <div class="modal fade" id="configModal" tabindex="-1" data-bs-backdrop="static">
+                                <div class="modal-dialog modal-xl">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">WinGet Configuration (Optional) <span class="text-muted" id="configVersionLabel"></span></h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <small class="text-muted d-block mb-2">
+                                                Optional <code>winget configure</code> YAML for this version. It applies to all installers of this version. The
+                                                <a href="https://github.com/dev-fYnn/Winget-Repo-Client" target="_blank" rel="noopener noreferrer">Winget-Repo Client</a>
+                                                applies it on the device after the installation has finished.
+                                                <br>Saving an empty editor removes the configuration.
+                                            </small>
+                                            <textarea id="configEditor" class="form-control config-editor" style="height: 300px;" spellcheck="false" disabled></textarea>
+                                            <div id="configStatus" class="small mt-2"></div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="button" class="btn btn-primary" id="configSaveBtn" disabled>Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         {% else %}
                             <h5 class="text-center text-secondary">No versions found!</h5>
                         {% endif %}
@@ -322,5 +358,64 @@
                 cb.checked=!cb.checked;
             }
         });
+
+        async function postEdit(payload) {
+            const response = await fetch("{{ url_for('ui_bp.edit_package_version', package_id=package_id) }}", {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': "{{ csrf_token() }}"},
+                body: JSON.stringify(payload)
+            });
+            let result = {};
+            try { result = await response.json(); } catch (_) {}
+            if (!response.ok || !result.success) throw new Error(result.message || 'Request failed');
+            return result;
+        }
+
+        (() => {
+            const modalEl = document.getElementById('configModal');
+            if (!modalEl) return;
+            const editor = document.getElementById('configEditor');
+            const saveBtn = document.getElementById('configSaveBtn');
+            const status = document.getElementById('configStatus');
+            const label = document.getElementById('configVersionLabel');
+            let currentVersion = null;
+
+            const setStatus = (msg, cls = 'text-muted') => {
+                status.className = 'small mt-2 ' + cls;
+                status.textContent = msg;
+            };
+
+            modalEl.addEventListener('show.bs.modal', async e => {
+                const btn = e.relatedTarget;
+                currentVersion = btn.dataset.versionId;
+                label.textContent = '– ' + btn.dataset.versionLabel;
+                editor.value = '';
+                editor.disabled = true;
+                saveBtn.disabled = true;
+                setStatus('Loading…');
+                try {
+                    const res = await postEdit({version_id: currentVersion, action: 'get_config'});
+                    editor.value = res.yaml || '';
+                    editor.disabled = false;
+                    saveBtn.disabled = false;
+                    setStatus(editor.value ? '' : 'No configuration saved yet.');
+                } catch (err) {
+                    setStatus('Failed to load: ' + err.message, 'text-danger');
+                }
+            });
+
+            saveBtn.addEventListener('click', async () => {
+                saveBtn.disabled = true;
+                setStatus('Saving…');
+                try {
+                    await postEdit({version_id: currentVersion, yaml: editor.value});
+                    setStatus('Saved.', 'text-success');
+                } catch (err) {
+                    setStatus(err.message, 'text-danger');
+                } finally {
+                    saveBtn.disabled = false;
+                }
+            });
+        })();
     </script>
 {% endblock %}
