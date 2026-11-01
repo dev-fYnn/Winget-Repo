@@ -60,6 +60,9 @@ def split_sql_data(data: list | dict, seperator: str = ",") -> list | dict:
         item['ARP_INSTALLER_TYPE'] = arp_installer_type
         return item
 
+    if not data:
+        return data
+
     if isinstance(data, dict):
         return split_item(data)
     return [split_item(item) for item in data]
