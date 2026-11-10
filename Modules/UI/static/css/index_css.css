@@ -537,3 +537,13 @@ button.store-update-count:disabled {
     font-style: italic;
     opacity: 0.6;
 }
+
+.idx-btn-gold {
+    background: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #fff !important;
+}
+.idx-btn-gold:hover {
+    background: #b45309 !important;
+    border-color: #b45309 !important;
+}
