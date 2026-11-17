@@ -30,12 +30,31 @@
             <div class="card-body py-3">
                 <div class="row g-3 align-items-end">
 
-                    <div class="col-lg-5 col-md-12">
+                    <div class="col-lg-{{ 6 if groups else 5 }} col-md-12">
                         <form action="{{ url_for('client_bp.add_client') }}" method="POST" class="m-0">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                             <label class="form-label text-muted small text-uppercase fw-semibold mb-2">Add New Client</label>
                             <div class="input-group">
                                 <input type="text" name="client_name" class="form-control" maxlength="25" required placeholder="Enter client name">
+                                {% if groups %}
+                                    <button class="btn btn-outline-secondary dropdown-toggle text-truncate" type="button"
+                                            id="addClientGroupsBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                                            aria-expanded="false" title="Assign Blacklist Groups" style="max-width: 200px;">
+                                        <i class="bi bi-collection me-1"></i><span id="addClientGroupsLabel">Blacklist Groups</span>
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 py-2" aria-labelledby="addClientGroupsBtn"
+                                        style="min-width: 240px; max-height: 260px; overflow-y: auto;">
+                                        {% for group in groups %}
+                                            <li>
+                                                <label class="dropdown-item d-flex align-items-center gap-2 mb-0" style="cursor: pointer;">
+                                                    <input class="form-check-input mt-0 add-client-group" type="checkbox"
+                                                           name="group_blacklist" value="{{ group.UID }}" data-name="{{ group.NAME }}">
+                                                    <span class="text-truncate">{{ group.NAME }}</span>
+                                                </label>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
                                 <button class="btn btn-success" type="submit">
                                     <i class="bi bi-plus-lg me-1"></i>Add New Client
                                 </button>
@@ -46,7 +65,7 @@
                     <div class="col-lg-1 d-none d-lg-flex justify-content-center align-self-stretch">
                     </div>
 
-                    <div class="col-lg-6 col-md-12">
+                    <div class="col-lg-{{ 5 if groups else 6 }} col-md-12">
                         <label class="form-label text-muted small text-uppercase fw-semibold mb-2">Search &amp; Filter</label>
                         <div class="row g-2">
                             <div class="col-sm-8">
@@ -229,6 +248,26 @@
                     });
                 });
             });
+
+            // --- Blacklist-Group Dropdown (Add Client) ---
+            const groupBoxes = document.querySelectorAll('.add-client-group');
+            const groupLabel = document.getElementById('addClientGroupsLabel');
+
+            function updateGroupLabel() {
+                const checked = Array.from(groupBoxes).filter(cb => cb.checked);
+                if (checked.length === 0) {
+                    groupLabel.textContent = 'Blacklist Groups';
+                } else if (checked.length === 1) {
+                    groupLabel.textContent = checked[0].getAttribute('data-name');
+                } else {
+                    groupLabel.textContent = checked.length + ' groups selected';
+                }
+            }
+
+            if (groupLabel) {
+                groupBoxes.forEach(cb => cb.addEventListener('change', updateGroupLabel));
+                updateGroupLabel();
+            }
 
             // --- Search & Filter ---
             const table = document.getElementById('clientsTable');

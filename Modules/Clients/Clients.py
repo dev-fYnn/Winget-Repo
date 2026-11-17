@@ -43,9 +43,16 @@ def add_client():
 
         if len(ip) > 0:
             c_id = str(uuid4())
+            token = str(uuid4())
+            selected_groups = request.form.getlist('group_blacklist')
 
             with SQLiteDatabase() as db:
-                status = db.add_New_Client(c_id, name.upper()[:25], ip, str(uuid4()))
+                status = db.add_New_Client(c_id, name.upper()[:25], ip, token)
+
+                if status and selected_groups:
+                    valid_groups = {g['UID'] for g in db.get_All_Blacklist_Groups()}
+                    selected_groups = [g for g in dict.fromkeys(selected_groups) if g in valid_groups]
+                    db.update_Blacklist_Groups_Clients(token, selected_groups)
 
             if status:
                 flash("Client was added successfully!", "success")
